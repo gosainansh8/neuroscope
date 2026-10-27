@@ -1,6 +1,7 @@
 -- NeuroScope database schema (Postgres 16 + pgvector)
 -- One database holds both the structured trial data and the document embeddings.
 -- Safe to re-run: every statement is idempotent.
+-- Changes to existing tables go in db/migrations/, applied after this file by `db init`.
 
 CREATE EXTENSION IF NOT EXISTS vector;
 
@@ -140,10 +141,10 @@ CREATE TABLE IF NOT EXISTS trial_interventions (
     -- How drug_id was decided, so every link can be explained and audited:
     --   matched = exact alias key match; created = new drug; conflict = names pointed
     --   at 2+ drugs (see drug_alias_conflicts); pending_review = only an unreviewed alias
-    --   from another trial matched (matched_alias_key names it); placebo / non_drug /
-    --   no_usable_name = unlinked
-    resolution_method TEXT NOT NULL DEFAULT 'non_drug' CHECK (resolution_method IN
-                      ('matched', 'created', 'conflict', 'pending_review', 'placebo', 'non_drug', 'no_usable_name')),
+    --   from another trial matched (matched_alias_key names it); ambiguous_name = the
+    --   name lists alternatives ("A or B"); placebo / non_drug / no_usable_name = unlinked.
+    -- Allowed values are enforced by db/migrations/001_resolution_method_values.sql.
+    resolution_method TEXT NOT NULL DEFAULT 'non_drug',
     matched_alias_key TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_interventions_nct ON trial_interventions(nct_id);

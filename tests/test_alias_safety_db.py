@@ -307,3 +307,36 @@ def test_live_arm_labels_and_procedures_are_not_aliases(conn):
     assert alias_owner(conn, "treatmenta") is None
     assert alias_owner(conn, "eeg") is None and alias_owner(conn, "fmri") is None
     assert links(conn, "NCT91000091") == [("FDG-PET", None, "pending_review")]
+
+
+# --- Alternatives and display names -------------------------------------------
+
+def test_live_alternatives_stay_unlinked_and_reviewable(conn):
+    # Before: became one drug named for the whole phrase (and, earlier, 'ct scan').
+    name = "18F-Florbetapir or 18F-Flutemetamol"
+    n_drugs = conn.execute("SELECT COUNT(*) FROM drugs").fetchone()[0]
+    ingest(conn, [
+        study("NCT91000100", interventions=[iv(name, other_names=["Amyvid or Vizamyl"])]),
+        # An "A or B" otherName on an ordinary record is not learned either.
+        study("NCT91000101", interventions=[iv("JKL-400", other_names=["Donepezil or Rivastigmine"])]),
+    ])
+    assert links(conn, "NCT91000100") == [(name, None, "ambiguous_name")]
+    assert conn.execute("SELECT other_names FROM trial_interventions WHERE nct_id = 'NCT91000100'"
+                        ).fetchone()[0] == ["Amyvid or Vizamyl"]
+    assert conn.execute("SELECT COUNT(*) FROM drugs").fetchone()[0] == n_drugs + 1   # only JKL-400
+    for key in ("18fflorbetapiror18fflutemetamol", "amyvidorvizamyl", "donepezilorrivastigmine"):
+        assert alias_owner(conn, key) is None
+    # Reviewable: listed by `curate ambiguous`, and unchanged by reresolve.
+    reresolve(conn)
+    assert links(conn, "NCT91000100") == [(name, None, "ambiguous_name")]
+
+
+def test_live_description_does_not_become_canonical_name(conn):
+    # Before: drug named "gamma secretase inhibitor".
+    ingest(conn, [study("NCT91000102", interventions=[iv("BMS-708163", other_names=["gamma secretase inhibitor"])])])
+    assert links(conn, "NCT91000102") == [("BMS-708163", "BMS-708163", "created")]
+    # Both names are kept as aliases with their source and the record that taught them.
+    rows = conn.execute("SELECT alias_display, source, review_status, first_seen_nct FROM drug_aliases "
+                        "WHERE alias_key IN ('bms708163', 'gammasecretaseinhibitor') ORDER BY 1").fetchall()
+    assert rows == [("BMS-708163", "ctgov_name", "unreviewed", "NCT91000102"),
+                    ("gamma secretase inhibitor", "ctgov_other_name", "unreviewed", "NCT91000102")]

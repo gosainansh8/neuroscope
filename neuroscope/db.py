@@ -1,7 +1,11 @@
 """Database connection, schema setup, and seeding.
 
 Usage:
-    python -m neuroscope.db init      # create tables and load the curated seed aliases
+    python -m neuroscope.db init      # create or upgrade tables, load the curated seed aliases
+
+init is non-destructive: schema.sql only creates what is missing, then every
+db/migrations/*.sql file is applied in name order. Migrations must be
+idempotent, because init runs all of them every time.
 """
 
 from __future__ import annotations
@@ -15,6 +19,7 @@ import psycopg
 
 ROOT = Path(__file__).resolve().parent.parent
 SCHEMA_PATH = ROOT / "db" / "schema.sql"
+MIGRATIONS_DIR = ROOT / "db" / "migrations"
 SEED_DRUGS = ROOT / "data" / "seed_drugs.csv"
 SEED_ALIASES = ROOT / "data" / "seed_aliases.csv"
 
@@ -30,11 +35,13 @@ def connect(url: str | None = None) -> psycopg.Connection:
 
 
 def init_db(conn: psycopg.Connection) -> dict[str, int]:
-    """Apply the schema and load seed drugs/aliases. Idempotent."""
+    """Apply the schema and migrations, then load seed drugs/aliases. Idempotent."""
     from .normalize import alias_key, combination_key  # local import keeps db importable standalone
 
     with conn.transaction():
         conn.execute(SCHEMA_PATH.read_text(encoding="utf-8"))
+        for migration in sorted(MIGRATIONS_DIR.glob("*.sql")):
+            conn.execute(migration.read_text(encoding="utf-8"))
 
         n_drugs = n_aliases = 0
         with SEED_DRUGS.open(encoding="utf-8") as fh:
@@ -83,7 +90,11 @@ def _seed_alias(conn, key: str, display: str, drug_id: int, alias_type: str) -> 
         "ON CONFLICT (alias_key) DO UPDATE SET "
         "  drug_id = EXCLUDED.drug_id, alias_display = EXCLUDED.alias_display, "
         "  alias_type = EXCLUDED.alias_type, source = 'seed', "
-        "  review_status = 'verified', reviewed_at = now()",
+        "  review_status = 'verified', reviewed_at = now() "
+        # Unchanged seed rows are left alone, so re-running init keeps review dates.
+        "WHERE (drug_aliases.drug_id, drug_aliases.alias_display, drug_aliases.alias_type, "
+        "       drug_aliases.source, drug_aliases.review_status) "
+        "  IS DISTINCT FROM (EXCLUDED.drug_id, EXCLUDED.alias_display, EXCLUDED.alias_type, 'seed', 'verified')",
         (key, display, drug_id, alias_type),
     )
     return 1

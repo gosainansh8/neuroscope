@@ -13,14 +13,16 @@ docker compose up -d                          # Postgres 16 + pgvector on localh
 python3.11 -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev]"
 cp .env.example .env && set -a && source .env && set +a
-python -m neuroscope.db init                  # tables + 25 curated drugs and their aliases
+python -m neuroscope.db init                  # tables, migrations, 25 curated drugs and their aliases
 ```
+
+Upgrading an existing database: pull, then run `python -m neuroscope.db init` again. It only creates what is missing and applies `db/migrations/`; no trial, intervention, alias, snapshot, or change record is touched. Run `python -m neuroscope.curate reresolve` afterwards to apply new resolution rules to existing interventions.
 
 ## Verify it
 
 ```bash
 # 1. Tests. REQUIRE_DB_TESTS=1 turns a missing database into an error instead of silent skips.
-REQUIRE_DB_TESTS=1 pytest -rs                 # expect: 134 passed, 0 skipped
+REQUIRE_DB_TESTS=1 pytest -rs                 # expect: 149 passed, 0 skipped
 
 # 2. Live check: 25 Alzheimer's studies in pages of 10, then re-fetch the same
 #    25 by NCT ID and confirm nothing duplicated. Writes live_review.md.
@@ -55,6 +57,10 @@ Never a basis for merging: shared words, shared mechanism, shared sponsor, appea
 Ambiguity: if one intervention's names point at two different drugs, nothing merges and nothing is learned from that record. If the registered name matches a drug, the intervention links there; otherwise it stays unlinked. Either way it lands in `drug_alias_conflicts`.
 
 Combinations: `Donepezil + Memantine` is its own drug with an order-independent key, so `Memantine and Donepezil` matches it. It never links to donepezil or memantine alone. Known ingredients are recorded in `drug_components`. A combination record ignores `otherNames` that name a single known drug, and a single-drug record ignores combination-looking `otherNames`. A comma list (`Rivastigmine, memantine`) is a combination unless it is a one-word name next to a code. A name listing alternatives (`donepezil, rivastigmine or galantamine`) is never a combination.
+
+Alternatives: a registered name that lists two or more usable names joined by `or` (`18F-Florbetapir or 18F-Flutemetamol`) does not say which drug the arm received. It is left unlinked as `ambiguous_name`, keeps its original text, and teaches no aliases; an `A or B` otherName is never learned either. `curate ambiguous` and the report list these. They cannot be linked by curation, by design.
+
+Display names: a new drug is named after its registered name. A one-word, not-all-caps letters-only otherName (`tilavonemab` for `ABBV-8E12`) replaces a registered code, since it is likely the nonproprietary name. A multi-word description (`gamma secretase inhibitor`) or an acronym (`DN-TNF`) never does; it is still stored as an alias with its source and NCT ID.
 
 Placebo: an intervention is a placebo if its name says placebo, sham, or sugar pill. If it is a drug joined to a bare placebo (`DAOIB plus placebo`, `Placebo and S-equol`), the drug part is resolved and `is_placebo` is false. A placebo that describes what it matches (`Placebo to Match Emtricitabine/Tenofovir`) stays placebo and unlinked.
 
@@ -98,7 +104,10 @@ python -m neuroscope.curate reresolve
 
 ```
 db/schema.sql            tables, indexes, v_drug_pipeline
+db/migrations/           idempotent changes to existing tables, applied in order by `db init`
 data/seed_*.csv          25 curated drugs with code and brand names (verify before trusting)
+data/raw/                raw CT.gov JSONL (git-ignored), incl. the 1,500-record validation sample
+data/validation/         before/after resolution report for that sample, and the script that made it
 neuroscope/ctgov.py      API client (paging, retries, fetch by ID) and parser
 neuroscope/normalize.py  pure functions: phases, statuses, dates, names, combinations
 neuroscope/resolver.py   the merge rules above
@@ -107,16 +116,17 @@ neuroscope/curate.py     review and correction CLI
 neuroscope/live_check.py live two-run verification
 neuroscope/review.py     per-trial Markdown review
 neuroscope/report.py     database summary
-tests/                   134 tests; all fixtures synthetic (fake NCT9xxxxxxx IDs), names from live records
+tests/                   149 tests; all fixtures synthetic (fake NCT9xxxxxxx IDs), names from live records
 ```
 
 ## Known limitations
 
 - Until aliases are reviewed, the same drug can exist twice as auto-created drugs (e.g. `bapineuzumab` and `AAB-001`); records naming both become conflicts.
-- A name listing alternatives (`18F-Florbetapir or 18F-Flutemetamol`) still becomes its own auto-created drug rather than being left unlinked.
-- Auto-created drug names can be poor: a letters-only otherName is preferred over a code, so `BMS-708163` is named `gamma secretase inhibitor`.
+- Alternatives are detected only by the word `or`; other phrasings (`either A/B`, `A vs B`) are not recognized.
+- A one-word otherName can still become a poor display name: a brand (`Interferon beta-1a` is named `rebif`) or a sponsor's misspelling (`flortauapir`).
+- `reresolve` re-links trials but never renames drugs. Drugs created before the display-name rule keep their old names (rename with `curate map`).
 - Sponsors sometimes put procedures or other arms in `otherNames`. Those names are learned as unreviewed aliases of the record's drug; they no longer affect other trials.
 - Dietary supplements and other non-drug intervention types are stored but not resolved to drugs.
 - Combination detection uses separators (`+`, `/`, `&`, `;`, `and`, `plus`, `in combination with`). An unusual phrasing can be missed, and a name that legitimately contains one of these words would be split.
 - Seed aliases are curated by hand. Verify them against primary sources.
-- Schema changes during development require a fresh database (`docker compose down -v`); there are no migrations yet.
+- Migrations are plain idempotent SQL files that `db init` re-applies on every run. There is no version table and no rollback.
