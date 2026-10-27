@@ -44,6 +44,10 @@ QUERIES = {
         LEFT JOIN drugs b ON b.id = c.conflicting_drug_id
         WHERE NOT c.resolved ORDER BY c.detected_at DESC LIMIT 25
     """,
+    "Interventions naming alternatives, left unlinked (A or B)": """
+        SELECT nct_id, name FROM trial_interventions
+        WHERE resolution_method = 'ambiguous_name' ORDER BY nct_id LIMIT 25
+    """,
     "Intervention links by resolution method": """
         SELECT resolution_method, COUNT(*) FROM trial_interventions GROUP BY 1 ORDER BY 2 DESC
     """,

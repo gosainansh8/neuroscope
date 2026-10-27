@@ -248,9 +248,23 @@ def clean_drug_name(raw: str) -> tuple[str, list[str]]:
     return _with_label(main, main_label), [p for p in parens if p]
 
 
+_OR_SPLIT_RE = re.compile(r"\s*\bor\b\s*", re.IGNORECASE)
+
+
+def lists_alternatives(name: str) -> bool:
+    """'18F-Florbetapir or 18F-Flutemetamol' names either drug, not one drug.
+
+    True when splitting on 'or' leaves at least two usable names.
+    """
+    parts = [_strip_noise(p) for p in _OR_SPLIT_RE.split(_strip_noise(name))]
+    return sum(1 for p in parts if is_usable_alias(p)) >= 2
+
+
 def is_usable_alias(name: str) -> bool:
-    """Reject empty strings, placebo labels, and generic words."""
+    """Reject empty strings, placebo labels, generic words, and lists of alternatives."""
     if not name or is_placebo(name):
+        return False
+    if _OR_SPLIT_RE.search(name) and lists_alternatives(name):
         return False
     if name.strip().lower() in _JUNK_NAMES or _ARM_LABEL_RE.fullmatch(name.strip()):
         return False
@@ -333,8 +347,11 @@ def combination_display(components: list[str]) -> str:
 def choose_display_name(candidates: list[str]) -> str:
     """Pick the canonical display name for a newly discovered drug.
 
-    Prefer the registered name, but if it is a code and a letters-only
-    alternative exists (a likely nonproprietary name), use that instead.
+    Prefer the registered name, but if it is a code and a one-word
+    letters-only alternative exists (a likely nonproprietary name), use that
+    instead. A multi-word phrase ("gamma secretase inhibitor") is usually a
+    description and an all-caps word ("DN-TNF", "FBB") an abbreviation, so
+    neither replaces a code; both are still kept as aliases.
     Letters-only names are lowercased to match INN convention.
     """
     usable = [c for c in candidates if is_usable_alias(c)]
@@ -343,9 +360,10 @@ def choose_display_name(candidates: list[str]) -> str:
     first = usable[0]
     unlabeled = re.sub(r"^\[[^\]]*\]", "", first)   # "[18F]Florbetapir" is a name, not a code
     if any(ch.isdigit() for ch in unlabeled):
-        letters_only = [c for c in usable if re.fullmatch(r"[A-Za-z][A-Za-z \-]*", c)]
-        if letters_only:
-            first = letters_only[0]
+        single_names = [c for c in usable
+                        if re.fullmatch(r"[A-Za-z][A-Za-z\-]*", c) and not c.isupper()]
+        if single_names:
+            first = single_names[0]
     if re.fullmatch(r"[A-Za-z][A-Za-z \-]*", first):
         return first.lower()
     return first

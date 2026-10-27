@@ -24,6 +24,9 @@ WHAT NEVER LINKS NAMES: shared words, shared mechanism, shared sponsor,
 appearing in the same trial (two interventions in one trial stay separate),
 or string similarity.
 
+ALTERNATIVES: a registered name like "A or B" says the arm got either drug.
+It is left unlinked as 'ambiguous_name' and nothing is learned from it.
+
 AMBIGUITY: if one intervention's names point at two different drugs, nothing
 is merged and nothing new is learned from that record. If the registered
 name itself matches, the intervention links to that drug; otherwise it stays
@@ -47,6 +50,7 @@ from dataclasses import dataclass, field
 from .normalize import (
     DRUG_INTERVENTION_TYPES,
     active_part_of_placebo_mix,
+    lists_alternatives,
     alias_key,
     choose_display_name,
     classify_alias_type,
@@ -62,7 +66,8 @@ from .normalize import (
 @dataclass
 class Resolution:
     drug_id: int | None
-    method: str                      # matched | created | conflict | pending_review | placebo | non_drug | no_usable_name
+    method: str                      # matched | created | conflict | pending_review | ambiguous_name |
+                                     # placebo | non_drug | no_usable_name
     matched_key: str | None = None
     created: bool = False
     conflicts: list[int] = field(default_factory=list)
@@ -134,6 +139,10 @@ def resolve_intervention(cur, *, nct_id: str, name: str, intervention_type: str 
         name = active
     if (intervention_type or "").upper() not in DRUG_INTERVENTION_TYPES:
         return Resolution(None, "non_drug")
+    if lists_alternatives(clean_drug_name(name)[0]):
+        # "A or B": the record does not say which drug was given. Link nothing,
+        # learn nothing; `curate ambiguous` lists these for review.
+        return Resolution(None, "ambiguous_name")
 
     cands = build_candidates(name, other_names)
     if not cands:

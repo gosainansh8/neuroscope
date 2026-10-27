@@ -2,7 +2,8 @@
 
 Usage:
     python -m neuroscope.curate unreviewed                 # learned aliases, most trials waiting first
-    python -m neuroscope.curate conflicts                  # ambiguous interventions
+    python -m neuroscope.curate conflicts                  # names pointing at 2+ drugs
+    python -m neuroscope.curate ambiguous                  # names listing alternatives ("A or B")
     python -m neuroscope.curate verify  "LY3372993"        # confirm an alias
     python -m neuroscope.curate reject  "AB-123"           # never match this name again
     python -m neuroscope.curate map     "DEF-200" defumab  # point a name at a drug (created if new)
@@ -163,6 +164,7 @@ def main(argv: list[str] | None = None) -> int:
     sub = p.add_subparsers(dest="cmd", required=True)
     sub.add_parser("unreviewed")
     sub.add_parser("conflicts")
+    sub.add_parser("ambiguous")
     for name in ("verify", "reject"):
         sp = sub.add_parser(name)
         sp.add_argument("alias")
@@ -198,6 +200,12 @@ def main(argv: list[str] | None = None) -> int:
                 "LEFT JOIN drugs b ON b.id = c.conflicting_drug_id "
                 "WHERE NOT c.resolved ORDER BY c.id").fetchall(),
                 ["id", "nct_id", "intervention", "alias_key", "assigned (blank=unlinked)", "conflicting"])
+        elif args.cmd == "ambiguous":
+            # Left unlinked on purpose: the record does not say which drug the arm received.
+            _print(conn.execute(
+                "SELECT nct_id, name, array_to_string(other_names, '; ') FROM trial_interventions "
+                "WHERE resolution_method = 'ambiguous_name' ORDER BY nct_id, id").fetchall(),
+                ["nct_id", "registered name (as published)", "other names (as published)"])
         elif args.cmd == "verify":
             verify_alias(conn, args.alias, args.note)
             print("Verified. Run `reresolve` to link trials waiting on this alias.")

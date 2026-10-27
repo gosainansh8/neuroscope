@@ -10,6 +10,7 @@ from neuroscope.normalize import (
     clean_drug_name,
     is_placebo,
     is_usable_alias,
+    lists_alternatives,
     normalize_phases,
     parse_partial_date,
     split_combination,
@@ -272,3 +273,32 @@ def test_split_combination_live_strings(name, parts):
                                   "EEG", "PET scan", "18F"])
 def test_live_junk_names_are_not_aliases(name):
     assert is_usable_alias(name) is False
+
+
+@pytest.mark.parametrize("name,expected", [
+    ("18F-Florbetapir or 18F-Flutemetamol", True),
+    ("Conventional medical treatment：donepezil, rivastigmine or galantamine", True),
+    ("Donepezil", False),
+    ("Donepezil + Memantine", False),
+    ("Orexin antagonist", False),          # 'or' inside a word is not a separator
+])
+def test_lists_alternatives(name, expected):
+    assert lists_alternatives(name) is expected
+
+
+def test_alternatives_are_never_aliases():
+    assert is_usable_alias("18F-Florbetapir or 18F-Flutemetamol") is False
+
+
+@pytest.mark.parametrize("candidates,display", [
+    # Live strings: a multi-word description never replaces a code.
+    (["BMS-708163", "gamma secretase inhibitor"], "BMS-708163"),
+    (["AADvac1", "coupled to KLH"], "AADvac1"),
+    (["XPro1595", "Dominant-negative Tumor Necrosis Factor", "DN-TNF"], "XPro1595"),
+    (["[18F]MNI-815", "FBB"], "[18F]MNI-815"),
+    # A one-word nonproprietary name still does.
+    (["ABBV-8E12", "Tilavonemab"], "tilavonemab"),
+    (["MK-8931", "verubecestat"], "verubecestat"),
+])
+def test_choose_display_never_prefers_description_over_code(candidates, display):
+    assert choose_display_name(candidates) == display
