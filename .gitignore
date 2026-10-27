@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+.venv/
+.env
+.pytest_cache/
+data/raw/
+*.egg-info/
+.DS_Store
+# Generated reports (rebuild with live_check / review)
+live_review.md
+review.md
+.vscode/
