@@ -76,7 +76,7 @@ python -m neuroscope.curate verify "XYZ-1234"     # or map / reject
 python -m neuroscope.curate reresolve
 ```
 
-Many corrections at once: put them in a CSV (`action,alias,drug,confidence,reason`; action is `map` or `reject`) and run `python -m neuroscope.curate apply FILE.csv --dry-run` to see the before/after counts with nothing changed, then without `--dry-run` to apply all rows (or none, if any row is invalid) and reresolve. `data/curation/proposed_aliases_2026-11-10.csv` holds 70 proposed corrections from the first full load. They are proposals: review them before applying.
+Many corrections at once: put them in a CSV (`action,alias,drug,confidence,reason`; action is `map` or `reject`) and run `python -m neuroscope.curate apply FILE.csv --dry-run` to see the before/after counts with nothing changed, then without `--dry-run` to apply all rows (or none, if any row is invalid) and reresolve. `data/curation/proposed_aliases_2026-11-10.csv` holds the 69 corrections from the first full load, approved and applied on 2026-11-10 (pending 127 to 59, conflicts 99 to 44). Mappings were checked against registry records that list both names and, for less common codes, public sources. It merges unlabeled tracer names, PET-scan names, and salt forms into the base drug by decision, not by rule. A fresh database needs this file applied again after ingestion.
 
 This replaced an earlier default in which unreviewed aliases matched everywhere. In a 1,500-record live sample, that default had linked FDG-PET interventions to insulin, `AH110690` to the wrong tracer, and `Treatment A` to atabecestat. The cost is more unlinked interventions until review (127 of 7,217 in the full Alzheimer's load of 4,341 trials on 2026-11-10, plus 99 conflicts) and some duplicate auto-created drugs that surface as conflicts (e.g. `bapineuzumab` and `AAB-001`) instead of being silently merged. `NEUROSCOPE_TRUST_UNREVIEWED_ALIASES=1` restores the old behavior for ingestion and `reresolve`.
 
@@ -110,7 +110,7 @@ db/migrations/           idempotent changes to existing tables, applied in order
 data/seed_*.csv          25 curated drugs with code and brand names (verify before trusting)
 data/raw/                raw CT.gov JSONL (git-ignored), incl. the 1,500-record validation sample
 data/validation/         before/after resolution report for that sample, and the script that made it
-data/curation/           alias correction files for `curate apply` (proposed until a human approves them)
+data/curation/           alias correction files for `curate apply`
 neuroscope/ctgov.py      API client (paging, retries, fetch by ID) and parser
 neuroscope/normalize.py  pure functions: phases, statuses, dates, names, combinations
 neuroscope/resolver.py   the merge rules above
