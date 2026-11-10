@@ -6,7 +6,7 @@ Milestone 1: the structured data layer. Pulls Alzheimer's trials from ClinicalTr
 
 Milestone 2: FDA approval. Loads approval records from Drugs@FDA and indications from FDA labels, matched to the same canonical drugs. Approval status comes only from these records.
 
-No document retrieval, agents, or cloud deployment yet.
+Milestone 3 (first half): documents. Loads PubMed abstracts for the most-studied drugs, links each to the drugs it names, and offers keyword search. There are no embeddings, agents, or cloud deployment yet.
 
 ## Setup
 
@@ -26,7 +26,7 @@ Upgrading an existing database: pull, then run `python -m neuroscope.db init` ag
 
 ```bash
 # 1. Tests. REQUIRE_DB_TESTS=1 turns a missing database into an error instead of silent skips.
-REQUIRE_DB_TESTS=1 pytest -rs                 # expect: 180 passed, 0 skipped
+REQUIRE_DB_TESTS=1 pytest -rs                 # expect: 191 passed, 0 skipped
 
 # 2. Live check: 25 Alzheimer's studies in pages of 10, then re-fetch the same
 #    25 by NCT ID and confirm nothing duplicated. Writes live_review.md.
@@ -49,6 +49,8 @@ python -m neuroscope.curate unreviewed                     # learned aliases, mo
 python -m neuroscope.curate conflicts
 python -m neuroscope.fda load                              # FDA approvals (downloads Drugs@FDA)
 python -m neuroscope.fda labels --save-raw data/raw/fda/labels.jsonl   # FDA label indications
+python -m neuroscope.pubmed load --save-raw data/raw/pubmed/ad.xml     # PubMed abstracts
+python -m neuroscope.search "amyloid related imaging abnormalities" --drug lecanemab
 ```
 
 ## What is allowed to merge two drug names
@@ -82,7 +84,7 @@ python -m neuroscope.curate verify "XYZ-1234"     # or map / reject
 python -m neuroscope.curate reresolve
 ```
 
-Many corrections at once: put them in a CSV (`action,alias,drug,confidence,reason`) and run `python -m neuroscope.curate apply FILE.csv --dry-run` to see the before/after counts with nothing changed, then without `--dry-run` to apply all rows (or none, if any row is invalid) and reresolve. Actions: `map` (this name is this drug; mapping a name to itself confirms it or splits it off as its own drug), `reject` (this text is not a drug name: it never matches, never names a drug, and an intervention registered only under it stays unlinked), and `resolve` (the alias column holds an NCT ID; that trial's conflicts are marked reviewed and its links stay as they are). `data/curation/proposed_aliases_2026-11-10.csv` holds the 69 corrections from the first full load, approved and applied on 2026-11-10 (pending 127 to 59, conflicts 99 to 44). Mappings were checked against registry records that list both names and, for less common codes, public sources. It merges unlabeled tracer names, PET-scan names, and salt forms into the base drug by decision, not by rule. `data/curation/review_round2_2026-11-10.csv` (96 rows, applied the same day) finished the review: pending 59 to 6, open conflicts 44 to 0, with 31 conflicts marked reviewed and left as they are (multi-tracer studies, formulation variants kept separate, wrong sponsor otherNames). A fresh database needs both files applied again after ingestion, in date order.
+Many corrections at once: put them in a CSV (`action,alias,drug,confidence,reason`) and run `python -m neuroscope.curate apply FILE.csv --dry-run` to see the before/after counts with nothing changed, then without `--dry-run` to apply all rows (or none, if any row is invalid) and reresolve. Actions: `map` (this name is this drug; mapping a name to itself confirms it or splits it off as its own drug), `reject` (this text is not a drug name: it never matches, never names a drug, and an intervention registered only under it stays unlinked), and `resolve` (the alias column holds an NCT ID; that trial's conflicts are marked reviewed and its links stay as they are). `data/curation/proposed_aliases_2026-11-10.csv` holds the 69 corrections from the first full load, approved and applied on 2026-11-10 (pending 127 to 59, conflicts 99 to 44). Mappings were checked against registry records that list both names and, for less common codes, public sources. It merges unlabeled tracer names, PET-scan names, and salt forms into the base drug by decision, not by rule. Two later one-line files (`review_round3`, `review_round4`) merged duplicates found while loading FDA and PubMed data. `data/curation/review_round2_2026-11-10.csv` (96 rows, applied the same day) finished the review: pending 59 to 6, open conflicts 44 to 0, with 31 conflicts marked reviewed and left as they are (multi-tracer studies, formulation variants kept separate, wrong sponsor otherNames). A fresh database needs all four files applied again after ingestion: `proposed_aliases`, then rounds 2, 3, and 4.
 
 This replaced an earlier default in which unreviewed aliases matched everywhere. In a 1,500-record live sample, that default had linked FDG-PET interventions to insulin, `AH110690` to the wrong tracer, and `Treatment A` to atabecestat. The cost is more unlinked interventions until review (127 of 7,217 in the full Alzheimer's load of 4,341 trials on 2026-11-10, plus 99 conflicts) and some duplicate auto-created drugs that surface as conflicts (e.g. `bapineuzumab` and `AAB-001`) instead of being silently merged. `NEUROSCOPE_TRUST_UNREVIEWED_ALIASES=1` restores the old behavior for ingestion and `reresolve`.
 
@@ -120,6 +122,21 @@ On the 2026-11-06 export: 162 of our drugs matched an approved application. For 
 
 Both loads replace all FDA rows, so re-run them after correcting aliases. Raw downloads are kept under `data/raw/fda/` and can be replayed with `--file` and `--from-jsonl`.
 
+## Documents and search
+
+```bash
+python -m neuroscope.pubmed load                 # drugs with 5+ trials, 20 abstracts each (no API key)
+python -m neuroscope.search "cognitive decline" --drug Leqembi --limit 5
+```
+
+For each drug, PubMed is searched for abstracts naming the drug and Alzheimer's. Each abstract is one row in `documents` (title, journal, date with its precision, PMID link) and one or more overlapping text chunks in `chunks`. Only abstracts are stored; PubMed does not carry full text.
+
+A document is linked to a drug only when a trusted name of that drug (a verified alias or its own canonical name, four or more characters) appears in the title or abstract as a whole word. Being returned by a search is not enough, and unreviewed aliases are never used. `document_drugs.matched_name` records the name that was found. Links are recomputed on every load, so they follow alias corrections.
+
+Search is Postgres full-text search: it matches word stems (`abnormality` finds `abnormalities`) and ranks by term frequency. It is not semantic search. `--drug` accepts any trusted name, including brands and codes. Every hit prints its source link and publication date.
+
+First load (2026-11-10): 823 abstracts for 67 drugs, 1,312 chunks, 801 abstracts linked to 223 drugs. `chunks.embedding` is empty; adding embeddings needs an embedding provider and is not built.
+
 ## Data integrity
 
 - Phase and recruitment status live on trials only. `v_drug_pipeline` summarizes trial phases and says so; it does not represent regulatory status.
@@ -144,13 +161,18 @@ neuroscope/resolver.py   the merge rules above
 neuroscope/ingest.py     per-study transactions, snapshots, change log
 neuroscope/curate.py     review and correction CLI
 neuroscope/fda.py        FDA approvals (Drugs@FDA) and label indications
+neuroscope/pubmed.py     PubMed abstracts, chunking, and drug links
+neuroscope/search.py     keyword search over chunks
 neuroscope/live_check.py live two-run verification
 neuroscope/review.py     per-trial Markdown review
 neuroscope/report.py     database summary
-tests/                   180 tests; all fixtures synthetic (fake NCT9xxxxxxx IDs), names from live records
+tests/                   191 tests; all fixtures synthetic (fake NCT9xxxxxxx IDs), names from live records
 ```
 
 ## Known limitations
+
+- Drug classes typed in as interventions (`cholinesterase inhibitors`, `ssri`) exist as drug rows and collect document links like a drug would.
+- Document links are whole-word name matches. A short or common name can match text that is not about the drug (`insulin`, `saline`), and names under four characters never link.
 
 - A drug missing from `v_drug_fda_approval` is not proven unapproved. Products match by active ingredient only, so a drug stored under a brand or code name with no verified generic name (`zunveyl`) does not match, and Namzaric does not match because there is no donepezil + memantine drug yet.
 - The Alzheimer's flag is a text search of the label, not a reading of it.

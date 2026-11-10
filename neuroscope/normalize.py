@@ -113,6 +113,10 @@ _JUNK_NAMES = {
     "spect scan", "tau pet scan", "amyloid pet scan", "pharmacotherapy", "drug intervention",
     "drug-drug interaction", "conventional medication", "disease-modifying therapy",
     "conventional anti-dementia treatment", "best medical treatment",
+    # Typed into drug-type interventions in live records; none is a drug.
+    "patients", "all subjects", "observational", "alzheimer disease", "alzheimer's disease",
+    "cerebrospinal fluid", "blood", "blood samples", "fecal samples", "amyloid pet",
+    "apoe", "apoe4", "apoe genotyping", "radiopharmaceuticals",
 }
 
 # Arm labels sponsors type into name fields: "Treatment A", "Active Comparator: B", "Group 2".

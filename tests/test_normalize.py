@@ -275,7 +275,8 @@ def test_split_combination_live_strings(name, parts):
 
 @pytest.mark.parametrize("name", ["Treatment A", "Active Comparator: A", "no other names", "Human",
                                   "EEG", "PET scan", "18F", "Pharmacotherapy", "SPECT scan",
-                                  "Drug intervention", "Disease-Modifying Therapy"])
+                                  "Drug intervention", "Disease-Modifying Therapy", "Patients",
+                                  "Cerebrospinal fluid", "Blood samples", "Amyloid PET", "ApoE genotyping"])
 def test_live_junk_names_are_not_aliases(name):
     assert is_usable_alias(name) is False
 
