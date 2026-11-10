@@ -1,6 +1,8 @@
 """Alias safety, combinations, corrections, and updates. Real Postgres, synthetic data."""
 
-from neuroscope.curate import map_alias, reject_alias, reresolve, verify_alias
+import pytest
+
+from neuroscope.curate import apply_file, map_alias, reject_alias, reresolve, verify_alias
 from neuroscope.ingest import run_ingestion
 from neuroscope.review import build_review
 from tests.fixtures import iv, study
@@ -58,11 +60,8 @@ def test_combination_is_its_own_drug_with_component_links(conn):
         study("NCT91000011", interventions=[iv("Memantine and Donepezil 10 mg")]),
     ])
     assert links(conn, "NCT91000010") == [("Donepezil + Memantine", "donepezil + memantine", "created")]
-    # Same order-independent key, but learned from another trial: waits for review.
-    assert links(conn, "NCT91000011") == [("Memantine and Donepezil 10 mg", None, "pending_review")]
-    verify_alias(conn, "Donepezil + Memantine")
-    reresolve(conn)
-    assert links(conn, "NCT91000011")[0][1] == "donepezil + memantine"
+    # Same order-independent key as the drug's own name: links without review.
+    assert links(conn, "NCT91000011") == [("Memantine and Donepezil 10 mg", "donepezil + memantine", "matched")]
     comps = conn.execute(
         "SELECT c.canonical_name FROM drug_components dc JOIN drugs d ON d.id = dc.drug_id "
         "JOIN drugs c ON c.id = dc.component_drug_id WHERE d.canonical_name = 'donepezil + memantine' "
@@ -340,3 +339,85 @@ def test_live_description_does_not_become_canonical_name(conn):
                         "WHERE alias_key IN ('bms708163', 'gammasecretaseinhibitor') ORDER BY 1").fetchall()
     assert rows == [("BMS-708163", "ctgov_name", "unreviewed", "NCT91000102"),
                     ("gamma secretase inhibitor", "ctgov_other_name", "unreviewed", "NCT91000102")]
+
+
+# --- Same-name rule: a registered name equal to a drug's own name links -------
+
+def test_same_registered_name_links_without_review(conn):
+    # Live case: 34 trials registered florbetapir; only the first was linked.
+    ingest(conn, [
+        study("NCT91000110", interventions=[iv("Florbetapir F 18", other_names=["Amyvid"])]),
+        study("NCT91000111", interventions=[iv("Florbetapir (18F)")]),            # same name, other notation
+        study("NCT91000112", interventions=[iv("Amyvid")]),                       # learned otherName
+        study("NCT91000113", interventions=[iv("ZZZ-9", other_names=["Florbetapir F 18"])]),
+    ])
+    assert links(conn, "NCT91000110") == [("Florbetapir F 18", "[18F]Florbetapir", "created")]
+    assert links(conn, "NCT91000111") == [("Florbetapir (18F)", "[18F]Florbetapir", "matched")]
+    # A name the first trial only listed as an otherName still waits for review.
+    assert links(conn, "NCT91000112") == [("Amyvid", None, "pending_review")]
+    # The drug's own name arriving as an otherName does not qualify either.
+    assert links(conn, "NCT91000113") == [("ZZZ-9", None, "pending_review")]
+    assert alias_owner(conn, "zzz9") is None
+
+
+def test_same_name_rule_needs_the_drugs_own_name(conn):
+    # Drug is named 'fakeumab' (from the otherName); 'ABC-100' is only its unreviewed alias.
+    ingest(conn, [
+        study("NCT91000114", interventions=[iv("ABC-100", other_names=["fakeumab"])]),
+        study("NCT91000115", interventions=[iv("ABC-100")]),
+        study("NCT91000116", interventions=[iv("Fakeumab 10 mg")]),
+    ])
+    assert links(conn, "NCT91000115") == [("ABC-100", None, "pending_review")]
+    assert links(conn, "NCT91000116") == [("Fakeumab 10 mg", "fakeumab", "matched")]
+
+
+def test_reresolve_keeps_placebo_flag_in_step(conn):
+    ingest(conn, [study("NCT91000117", interventions=[iv("Placebos"), iv("DAOIB plus placebo")])])
+    conn.execute("UPDATE trial_interventions SET is_placebo = NOT is_placebo WHERE nct_id = 'NCT91000117'")
+    reresolve(conn)
+    assert conn.execute("SELECT name, resolution_method, is_placebo FROM trial_interventions "
+                        "WHERE nct_id = 'NCT91000117' ORDER BY id").fetchall() == [
+        ("Placebos", "placebo", True), ("DAOIB plus placebo", "matched", False)]
+
+
+# --- Reviewed correction files -------------------------------------------------
+
+def _corrections_file(tmp_path, body):
+    path = tmp_path / "corrections.csv"
+    path.write_text("action,alias,drug,confidence,reason\n" + body, encoding="utf-8")
+    return str(path)
+
+
+def test_apply_file_dry_run_changes_nothing_then_apply_links(conn, tmp_path):
+    ingest(conn, [
+        study("NCT91000120", interventions=[iv("Bapineuzumab", "BIOLOGICAL", ["AAB-001"])]),
+        study("NCT91000121", interventions=[iv("AAB-001", "BIOLOGICAL")]),
+        study("NCT91000122", interventions=[iv("Caffeine", other_names=["Midazolam"])]),
+    ])
+    assert links(conn, "NCT91000121") == [("AAB-001", None, "pending_review")]
+    path = _corrections_file(tmp_path,
+                             "map,AAB-001,bapineuzumab,high,sponsor code\n"
+                             "map,Midazolam,midazolam,high,separate drug in a cocktail study\n")
+
+    dry = apply_file(conn, path, dry_run=True)
+    assert dry["applied"] is False and dry["after"].get("pending_review", 0) == 0
+    assert links(conn, "NCT91000121") == [("AAB-001", None, "pending_review")]      # rolled back
+    assert alias_owner(conn, "midazolam") == ("caffeine", "unreviewed")
+    assert conn.execute("SELECT COUNT(*) FROM alias_corrections").fetchone()[0] == 0
+
+    apply_file(conn, path)
+    assert links(conn, "NCT91000121") == [("AAB-001", "bapineuzumab", "matched")]
+    assert alias_owner(conn, "aab001") == ("bapineuzumab", "verified")
+    assert alias_owner(conn, "midazolam") == ("midazolam", "verified")
+    logged = conn.execute("SELECT action, alias_key, note FROM alias_corrections ORDER BY id").fetchall()
+    assert logged[:2] == [("map", "aab001", "sponsor code"),
+                          ("map", "midazolam", "separate drug in a cocktail study")]
+    assert logged[2][0] == "reresolve"
+
+
+def test_apply_file_is_all_or_nothing(conn, tmp_path):
+    ingest(conn, [study("NCT91000123", interventions=[iv("Bapineuzumab", "BIOLOGICAL", ["AAB-001"])])])
+    path = _corrections_file(tmp_path, "map,AAB-001,bapineuzumab,high,ok\nmerge,Foo,bar,high,bad action\n")
+    with pytest.raises(ValueError, match="line 3"):
+        apply_file(conn, path)
+    assert alias_owner(conn, "aab001") == ("bapineuzumab", "unreviewed")

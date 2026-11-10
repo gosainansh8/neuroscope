@@ -68,6 +68,10 @@ def test_alias_key(raw, expected):
     # Two labels: ambiguous, so the name is left exactly as cleaned.
     ("18F-Florbetapir or 18F-Flutemetamol", "18F-Florbetapir or 18F-Flutemetamol", []),
     ("Memantine ER", "Memantine", []),
+    # From the full load: per-24-hours doses, spelled-out schedules, dose multipliers.
+    ("Rotigotine 4Mg/24Hrs Patch", "Rotigotine", []),
+    ("Administer Leqemi 10 mg/kg, every two weeks.", "Administer Leqemi", []),
+    ("CHF5074 1x", "CHF5074", []),
     # Formulation words outside the dosage-form list are kept.
     ("Amyvid PET Scan", "Amyvid PET Scan", []),
 ])
@@ -77,7 +81,7 @@ def test_clean_drug_name(raw, main, parens):
 
 @pytest.mark.parametrize("name,expected", [
     ("Placebo", True), ("Matching placebo", True), ("Placebo for lecanemab", True),
-    ("Sham stimulation", True), ("Lecanemab", False), ("Sugar Pill", True),
+    ("Sham stimulation", True), ("Lecanemab", False), ("Sugar Pill", True), ("Placebos", True),
 ])
 def test_is_placebo(name, expected):
     assert is_placebo(name) is expected

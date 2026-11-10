@@ -5,7 +5,10 @@ WHAT IS ALLOWED TO LINK TWO NAMES (the complete list):
   1. Exact key match against a TRUSTED alias. Keys are normalized strings
      ("BAN-2401" and "ban 2401" -> "ban2401"). There is no fuzzy matching,
      no partial matching, and no shared-word matching. Trusted means
-     'verified', or 'unreviewed' but learned from this same NCT ID.
+     'verified', or 'unreviewed' but learned from this same NCT ID, or the
+     same-name case: this intervention's REGISTERED name is the drug's own
+     canonical name. That last case equates no two names; it only says two
+     trials registered under one name mean one drug.
 
   2. Same-record equivalence. Names a sponsor lists together for ONE
      intervention in ONE registry record (the registered name, a name in
@@ -14,7 +17,8 @@ WHAT IS ALLOWED TO LINK TWO NAMES (the complete list):
      the NCT ID that taught them, so a human can audit them.
 
 UNREVIEWED ALIASES DO NOT RESOLVE OTHER TRIALS. An unreviewed alias learned
-from trial A is a review candidate. If trial B's names hit it, B is left
+from trial A is a review candidate (except the same-name case above; a hit
+through an otherName or parenthetical never qualifies). If trial B's names hit it, B is left
 unlinked with resolution_method 'pending_review' and matched_alias_key set to
 that alias, and nothing is learned from B. Verifying the alias and running
 `curate reresolve` links B. Set NEUROSCOPE_TRUST_UNREVIEWED_ALIASES=1 to
@@ -122,6 +126,12 @@ def build_candidates(name: str, other_names: list[str]) -> list[Candidate]:
     return filtered
 
 
+def _own_key(canonical_name: str) -> str:
+    """The alias key of a drug's own canonical name."""
+    comps = split_combination(canonical_name)
+    return combination_key(comps) if comps else alias_key(canonical_name)
+
+
 def trust_unreviewed_default() -> bool:
     return os.environ.get("NEUROSCOPE_TRUST_UNREVIEWED_ALIASES") == "1"
 
@@ -152,21 +162,22 @@ def resolve_intervention(cur, *, nct_id: str, name: str, intervention_type: str 
     primary_key = keys[0] if cands[0].source == "ctgov_name" else None
 
     cur.execute(
-        "SELECT a.alias_key, a.drug_id, d.is_combination, a.review_status, a.first_seen_nct "
-        "FROM drug_aliases a LEFT JOIN drugs d ON d.id = a.drug_id "
+        "SELECT a.alias_key, a.drug_id, d.is_combination, a.review_status, a.first_seen_nct, "
+        "d.canonical_name FROM drug_aliases a LEFT JOIN drugs d ON d.id = a.drug_id "
         "WHERE a.alias_key = ANY(%s)",
         (keys,),
     )
     owned: set[str] = set()       # keys that exist in the table in any state
     matched: dict[str, int] = {}  # trusted hits: may link this intervention
     pending: dict[str, int] = {}  # unreviewed hits learned from other trials: review candidates only
-    for key, drug_id, drug_is_combo, status, first_nct in cur.fetchall():
+    for key, drug_id, drug_is_combo, status, first_nct, canonical in cur.fetchall():
         owned.add(key)
         if status == "rejected":
             continue
         if is_combo and not drug_is_combo:
             continue              # combination intervention never links to a single drug
-        if status == "unreviewed" and first_nct != nct_id and not trust_unreviewed:
+        same_name = key == primary_key and key == _own_key(canonical)
+        if status == "unreviewed" and first_nct != nct_id and not same_name and not trust_unreviewed:
             pending[key] = drug_id
         else:
             matched[key] = drug_id

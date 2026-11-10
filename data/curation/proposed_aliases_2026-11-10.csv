@@ -1,0 +1,71 @@
+action,alias,drug,confidence,reason
+map,Flortaucipir,[18F]Flortaucipir,high,Flortaucipir exists only as the F-18 tau PET tracer; merges the unlabeled duplicate drug
+map,[18F]AV-1451,[18F]Flortaucipir,high,AV-1451 is the development code of flortaucipir F 18
+map,AV-1451,[18F]Flortaucipir,high,AV-1451 is the development code of flortaucipir F 18 (written without the label)
+map,[18F]T807,[18F]Flortaucipir,high,T807 is the original code of flortaucipir F 18
+map,T807,[18F]Flortaucipir,high,T807 is the original code of flortaucipir F 18 (written without the label)
+map,Tauvid,[18F]Flortaucipir,high,Tauvid is the brand name of flortaucipir F 18
+map,florbetapir,[18F]florbetapir,high,Florbetapir exists only as the F-18 amyloid PET tracer
+map,[18F]AV-45,[18F]florbetapir,high,AV-45 is the development code of florbetapir F 18
+map,AV-45,[18F]florbetapir,high,AV-45 is the development code of florbetapir F 18 (written without the label); merges duplicate drug AV45
+map,Amyvid,[18F]florbetapir,high,Amyvid is the brand name of florbetapir F 18
+map,[18F]Florbetapir PET Scan,[18F]florbetapir,medium,A florbetapir PET scan is an administration of florbetapir F 18
+map,[18F]Florbetaben,florbetaben,high,Same tracer; was learned onto MNI-815 from one record's otherName
+map,BAY94-9172,florbetaben,high,BAY 94-9172 is the development code of florbetaben
+map,Neuraceq,florbetaben,high,Neuraceq is the brand name of florbetaben F 18
+map,Flutemetamol,[18F]Flutemetamol,high,Flutemetamol exists only as the F-18 amyloid PET tracer; merges the unlabeled duplicate drug
+map,Vizamyl,[18F]Flutemetamol,high,Vizamyl is the brand name of flutemetamol F 18
+map,GE067,[18F]Flutemetamol,high,GE-067 is the development code of flutemetamol
+map,AH110690,[18F]Flutemetamol,high,AH110690 is GE Healthcare's code for flutemetamol
+map,PiB,[11C]PIB,high,PiB is Pittsburgh compound B which is used only as the C-11 tracer
+map,Pittsburgh Compound B,[11C]PIB,high,Full name of PiB
+map,FDG,[18F]FDG,high,FDG as a study intervention is fluorodeoxyglucose F 18
+map,Fluorodeoxyglucose,[18F]FDG,high,Full name of FDG
+map,FDG-PET,[18F]FDG,medium,An FDG-PET scan is an administration of FDG; this name is currently an unreviewed alias of insulin
+map,AAB-001,bapineuzumab,high,AAB-001 is the development code of bapineuzumab
+map,Ebixa,memantine,high,Ebixa is a brand name of memantine; merges duplicate drug ebixa
+map,Axura,memantine,high,Axura is a brand name of memantine
+map,Escitalopram Oxalate,escitalopram,high,Salt form of escitalopram; merges duplicate drug
+map,Lexapro,escitalopram,high,Lexapro is a brand name of escitalopram
+map,Cipralex,escitalopram,high,Cipralex is a brand name of escitalopram
+map,latrepirdine,dimebon,high,Latrepirdine is the nonproprietary name of Dimebon
+map,PF-01913539,dimebon,high,PF-01913539 is Pfizer's code for latrepirdine (Dimebon)
+map,DMB-I,dimebon,medium,Registered as "DMB-I (Dimebon)" with otherName "INN: Latrepirdine"
+map,Lu AE58054,idalopirdine,high,Lu AE58054 is the development code of idalopirdine
+map,ACU193,sabirnetug,high,ACU193 is the development code of sabirnetug
+map,semagacestat,LY450139,high,Semagacestat is the nonproprietary name of LY450139
+map,SRA-333,lecozotan,high,SRA-333 is the development code of lecozotan
+map,oligomannate,GV-971,high,GV-971 is sodium oligomannate; merges duplicate drug
+map,oligo-mannurarate,GV-971,medium,Sponsor's spelling of oligomannate for GV-971
+map,rifampicin,rifampin,high,Rifampicin (INN) and rifampin (USAN) are the same drug
+map,paracetamol,acetaminophen,high,Paracetamol (INN) and acetaminophen (USAN) are the same drug
+map,Lithium Carbonate,lithium,high,Salt form of lithium; merges duplicate drug
+map,3APS,tramiprosate,high,3APS is the development code of tramiprosate
+map,GV1001,tertomotide,high,GV1001 is the development code of tertomotide
+map,VX-745,neflamapimod,high,VX-745 is the development code of neflamapimod
+map,ABBV-8E12,tilavonemab,high,ABBV-8E12 is the development code of tilavonemab
+map,RO7105705,semorinemab,high,RO7105705 is Roche's code for semorinemab
+map,NP031112,tideglusib,high,NP031112 is the development code of tideglusib
+map,AZD0530,saracatinib,high,AZD0530 is the development code of saracatinib
+map,PRI-002,contraloid,high,PRI-002 is the development code of Contraloid
+map,ENA713,rivastigmine,high,ENA 713 is the development code of rivastigmine
+map,Rapamycin,sirolimus,high,Rapamycin is another name for sirolimus
+map,Leukine,sargramostim,high,Leukine is the brand name of sargramostim
+map,Lipitor,atorvastatin,high,Lipitor is atorvastatin; it was learned onto pravastatin from one record
+map,Midazolam,midazolam,high,Separate drug; was learned onto caffeine from a drug-interaction cocktail record
+map,Fluvoxamine,fluvoxamine,high,Separate drug; was learned onto caffeine from a drug-interaction cocktail record
+map,anle138b,anle138b,high,Separate investigational drug; was learned onto caffeine from a cocktail record
+map,progesterone,progesterone,high,Progesterone is not medroxyprogesterone
+map,Mefloquine,mefloquine,high,Separate drug; was learned onto donepezil from a combination-product record
+reject,GAMMA SECRETASE inhibitor,,high,Drug class not a drug name
+reject,Fully human,,high,Description not a drug name
+reject,IgG1,,high,Antibody class not a drug name
+reject,Other names,,high,Form-field text not a drug name
+reject,ODT,,high,Dosage form (orally disintegrating tablet) not a drug name
+reject,Disintegrating,,high,Dosage form not a drug name
+reject,switch to,,high,Instruction text not a drug name
+reject,amyloid imaging,,high,Procedure not a drug name
+reject,SAD,,high,Study part (single ascending dose) not a drug name
+reject,MAD,,high,Study part (multiple ascending dose) not a drug name
+reject,Dietary impact,,high,Study part not a drug name
+reject,Part II,,high,Study part not a drug name

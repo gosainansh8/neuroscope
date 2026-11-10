@@ -9,6 +9,8 @@ Usage:
     python -m neuroscope.curate map     "DEF-200" defumab  # point a name at a drug (created if new)
     python -m neuroscope.curate resolve-conflict 12 --note "checked sponsor pipeline"
     python -m neuroscope.curate reresolve                  # re-link every intervention
+    python -m neuroscope.curate apply FILE.csv --dry-run   # show what a reviewed file would change
+    python -m neuroscope.curate apply FILE.csv             # apply it (map/reject rows), then reresolve
 
 HOW AN INCORRECT MERGE IS REVERSED
 Trial links are never the source of truth; aliases are. Every intervention
@@ -25,6 +27,7 @@ written to alias_corrections.
 from __future__ import annotations
 
 import argparse
+import csv
 import sys
 
 import psycopg
@@ -139,8 +142,8 @@ def reresolve(conn: psycopg.Connection) -> dict[str, int]:
                     relinked += 1
                 cur.execute(
                     "UPDATE trial_interventions SET drug_id = %s, resolution_method = %s, "
-                    "matched_alias_key = %s WHERE id = %s",
-                    (res.drug_id, res.method, res.matched_key, iv_id),
+                    "matched_alias_key = %s, is_placebo = %s WHERE id = %s",
+                    (res.drug_id, res.method, res.matched_key, res.method == "placebo", iv_id),
                 )
         orphans = conn.execute(
             "DELETE FROM drugs d WHERE NOT d.is_seeded "
@@ -151,6 +154,42 @@ def reresolve(conn: psycopg.Connection) -> dict[str, int]:
                                        f"{n_conflicts} conflicts, {orphans} orphan drugs removed")
     return {"interventions": len(rows), "relinked": relinked,
             "conflicts": n_conflicts, "orphan_drugs_deleted": orphans}
+
+
+METHOD_COUNTS_SQL = "SELECT resolution_method, COUNT(*) FROM trial_interventions GROUP BY 1"
+
+
+def apply_file(conn: psycopg.Connection, path: str, dry_run: bool = False) -> dict:
+    """Apply a reviewed CSV of corrections, then reresolve. All rows or none.
+
+    Columns: action (map | reject), alias, drug (for map), reason. Other columns
+    are ignored. Each row goes through map_alias / reject_alias, so it is logged
+    in alias_corrections like a hand-typed command. With dry_run, everything is
+    rolled back after the before/after counts are taken.
+    """
+    with open(path, encoding="utf-8", newline="") as fh:
+        rows = list(csv.DictReader(fh))
+    before = dict(conn.execute(METHOD_COUNTS_SQL).fetchall())
+    with conn.transaction() as tx:
+        for n, row in enumerate(rows, start=2):          # line 1 is the header
+            action, alias = (row.get("action") or "").strip(), (row.get("alias") or "").strip()
+            note = (row.get("reason") or "").strip() or None
+            try:
+                if not alias:
+                    raise ValueError("empty alias")
+                if action == "map":
+                    map_alias(conn, alias, (row.get("drug") or "").strip(), note)
+                elif action == "reject":
+                    reject_alias(conn, alias, note)
+                else:
+                    raise ValueError(f"unknown action {action!r}")
+            except ValueError as exc:
+                raise ValueError(f"{path} line {n}: {exc}") from exc
+        result = reresolve(conn)
+        after = dict(conn.execute(METHOD_COUNTS_SQL).fetchall())
+        if dry_run:
+            raise psycopg.Rollback(tx)
+    return {"rows": len(rows), "applied": not dry_run, "before": before, "after": after, **result}
 
 
 def _print(rows, header):
@@ -177,6 +216,9 @@ def main(argv: list[str] | None = None) -> int:
     sp.add_argument("conflict_id", type=int)
     sp.add_argument("--note")
     sub.add_parser("reresolve")
+    sp = sub.add_parser("apply")
+    sp.add_argument("file")
+    sp.add_argument("--dry-run", action="store_true")
     args = p.parse_args(argv)
 
     with connect() as conn:
@@ -219,6 +261,12 @@ def main(argv: list[str] | None = None) -> int:
             resolve_conflict(conn, args.conflict_id, args.note)
         elif args.cmd == "reresolve":
             print(reresolve(conn))
+        elif args.cmd == "apply":
+            r = apply_file(conn, args.file, args.dry_run)
+            print(f"{r['rows']} rows {'applied' if r['applied'] else 'checked (dry run, nothing changed)'}; "
+                  f"{r['relinked']} interventions relinked, {r['orphan_drugs_deleted']} orphan drugs removed")
+            for m in sorted(set(r["before"]) | set(r["after"])):
+                print(f"  {m:15} {r['before'].get(m, 0):5} -> {r['after'].get(m, 0):5}")
     return 0
 
 

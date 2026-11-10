@@ -99,7 +99,7 @@ def parse_partial_date(value: str | None) -> tuple[date | None, str | None]:
 # Intervention types that represent a drug-like entity worth tracking.
 DRUG_INTERVENTION_TYPES = {"DRUG", "BIOLOGICAL", "COMBINATION_PRODUCT", "GENETIC"}
 
-_PLACEBO_RE = re.compile(r"\b(placebo|sham|sugar pills?)\b", re.IGNORECASE)
+_PLACEBO_RE = re.compile(r"\b(placebos?|sham|sugar pills?)\b", re.IGNORECASE)
 
 # Strings that show up as names or otherNames but are not drug identities.
 _JUNK_NAMES = {
@@ -123,7 +123,7 @@ _ARM_LABEL_RE = re.compile(
 # The trailing (?!\w) rather than \b lets "10%)" match: % is not a word character.
 _DOSE_RE = re.compile(
     r"\b\d+(?:\.\d+)?\s*(?:mg|mcg|µg|μg|ug|g|ml|iu|units?|%)"
-    r"(?:\s*/\s*(?:kg|day|d|ml|m2|dose|week|wk))?(?!\w)",
+    r"(?:\s*/\s*\d*\s*(?:kg|day|d|ml|m2|dose|week|wk|hrs?|hours?|h))?(?!\w)",
     re.IGNORECASE,
 )
 
@@ -158,7 +158,9 @@ _NOISE_WORDS = [
     "tablets?", "capsules?", "injections?", "infusions?", "solution", "patch",
     "transdermal", "extended[- ]release", "immediate[- ]release", "er", "xr", "sr", "ir",
     "film[- ]coated", "pills?", "dispersible", "daily", "once", "twice", "weekly", "monthly", "biweekly",
-    "bid", "tid", "qd", "qw", r"q\d+w", r"every \d+ weeks?", "low", "medium", "mid", "moderate", "high", "double",
+    "bid", "tid", "qd", "qw", r"q\d+w", r"every (?:\d+|two|three|four|six|eight|twelve) weeks?",
+    r"\d{1,2}x",                       # dose multiplier: "CHF5074 1x"
+    "low", "medium", "mid", "moderate", "high", "double",
     "dose", "doses", "dosing", "titration", "arm", "group", "cohort", "regimen",
     "auto[- ]?injector", "pen", "prefilled syringe", "pre-filled syringe", "vial", "formulation",
     "hydrochloride", "hcl", "mesylate", "maleate", "tartrate", "hydrobromide",
