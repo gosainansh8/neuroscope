@@ -203,6 +203,52 @@ CREATE INDEX IF NOT EXISTS idx_changes_detected ON trial_changes(detected_at);
 CREATE INDEX IF NOT EXISTS idx_changes_nct ON trial_changes(nct_id);
 
 -- ---------------------------------------------------------------------------
+-- FDA approval records (Drugs@FDA). The only source of approval status.
+-- An application is here only if one of its products matched a drug by exact
+-- key against a trusted name (see neuroscope/fda.py). Replaced on every load.
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS fda_applications (
+    application_number     TEXT PRIMARY KEY,       -- e.g. BLA761269
+    application_type       TEXT NOT NULL CHECK (application_type IN ('NDA', 'BLA', 'ANDA')),
+    sponsor_name           TEXT,
+    -- approved = an ORIGINAL submission with status AP; tentative = TA only (not an approval);
+    -- no_submission_record = Drugs@FDA lists the application without submission history
+    approval_status        TEXT NOT NULL CHECK (approval_status IN ('approved', 'tentative', 'no_submission_record')),
+    original_approval_date DATE,                   -- earliest ORIG/AP date; NULL unless approved
+    source_export_date     DATE NOT NULL,          -- source date: the Drugs@FDA export
+    retrieved_at           TIMESTAMPTZ NOT NULL DEFAULT now(),
+    raw                    JSONB NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS fda_products (
+    application_number TEXT NOT NULL REFERENCES fda_applications(application_number) ON DELETE CASCADE,
+    product_number     TEXT NOT NULL,
+    brand_name         TEXT,
+    active_ingredients TEXT[] NOT NULL,            -- exactly as published
+    dosage_form        TEXT,
+    route              TEXT,
+    marketing_status   TEXT,                       -- Prescription, Over-the-counter, Discontinued, ...
+    drug_id            INTEGER NOT NULL REFERENCES drugs(id) ON DELETE CASCADE,
+    matched_key        TEXT NOT NULL,              -- the trusted alias key that matched
+    match_method       TEXT NOT NULL CHECK (match_method IN ('exact', 'normalized')),
+    PRIMARY KEY (application_number, product_number)
+);
+CREATE INDEX IF NOT EXISTS idx_fda_products_drug ON fda_products(drug_id);
+
+-- FDA drug labels (openFDA label API) for approved NDA/BLA applications.
+-- indications_mention_alzheimers is a text search of the section, kept next
+-- to the verbatim text so it can be checked. Replaced on every label load.
+CREATE TABLE IF NOT EXISTS fda_labels (
+    set_id                         TEXT PRIMARY KEY,
+    application_numbers            TEXT[] NOT NULL,     -- stored applications this label covers
+    brand_names                    TEXT[] NOT NULL DEFAULT '{}',
+    effective_date                 DATE,                -- source date: label version
+    indications_and_usage          TEXT,                -- verbatim "Indications and Usage" section
+    indications_mention_alzheimers BOOLEAN NOT NULL,
+    retrieved_at                   TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- ---------------------------------------------------------------------------
 -- Documents and chunks for RAG (filled in the next build step)
 -- 768 dims matches Vertex AI text-embedding-005.
 -- ---------------------------------------------------------------------------
@@ -261,3 +307,42 @@ JOIN trials t ON t.nct_id = ti.nct_id
 LEFT JOIN sponsors s ON s.id = t.lead_sponsor_id
 WHERE t.study_type = 'INTERVENTIONAL'
 GROUP BY d.id;
+
+-- ---------------------------------------------------------------------------
+-- One row per drug that has an FDA-approved application.
+--
+-- IMPORTANT: this is approval for ANY use. Drugs@FDA does not record
+-- indications, so a row here never means "approved for Alzheimer's disease".
+-- A drug absent from this view has no matched FDA approval record; that is
+-- not proof it is unapproved (its names may not have matched).
+-- ---------------------------------------------------------------------------
+CREATE OR REPLACE VIEW v_drug_fda_approval AS
+SELECT
+    base.*,
+    -- Labels of this drug's approved NDA/BLA applications. NULL = no label retrieved.
+    -- TRUE = at least one label's Indications and Usage text contains "alzheimer"
+    -- (a text search: read fda_labels.indications_and_usage before relying on it).
+    (SELECT COUNT(DISTINCT l.set_id) FROM fda_products p
+       JOIN fda_applications a ON a.application_number = p.application_number
+       JOIN fda_labels l ON a.application_number = ANY (l.application_numbers)
+      WHERE p.drug_id = base.drug_id AND a.approval_status = 'approved') AS n_labels,
+    (SELECT BOOL_OR(l.indications_mention_alzheimers) FROM fda_products p
+       JOIN fda_applications a ON a.application_number = p.application_number
+       JOIN fda_labels l ON a.application_number = ANY (l.application_numbers)
+      WHERE p.drug_id = base.drug_id AND a.approval_status = 'approved') AS indications_mention_alzheimers
+FROM (
+    SELECT
+        d.id AS drug_id,
+        d.canonical_name,
+        MIN(a.original_approval_date) FILTER (WHERE a.application_type IN ('NDA', 'BLA')) AS first_approval_date,
+        COUNT(DISTINCT a.application_number) FILTER (WHERE a.application_type IN ('NDA', 'BLA')) AS n_new_drug_applications,
+        COUNT(DISTINCT a.application_number) FILTER (WHERE a.application_type = 'ANDA') AS n_generic_applications,
+        COALESCE(BOOL_OR(p.marketing_status IN ('Prescription', 'Over-the-counter')), FALSE) AS currently_marketed,
+        ARRAY_AGG(DISTINCT p.brand_name) FILTER (WHERE a.application_type IN ('NDA', 'BLA') AND p.brand_name IS NOT NULL) AS brand_names,
+        MAX(a.source_export_date) AS source_export_date
+    FROM drugs d
+    JOIN fda_products p ON p.drug_id = d.id
+    JOIN fda_applications a ON a.application_number = p.application_number
+    WHERE a.approval_status = 'approved'
+    GROUP BY d.id
+) base;

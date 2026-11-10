@@ -1,0 +1,3 @@
+action,alias,drug,confidence,reason
+map,Atorvastatin Calcium,atorvastatin,high,Salt form of atorvastatin; merges duplicate drug found while matching FDA records
+map,[18F]Fludeoxyglucose,[18F]FDG,high,Fludeoxyglucose F 18 is the official (USAN and FDA) name of FDG

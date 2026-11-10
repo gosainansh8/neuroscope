@@ -32,6 +32,23 @@ QUERIES = {
         FROM v_drug_pipeline WHERE highest_phase_active >= 3
         ORDER BY canonical_name
     """,
+    "FDA labels whose indications mention Alzheimer's (text match; read the label)": """
+        SELECT canonical_name, first_approval_date, brand_names, currently_marketed
+        FROM v_drug_fda_approval WHERE indications_mention_alzheimers
+        ORDER BY first_approval_date
+    """,
+    "FDA-approved for some use, by what the label says about Alzheimer's": """
+        SELECT CASE WHEN indications_mention_alzheimers THEN 'indications mention Alzheimer''s'
+                    WHEN indications_mention_alzheimers IS FALSE THEN 'approved for other uses only'
+                    ELSE 'approved; no label retrieved' END, COUNT(*)
+        FROM v_drug_fda_approval GROUP BY 1 ORDER BY 2 DESC
+    """,
+    "Drugs with an active Phase 3 trial and no FDA approval record": """
+        SELECT v.canonical_name, v.n_active_trials FROM v_drug_pipeline v
+        WHERE v.highest_phase_active >= 3
+          AND NOT EXISTS (SELECT 1 FROM v_drug_fda_approval f WHERE f.drug_id = v.drug_id)
+        ORDER BY v.n_active_trials DESC, v.canonical_name LIMIT 25
+    """,
     "Seeded drugs with zero trials (check aliases)": """
         SELECT d.canonical_name FROM drugs d
         WHERE d.is_seeded AND NOT EXISTS (SELECT 1 FROM trial_interventions ti WHERE ti.drug_id = d.id)

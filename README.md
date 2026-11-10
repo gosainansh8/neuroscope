@@ -2,7 +2,11 @@
 
 Sourced neuroscience drug-development intelligence. Launching with Alzheimer's disease.
 
-Milestone 1: the structured data layer. Pulls Alzheimer's trials from ClinicalTrials.gov, normalizes them, resolves drug names to canonical drugs with full provenance, and tracks every change between runs. No agents or cloud deployment yet.
+Milestone 1: the structured data layer. Pulls Alzheimer's trials from ClinicalTrials.gov, normalizes them, resolves drug names to canonical drugs with full provenance, and tracks every change between runs.
+
+Milestone 2: FDA approval. Loads approval records from Drugs@FDA and indications from FDA labels, matched to the same canonical drugs. Approval status comes only from these records.
+
+No document retrieval, agents, or cloud deployment yet.
 
 ## Setup
 
@@ -22,7 +26,7 @@ Upgrading an existing database: pull, then run `python -m neuroscope.db init` ag
 
 ```bash
 # 1. Tests. REQUIRE_DB_TESTS=1 turns a missing database into an error instead of silent skips.
-REQUIRE_DB_TESTS=1 pytest -rs                 # expect: 165 passed, 0 skipped
+REQUIRE_DB_TESTS=1 pytest -rs                 # expect: 180 passed, 0 skipped
 
 # 2. Live check: 25 Alzheimer's studies in pages of 10, then re-fetch the same
 #    25 by NCT ID and confirm nothing duplicated. Writes live_review.md.
@@ -43,6 +47,8 @@ python -m neuroscope.ingest --from-jsonl data/raw/ad.jsonl # replay offline (lab
 python -m neuroscope.review --limit 10 --origin live_api --out review.md
 python -m neuroscope.curate unreviewed                     # learned aliases, most trials waiting first
 python -m neuroscope.curate conflicts
+python -m neuroscope.fda load                              # FDA approvals (downloads Drugs@FDA)
+python -m neuroscope.fda labels --save-raw data/raw/fda/labels.jsonl   # FDA label indications
 ```
 
 ## What is allowed to merge two drug names
@@ -93,10 +99,31 @@ python -m neuroscope.curate reresolve
 
 `reresolve` recomputes every intervention's drug from its original names. No trial, intervention, or original name is deleted; auto-created drugs left with nothing pointing at them are removed. `reject` tombstones a name so ingestion can never re-learn it. Every correction is written to `alias_corrections`. This exact scenario is a test (`test_wrong_merge_is_reversible`).
 
+## FDA approval
+
+```bash
+python -m neuroscope.fda load          # Drugs@FDA bulk export (about 9 MB, no API key)
+python -m neuroscope.fda labels        # labels for the approved applications found above
+python -m neuroscope.report            # includes the FDA sections
+```
+
+Two separate questions, answered from two FDA sources:
+
+1. **Is the drug FDA-approved for anything?** From Drugs@FDA. An application counts as approved only if its original submission has status `AP`; a tentative approval does not count. `v_drug_fda_approval` gives the first approval date (from NDA/BLA applications, not later generics), brand names, the number of generic applications, and whether any product is still marketed.
+2. **Does its label mention Alzheimer's as a use?** From FDA drug labels. The "Indications and Usage" text is stored verbatim in `fda_labels`, and `indications_mention_alzheimers` is a plain text search of that section. It finds labels worth reading; it is not a regulatory determination. Tracer labels match because they say "evaluation of Alzheimer's disease", and a label can also mention the disease in a limitation of use. `NULL` means no label was retrieved, not "no".
+
+Matching follows the same rule as trials: exact key against a trusted name (a verified alias or the drug's own canonical name), never an unreviewed alias. The published ingredient is tried as is, then with three FDA naming conventions removed: the four-letter biologic suffix (`LECANEMAB-IRMB`), the radiolabel notation (`FLORBETAPIR F-18`), and a trailing salt (`DONEPEZIL HYDROCHLORIDE`). Esters such as acetate are kept. A multi-ingredient product matches only a combination drug with exactly those ingredients. Each product row records the published ingredients, the key that matched, and whether the match was `exact` or `normalized`.
+
+Labels are fetched for approved NDA and BLA applications. If a drug has no marketed NDA/BLA product (galantamine's brand is discontinued), its approved generic labels are used instead.
+
+On the 2026-11-06 export: 162 of our drugs matched an approved application. For 12 the label indications mention Alzheimer's (donepezil, rivastigmine, galantamine, memantine, lecanemab, donanemab, brexpiprazole, dextromethorphan + bupropion, and four PET tracers); 131 are approved for other uses only (semaglutide, risperidone); 19 have no label retrieved (aducanumab, whose label is no longer published).
+
+Both loads replace all FDA rows, so re-run them after correcting aliases. Raw downloads are kept under `data/raw/fda/` and can be replayed with `--file` and `--from-jsonl`.
+
 ## Data integrity
 
 - Phase and recruitment status live on trials only. `v_drug_pipeline` summarizes trial phases and says so; it does not represent regulatory status.
-- FDA approval is never inferred from phase, completion, or a Phase 4 trial. Approval will come only from FDA records in a later milestone.
+- FDA approval is never inferred from phase, completion, or a Phase 4 trial. It comes only from FDA records (`v_drug_fda_approval`), and "approved" there means approved for some use, not for Alzheimer's.
 - Raw API responses are kept in `trial_snapshots` (JSONB), one row per distinct version of each record.
 - Two dates everywhere: `last_update_posted` (when the source changed) and `last_retrieved_at` (when we pulled it).
 - Every trial and run is labeled `live_api`, `replay`, or `synthetic`. Reports print the label on every trial, and synthetic trials get no source link.
@@ -116,13 +143,18 @@ neuroscope/normalize.py  pure functions: phases, statuses, dates, names, combina
 neuroscope/resolver.py   the merge rules above
 neuroscope/ingest.py     per-study transactions, snapshots, change log
 neuroscope/curate.py     review and correction CLI
+neuroscope/fda.py        FDA approvals (Drugs@FDA) and label indications
 neuroscope/live_check.py live two-run verification
 neuroscope/review.py     per-trial Markdown review
 neuroscope/report.py     database summary
-tests/                   165 tests; all fixtures synthetic (fake NCT9xxxxxxx IDs), names from live records
+tests/                   180 tests; all fixtures synthetic (fake NCT9xxxxxxx IDs), names from live records
 ```
 
 ## Known limitations
+
+- A drug missing from `v_drug_fda_approval` is not proven unapproved. Products match by active ingredient only, so a drug stored under a brand or code name with no verified generic name (`zunveyl`) does not match, and Namzaric does not match because there is no donepezil + memantine drug yet.
+- The Alzheimer's flag is a text search of the label, not a reading of it.
+- FDA data covers the United States only; there is no EMA or other regulator data.
 
 - Until aliases are reviewed, the same drug can exist twice as auto-created drugs (e.g. `bapineuzumab` and `AAB-001`); records naming both become conflicts.
 - Instruction-like names are not cleaned by rule (`Donepezil drug treatment`, `Administer Leqemi 10 mg/kg, every two weeks.`). The ones in the first full load were mapped by hand; new ones need `curate map`.
