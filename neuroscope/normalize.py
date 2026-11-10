@@ -110,6 +110,9 @@ _JUNK_NAMES = {
     "no other name", "no other names", "not applicable", "human",
     "drug product", "botanical drug", "botanical drug product",
     "eeg", "mri", "fmri", "pet", "pet scan", "ct scan", "mri scan", "blood collection", "blood draw",
+    "spect scan", "tau pet scan", "amyloid pet scan", "pharmacotherapy", "drug intervention",
+    "drug-drug interaction", "conventional medication", "disease-modifying therapy",
+    "conventional anti-dementia treatment", "best medical treatment",
 }
 
 # Arm labels sponsors type into name fields: "Treatment A", "Active Comparator: B", "Group 2".
@@ -362,8 +365,10 @@ def choose_display_name(candidates: list[str]) -> str:
     first = usable[0]
     unlabeled = re.sub(r"^\[[^\]]*\]", "", first)   # "[18F]Florbetapir" is a name, not a code
     if any(ch.isdigit() for ch in unlabeled):
+        # "anti-Tau" and "anti-Abeta" describe a target, not a drug.
         single_names = [c for c in usable
-                        if re.fullmatch(r"[A-Za-z][A-Za-z\-]*", c) and not c.isupper()]
+                        if re.fullmatch(r"[A-Za-z][A-Za-z\-]*", c) and not c.isupper()
+                        and not c.lower().startswith("anti-")]
         if single_names:
             first = single_names[0]
     if re.fullmatch(r"[A-Za-z][A-Za-z \-]*", first):

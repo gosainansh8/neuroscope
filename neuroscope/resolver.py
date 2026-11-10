@@ -167,10 +167,23 @@ def resolve_intervention(cur, *, nct_id: str, name: str, intervention_type: str 
         "WHERE a.alias_key = ANY(%s)",
         (keys,),
     )
+    rows = cur.fetchall()
+
+    # A rejected name is not a drug name: it cannot match, name a new drug, or
+    # be the only reason a drug is created.
+    rejected = {row[0] for row in rows if row[3] == "rejected"}
+    if rejected:
+        cands = [c for c in cands if c.key not in rejected]
+        if not cands:
+            return Resolution(None, "no_usable_name")
+        is_combo = cands[0].is_combination
+        keys = [c.key for c in cands]
+        primary_key = keys[0] if cands[0].source == "ctgov_name" else None
+
     owned: set[str] = set()       # keys that exist in the table in any state
     matched: dict[str, int] = {}  # trusted hits: may link this intervention
     pending: dict[str, int] = {}  # unreviewed hits learned from other trials: review candidates only
-    for key, drug_id, drug_is_combo, status, first_nct, canonical in cur.fetchall():
+    for key, drug_id, drug_is_combo, status, first_nct, canonical in rows:
         owned.add(key)
         if status == "rejected":
             continue
@@ -241,7 +254,7 @@ def resolve_intervention(cur, *, nct_id: str, name: str, intervention_type: str 
         matched_key = None
         method = "created"
 
-    # Register keys nobody owns yet (including rejected tombstones) as unreviewed.
+    # Register keys nobody owns yet as unreviewed (rejected keys were dropped above).
     for c in cands:
         if c.key in owned:
             continue

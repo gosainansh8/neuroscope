@@ -150,6 +150,8 @@ def reresolve(conn: psycopg.Connection) -> dict[str, int]:
             "AND NOT EXISTS (SELECT 1 FROM trial_interventions ti WHERE ti.drug_id = d.id) "
             "AND NOT EXISTS (SELECT 1 FROM drug_aliases a WHERE a.drug_id = d.id AND a.review_status = 'verified')"
         ).rowcount
+        # A conflict whose other drug was just removed as an orphan no longer exists.
+        conn.execute("DELETE FROM drug_alias_conflicts WHERE NOT resolved AND conflicting_drug_id IS NULL")
         _audit(conn, "reresolve", note=f"{len(rows)} interventions, {relinked} relinked, "
                                        f"{n_conflicts} conflicts, {orphans} orphan drugs removed")
     return {"interventions": len(rows), "relinked": relinked,
@@ -162,10 +164,13 @@ METHOD_COUNTS_SQL = "SELECT resolution_method, COUNT(*) FROM trial_interventions
 def apply_file(conn: psycopg.Connection, path: str, dry_run: bool = False) -> dict:
     """Apply a reviewed CSV of corrections, then reresolve. All rows or none.
 
-    Columns: action (map | reject), alias, drug (for map), reason. Other columns
-    are ignored. Each row goes through map_alias / reject_alias, so it is logged
-    in alias_corrections like a hand-typed command. With dry_run, everything is
-    rolled back after the before/after counts are taken.
+    Columns: action, alias, drug, reason. Other columns are ignored.
+      map      alias -> drug, as a verified alias (map_alias)
+      reject   alias is never a drug name (reject_alias)
+      resolve  alias holds an NCT ID: after re-resolving, mark that trial's open
+               conflicts as reviewed. The links stay as the resolver left them.
+    Every row is logged in alias_corrections like a hand-typed command. With
+    dry_run, everything is rolled back after the before/after counts are taken.
     """
     with open(path, encoding="utf-8", newline="") as fh:
         rows = list(csv.DictReader(fh))
@@ -181,11 +186,24 @@ def apply_file(conn: psycopg.Connection, path: str, dry_run: bool = False) -> di
                     map_alias(conn, alias, (row.get("drug") or "").strip(), note)
                 elif action == "reject":
                     reject_alias(conn, alias, note)
-                else:
+                elif action != "resolve":
                     raise ValueError(f"unknown action {action!r}")
             except ValueError as exc:
                 raise ValueError(f"{path} line {n}: {exc}") from exc
         result = reresolve(conn)
+        n_resolved = 0
+        for row in rows:
+            if (row.get("action") or "").strip() != "resolve":
+                continue
+            nct, note = row["alias"].strip(), (row.get("reason") or "").strip()
+            ids = [r[0] for r in conn.execute(
+                "SELECT id FROM drug_alias_conflicts WHERE nct_id = %s AND NOT resolved ORDER BY id", (nct,))]
+            for conflict_id in ids:
+                resolve_conflict(conn, conflict_id, f"{nct}: {note}")
+            n_resolved += len(ids)
+        result["conflicts_resolved"] = n_resolved
+        result["open_conflicts"] = conn.execute(
+            "SELECT COUNT(*) FROM drug_alias_conflicts WHERE NOT resolved").fetchone()[0]
         after = dict(conn.execute(METHOD_COUNTS_SQL).fetchall())
         if dry_run:
             raise psycopg.Rollback(tx)
@@ -267,6 +285,7 @@ def main(argv: list[str] | None = None) -> int:
                   f"{r['relinked']} interventions relinked, {r['orphan_drugs_deleted']} orphan drugs removed")
             for m in sorted(set(r["before"]) | set(r["after"])):
                 print(f"  {m:15} {r['before'].get(m, 0):5} -> {r['after'].get(m, 0):5}")
+            print(f"  conflicts marked reviewed: {r['conflicts_resolved']}; still open: {r['open_conflicts']}")
     return 0
 
 

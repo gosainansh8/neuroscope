@@ -162,9 +162,8 @@ def test_rejected_alias_is_never_relearned(conn):
     reject_alias(conn, "LCN-1")
     ingest(conn, [study("NCT91000051", interventions=[iv("LCN-1", "BIOLOGICAL")])])
     assert alias_owner(conn, "lcn1") == (None, "rejected")
-    # The rejected name no longer links to lecanemab; it becomes its own unconfirmed drug,
-    # but the key itself stays a tombstone.
-    assert links(conn, "NCT91000051")[0][1] != "lecanemab"
+    # A rejected name is not a drug name: the intervention stays unlinked and no drug is created.
+    assert links(conn, "NCT91000051") == [("LCN-1", None, "no_usable_name")]
 
 
 def test_seed_aliases_are_verified(conn):
@@ -421,3 +420,36 @@ def test_apply_file_is_all_or_nothing(conn, tmp_path):
     with pytest.raises(ValueError, match="line 3"):
         apply_file(conn, path)
     assert alias_owner(conn, "aab001") == ("bapineuzumab", "unreviewed")
+
+
+def test_apply_file_resolve_marks_conflicts_reviewed_and_survives_reresolve(conn, tmp_path):
+    # A donepezil arm whose sponsor listed another drug's code as an otherName.
+    ingest(conn, [
+        study("NCT91000124", interventions=[iv("SB-742457")]),
+        study("NCT91000125", interventions=[iv("Donepezil", other_names=["SB-742457"])]),
+    ])
+    assert links(conn, "NCT91000125") == [("Donepezil", "donepezil", "conflict")]
+    path = _corrections_file(tmp_path, "resolve,NCT91000125,,high,donepezil arm of an SB-742457 study\n")
+    r = apply_file(conn, path)
+    assert (r["conflicts_resolved"], r["open_conflicts"]) == (1, 0)
+    # The link is unchanged, and a later reresolve does not reopen the reviewed conflict.
+    reresolve(conn)
+    assert links(conn, "NCT91000125") == [("Donepezil", "donepezil", "conflict")]
+    assert conn.execute("SELECT resolved FROM drug_alias_conflicts WHERE nct_id = 'NCT91000125'"
+                        ).fetchall() == [(True,)]
+    assert conn.execute("SELECT note FROM alias_corrections WHERE action = 'resolve_conflict'"
+                        ).fetchone()[0].endswith("NCT91000125: donepezil arm of an SB-742457 study")
+
+
+def test_rejected_name_never_names_or_creates_a_drug(conn):
+    # Live case: NPT088 listed the class "anti-Abeta" as an otherName. After that
+    # phrase was rejected, NPT088 was still named after it.
+    reject_alias(conn, "anti-Abeta")
+    ingest(conn, [
+        study("NCT91000130", interventions=[iv("NPT088", "BIOLOGICAL", ["fusion protein", "anti-Abeta"])]),
+        study("NCT91000131", interventions=[iv("anti-Abeta", "BIOLOGICAL")]),
+    ])
+    assert links(conn, "NCT91000130") == [("NPT088", "NPT088", "created")]
+    assert links(conn, "NCT91000131") == [("anti-Abeta", None, "no_usable_name")]
+    assert conn.execute("SELECT COUNT(*) FROM drugs WHERE canonical_name ILIKE 'anti-abeta'").fetchone()[0] == 0
+    assert alias_owner(conn, "antiabeta") == (None, "rejected")

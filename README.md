@@ -22,7 +22,7 @@ Upgrading an existing database: pull, then run `python -m neuroscope.db init` ag
 
 ```bash
 # 1. Tests. REQUIRE_DB_TESTS=1 turns a missing database into an error instead of silent skips.
-REQUIRE_DB_TESTS=1 pytest -rs                 # expect: 158 passed, 0 skipped
+REQUIRE_DB_TESTS=1 pytest -rs                 # expect: 165 passed, 0 skipped
 
 # 2. Live check: 25 Alzheimer's studies in pages of 10, then re-fetch the same
 #    25 by NCT ID and confirm nothing duplicated. Writes live_review.md.
@@ -76,7 +76,7 @@ python -m neuroscope.curate verify "XYZ-1234"     # or map / reject
 python -m neuroscope.curate reresolve
 ```
 
-Many corrections at once: put them in a CSV (`action,alias,drug,confidence,reason`; action is `map` or `reject`) and run `python -m neuroscope.curate apply FILE.csv --dry-run` to see the before/after counts with nothing changed, then without `--dry-run` to apply all rows (or none, if any row is invalid) and reresolve. `data/curation/proposed_aliases_2026-11-10.csv` holds the 69 corrections from the first full load, approved and applied on 2026-11-10 (pending 127 to 59, conflicts 99 to 44). Mappings were checked against registry records that list both names and, for less common codes, public sources. It merges unlabeled tracer names, PET-scan names, and salt forms into the base drug by decision, not by rule. A fresh database needs this file applied again after ingestion.
+Many corrections at once: put them in a CSV (`action,alias,drug,confidence,reason`) and run `python -m neuroscope.curate apply FILE.csv --dry-run` to see the before/after counts with nothing changed, then without `--dry-run` to apply all rows (or none, if any row is invalid) and reresolve. Actions: `map` (this name is this drug; mapping a name to itself confirms it or splits it off as its own drug), `reject` (this text is not a drug name: it never matches, never names a drug, and an intervention registered only under it stays unlinked), and `resolve` (the alias column holds an NCT ID; that trial's conflicts are marked reviewed and its links stay as they are). `data/curation/proposed_aliases_2026-11-10.csv` holds the 69 corrections from the first full load, approved and applied on 2026-11-10 (pending 127 to 59, conflicts 99 to 44). Mappings were checked against registry records that list both names and, for less common codes, public sources. It merges unlabeled tracer names, PET-scan names, and salt forms into the base drug by decision, not by rule. `data/curation/review_round2_2026-11-10.csv` (96 rows, applied the same day) finished the review: pending 59 to 6, open conflicts 44 to 0, with 31 conflicts marked reviewed and left as they are (multi-tracer studies, formulation variants kept separate, wrong sponsor otherNames). A fresh database needs both files applied again after ingestion, in date order.
 
 This replaced an earlier default in which unreviewed aliases matched everywhere. In a 1,500-record live sample, that default had linked FDG-PET interventions to insulin, `AH110690` to the wrong tracer, and `Treatment A` to atabecestat. The cost is more unlinked interventions until review (127 of 7,217 in the full Alzheimer's load of 4,341 trials on 2026-11-10, plus 99 conflicts) and some duplicate auto-created drugs that surface as conflicts (e.g. `bapineuzumab` and `AAB-001`) instead of being silently merged. `NEUROSCOPE_TRUST_UNREVIEWED_ALIASES=1` restores the old behavior for ingestion and `reresolve`.
 
@@ -119,15 +119,16 @@ neuroscope/curate.py     review and correction CLI
 neuroscope/live_check.py live two-run verification
 neuroscope/review.py     per-trial Markdown review
 neuroscope/report.py     database summary
-tests/                   158 tests; all fixtures synthetic (fake NCT9xxxxxxx IDs), names from live records
+tests/                   165 tests; all fixtures synthetic (fake NCT9xxxxxxx IDs), names from live records
 ```
 
 ## Known limitations
 
 - Until aliases are reviewed, the same drug can exist twice as auto-created drugs (e.g. `bapineuzumab` and `AAB-001`); records naming both become conflicts.
-- Instruction-like names are not cleaned: `Administer Leqemi 10 mg/kg, every two weeks.` becomes a drug named `administer leqemi`, and `Donepezil drug treatment` stays separate from donepezil. Fix these with `curate map`.
+- Instruction-like names are not cleaned by rule (`Donepezil drug treatment`, `Administer Leqemi 10 mg/kg, every two weeks.`). The ones in the first full load were mapped by hand; new ones need `curate map`.
+- Six interventions stay pending on purpose: an ApoE test and a drug-class arm (not specific drugs), two COVID-19 vaccine arms, and two BCG records where `Bacillus of Calmette and Guerin` is misread as a combination because of the word `and`.
+- About 20 long descriptive names (`Standard of Care medication for early Alzheimer's Disease`) still exist as single-trial drugs.
 - Formulation and extract variants are kept as separate drugs on purpose (`AGB101` vs levetiracetam, `EGb 761` vs ginkgo biloba, intranasal insulin vs insulin).
-- Rejecting a drug's own canonical name does not unlink trials registered under that name; use `curate map` to move them.
 - Alternatives are detected only by the word `or`; other phrasings (`either A/B`, `A vs B`) are not recognized.
 - A one-word otherName can still become a poor display name: a brand (`Interferon beta-1a` is named `rebif`) or a sponsor's misspelling (`flortauapir`).
 - `reresolve` re-links trials but never renames drugs. Drugs created before the display-name rule keep their old names (rename with `curate map`).

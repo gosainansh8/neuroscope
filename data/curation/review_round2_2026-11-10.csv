@@ -1,0 +1,97 @@
+action,alias,drug,confidence,reason
+map,[18F]MNI-946,[18F]MK-6240,high,MNI-946 is Invicro's code for MK-6240 (stated in the registry record NCT03071224)
+map,[18F]PM-PBB3,[18F]PM-PBB3,high,Confirms the drug's own name so records listing it as an otherName can link
+map,AG10,acoramidis,high,AG10 is the development code of acoramidis
+map,AFFITOPE AD02,AFFITOPE AD02,high,Confirms the drug's own name
+map,Albutein,albutein,high,Confirms the drug's own name (Grifols human albumin brand)
+map,CX516,ampalex,high,CX516 is the development code of Ampalex
+map,CSTC1-BAC,bac,medium,Same sponsor product: BAC is registered with otherName CSTC1-BAC
+map,Avagacestat,BMS-708163,high,Avagacestat is the nonproprietary name of BMS-708163
+map,BMS-708163,BMS-708163,high,Confirms the drug's own name
+map,Bryostatin,bryostatin,high,Confirms the drug's own name
+map,CBD,cannabidiol,high,CBD is the standard abbreviation of cannabidiol
+map,AC-1204,AC-1204,high,Formulation code kept as its own drug rather than merged into caprylic triglyceride
+map,ISIS 814907,diranersen,high,ISIS 814907 / IONIS-MAPTRx / BIIB080 is diranersen (Biogen and Ionis)
+map,BIIB080,diranersen,high,BIIB080 is Biogen's code for diranersen
+map,IONIS MAPTRx,diranersen,high,IONIS-MAPTRx is Ionis's name for diranersen
+map,Emtricitabine,emtricitabine,high,Names the drug by its nonproprietary name instead of the brand Emtriva
+map,Emtriva,emtricitabine,high,Emtriva is a brand name of emtricitabine
+map,lamivudine,lamivudine,high,Names the drug by its nonproprietary name instead of the brand Epivir
+map,Epivir,lamivudine,high,Epivir is a brand name of lamivudine
+map,3TC,lamivudine,high,3TC is the standard abbreviation of lamivudine
+map,[18F]PI-2620,[18F]PI-2620,high,Names the tracer by its code; it had been named after the ambiguous nickname FluoroTau
+map,NEUROSTEM-AD,human umbilical cord blood derived-mesenchymal stem cells,high,Medipost's product name for its hUCB-MSC therapy (sponsor lists both)
+map,NEUROSTEM,human umbilical cord blood derived-mesenchymal stem cells,high,Medipost's product name for its hUCB-MSC therapy (sponsor lists both)
+map,Trappsol Cyclo,hydroxypropyl beta cyclodextrin,high,Trappsol Cyclo is a brand of hydroxypropyl beta cyclodextrin
+map,Ibuprofen,ibuprofen,high,Confirms the drug's own name
+map,KarX-EC,karx-ec,high,Confirms the drug's own name
+map,alpha lipoic acid,alpha lipoic acid,high,Separate ingredient; was learned onto a combination from one record
+map,fish oil,fish oil,high,Separate ingredient; was learned onto a combination from one record
+map,Zagotenemab,LY3303560,high,Zagotenemab is the nonproprietary name of LY3303560
+map,LY3303560,LY3303560,high,Confirms the drug's own name
+map,ALN-APP,mivelsiran,high,ALN-APP is the development code of mivelsiran
+map,BMS-986446,moponetug,high,Moponetug was formerly BMS-986446 / PRX005
+map,PRX005,moponetug,high,PRX005 is Prothena's code for moponetug
+map,NaCl,saline,high,Sodium chloride solution is saline; merges duplicate drug
+map,Normal saline,saline,high,Normal saline is saline; merges duplicate drug
+map,TB006,oloctinebart,medium,Sponsor's own records list TB006 as oloctinebart; not confirmed in an independent source
+map,Recombinant Novel Coronavirus Vaccine,recombinant novel coronavirus vaccine,high,Own drug; was attached to the inhaled product from one record
+map,Rivastigmine cm^,rivastigmine,high,Rivastigmine patch registered by patch size (10 cm2 / 5 cm2)
+map,Sirolimus,sirolimus,high,Confirms the drug's own name
+map,Rapamune,sirolimus,high,Rapamune is a brand name of sirolimus
+map,Masupirdine,SUVN-502,high,Masupirdine is the nonproprietary name of SUVN-502
+map,SUVN-502,SUVN-502,high,Confirms the drug's own name
+map,Valtrex,valaciclovir,high,Valtrex is a brand name of valaciclovir
+map,Valacyclovir,valaciclovir,high,Valacyclovir (USAN) and valaciclovir (INN) are the same drug
+map,Experimental: ALZ-801,valiltramiprosate,high,Arm label in front of the verified code ALZ-801
+map,Vitamin E,vitamin e,high,Confirms the drug's own name
+map,EGb 761,EGb 761,high,Standardized ginkgo extract kept as its own drug and named by its code
+map,Tanakan,EGb 761,high,Tanakan is a brand of EGb 761
+map,Depakote,divalproex,high,Depakote is a brand name of divalproex; it had been learned onto valproic acid
+map,FBB,florbetaben,medium,FBB is used for florbetaben in three records from different sponsors
+map,THN 201,THN 201,high,Combination product (donepezil with mefloquine) kept as its own drug instead of donepezil
+map,TEV-56286,anle138b,high,Registered as "anle138b (TEV-56286)"
+map,ALX-001,BMS-984923,high,ALX-001 is Allyx's name for BMS-984923
+map,BMS-9894923,BMS-984923,medium,Sponsor typo of BMS-984923 on a record whose otherName is ALX-001
+map,Administer Leqemi,lecanemab,medium,Misspelling of Leqembi in an instruction-style name (10 mg/kg every two weeks)
+map,Donepezil drug treatment,donepezil,high,Donepezil with descriptive words
+map,treatment with donepezil,donepezil,high,Donepezil with descriptive words
+map,Lecanemab treatment,lecanemab,high,Lecanemab with descriptive words
+map,Dimebon for administration,dimebon,high,Dimebon with descriptive words
+map,Active Treatment- CT1812,CT1812,high,CT1812 with an arm label
+map,CAD106 Immunotherapy,CAD106,high,CAD106 with a descriptive word
+map,Tau PET scan using MK-6240,[18F]MK-6240,medium,A tau PET scan using MK-6240 is an administration of the tracer
+reject,anti-Abeta,,high,Drug class not a drug name
+reject,FluoroTau,,high,Nickname used for two different tau tracers (PI-2620 and THK-5351)
+reject,Brand name for Cerebrolysin: Cerebrolysin,,high,Form-field sentence not a drug name
+reject,Brand name for donepezil: Aricept,,high,Form-field sentence not a drug name
+reject,Study Drug Active,,high,Arm label not a drug name
+resolve,NCT00010803,,high,Ginkgo biloba kept separate from the specific extract EGb 761
+resolve,NCT00066157,,high,Medroxyprogesterone arm; progesterone is a different drug
+resolve,NCT00142805,,high,Tricaprilin kept separate from the formulation code AC-1202
+resolve,NCT03971123,,high,Tricaprilin kept separate from formulation codes
+resolve,NCT00303277,,high,Pravastatin arm; the sponsor's otherName Lipitor is atorvastatin
+resolve,NCT00348192,,high,Donepezil arm of an SB-742457 study
+resolve,NCT00581867,,high,Insulin aspart kept separate from the route description intranasal insulin
+resolve,NCT00911807,,high,Arms link to their own drug; form-field otherNames ignored
+resolve,NCT01439555,,high,Simvastatin arm; tetrahydrobiopterin is a different drug
+resolve,NCT02103894,,high,Flortaucipir arm of a multi-tracer study; other tracers listed as otherNames
+resolve,NCT02370524,,high,Flortaucipir arm of a multi-tracer study; other tracers listed as otherNames
+resolve,NCT02531360,,high,MNI-815 arm; florbetaben is a second tracer in the same study
+resolve,NCT03507257,,high,Florbetaben arm; AV-45 in the otherNames is a different tracer
+resolve,NCT03545789,,high,MNI-958 arm; florbetapir is a second tracer in the same study
+resolve,NCT03698695,,high,THN 201 is its own combination product; ingredients listed as otherNames
+resolve,NCT03821857,,high,Flortaucipir arm; PiB is a second tracer in the same study
+resolve,NCT03959124,,high,Not one drug (best medical treatment); left unlinked
+resolve,NCT05124561,,high,COVID-19 vaccine arm labels; left unlinked
+resolve,NCT05169008,,high,COVID-19 vaccine arm labels; left unlinked
+resolve,NCT05330871,,high,COVID-19 vaccine arm label; link left as is
+resolve,NCT05532358,,high,anle138b arm; the other drugs are a drug-interaction cocktail
+resolve,NCT05986721,,high,AGB101 kept separate from levetiracetam (distinct low-dose formulation)
+resolve,NCT06292351,,high,DMB-I kept separate from Dimebon (distinct crystal form)
+resolve,NCT06391853,,high,Insulin arm; FDG-PET is a procedure in the study
+resolve,NCT07115238,,medium,XTR006 kept separate from MK-6240; equivalence rests on one registry entry
+reject,Adenovirus Type Vector,,high,Vaccine platform description not a drug name
+resolve,NCT01211782,,high,Caprylic triglyceride kept separate from the formulation code AC-1204
+resolve,NCT01729598,,high,Valproic acid arm; Depakote in the otherNames is the divalproex brand
+reject,anti-Tau,,high,Drug class not a drug name

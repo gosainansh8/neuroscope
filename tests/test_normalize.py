@@ -274,7 +274,8 @@ def test_split_combination_live_strings(name, parts):
 
 
 @pytest.mark.parametrize("name", ["Treatment A", "Active Comparator: A", "no other names", "Human",
-                                  "EEG", "PET scan", "18F"])
+                                  "EEG", "PET scan", "18F", "Pharmacotherapy", "SPECT scan",
+                                  "Drug intervention", "Disease-Modifying Therapy"])
 def test_live_junk_names_are_not_aliases(name):
     assert is_usable_alias(name) is False
 
@@ -300,6 +301,7 @@ def test_alternatives_are_never_aliases():
     (["AADvac1", "coupled to KLH"], "AADvac1"),
     (["XPro1595", "Dominant-negative Tumor Necrosis Factor", "DN-TNF"], "XPro1595"),
     (["[18F]MNI-815", "FBB"], "[18F]MNI-815"),
+    (["NPT088", "fusion protein", "GAIM", "anti-Tau"], "NPT088"),
     # A one-word nonproprietary name still does.
     (["ABBV-8E12", "Tilavonemab"], "tilavonemab"),
     (["MK-8931", "verubecestat"], "verubecestat"),
