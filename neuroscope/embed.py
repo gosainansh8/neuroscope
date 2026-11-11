@@ -62,9 +62,16 @@ class VertexEmbedder:
                                     location=location or os.environ.get("GOOGLE_CLOUD_LOCATION", "us-central1"))
 
     def _embed(self, texts: Sequence[str], task_type: str) -> list[list[float]]:
-        resp = self._client.models.embed_content(
-            model=self.model, contents=list(texts),
-            config=self._types.EmbedContentConfig(task_type=task_type, output_dimensionality=EMBEDDING_DIM))
+        from google.genai import errors
+        try:
+            resp = self._client.models.embed_content(
+                model=self.model, contents=list(texts),
+                config=self._types.EmbedContentConfig(task_type=task_type, output_dimensionality=EMBEDDING_DIM))
+        except errors.APIError as exc:
+            # One readable line: the status and Google's own first sentence, which names the fix.
+            message = (getattr(exc, "message", None) or str(exc)).split(". If you ")[0]
+            raise RuntimeError(f"Vertex AI request failed ({getattr(exc, 'code', '?')} "
+                               f"{getattr(exc, 'status', '')}): {message}") from exc
         return [list(e.values) for e in resp.embeddings]
 
     def embed_documents(self, texts: Sequence[str]) -> list[list[float]]:
@@ -126,10 +133,10 @@ def main(argv: list[str] | None = None) -> int:
             return 0
         try:
             embedder = VertexEmbedder()
+            r = embed_chunks(conn, embedder, args.limit)
         except RuntimeError as exc:
             print(exc)
             return 2
-        r = embed_chunks(conn, embedder, args.limit)
     print(f"Embedded {r['embedded']} chunks with {EMBEDDING_MODEL}; {r['remaining']} remaining")
     return 0
 
