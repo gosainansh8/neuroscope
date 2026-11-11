@@ -93,6 +93,15 @@ def test_identifiers_are_extracted_in_their_written_forms():
     assert ids == {"nct": {"NCT95000001"}, "fda_application": {"BLA999001"}, "pmid": {"900000021", "900000022"}}
 
 
+def test_fda_application_numbers_are_checked_however_they_are_spaced():
+    # Seen live: the model wrote "NDA 209637" and the check, which expected "NDA209637", skipped it.
+    assert identifiers("NDA 209637, BLA-761269 and ANDA090178")["fda_application"] == {
+        "NDA209637", "BLA761269", "ANDA090178"}
+    steps = [(ToolCall("get_fda_status", {}), {"applications": [{"application_number": "NDA209637"}]})]
+    cited, bad = check_citations("Approved under NDA 209637; also NDA 123456.", steps)
+    assert cited["fda_application"] == ["NDA209637"] and bad["fda_application"] == ["NDA123456"]
+
+
 def test_check_citations_flags_identifiers_no_tool_returned():
     steps = [(ToolCall("get_trials", {}), {"trials": [{"nct_id": "NCT95000001"}]}),
              (ToolCall("search_literature", {}), {"results": [{"pmid": "900000021"}]})]

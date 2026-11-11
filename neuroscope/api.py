@@ -8,6 +8,7 @@ Run locally:
          -d '{"question": "Is semaglutide approved for Alzheimer'"'"'s disease?"}'
 
 Endpoints:
+    GET  /         a single web page for asking questions (neuroscope/static/index.html)
     GET  /health   is the database reachable, and how much data it holds
     POST /ask      {"question": "..."} -> the agent's answer, its lookups, and the citation check
 
@@ -21,16 +22,20 @@ so, rather than failing obscurely.
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Iterator
 
 import psycopg
 from fastapi import Depends, FastAPI, HTTPException
+from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, Field
 
 from .agent import GeminiModel, answer_question, build_tools
 from .db import connect
 
 app = FastAPI(title="NeuroScope", description="Sourced answers about Alzheimer's drug development.")
+
+INDEX_HTML = Path(__file__).resolve().parent / "static" / "index.html"
 
 DATABASE_DOWN = ("The database is not reachable. If it was stopped to save cost, start it with "
                  "deploy/start.sh and try again in a minute.")
@@ -82,6 +87,12 @@ def get_embedder():
         return VertexEmbedder()
     except RuntimeError:
         return None
+
+
+@app.get("/", response_class=HTMLResponse, include_in_schema=False)
+def index() -> str:
+    """The web page. It is one self-contained file: no external scripts, fonts, or styles."""
+    return INDEX_HTML.read_text(encoding="utf-8")
 
 
 @app.get("/health")

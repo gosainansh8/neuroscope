@@ -83,7 +83,8 @@ TOOL_SPECS: list[dict[str, Any]] = [
 
 _ID_PATTERNS = {
     "nct": re.compile(r"\bNCT\d{8}\b"),
-    "fda_application": re.compile(r"\b(?:NDA|BLA|ANDA)\d{6}\b"),
+    # Models also write "NDA 209637" or "NDA-209637"; both are read as NDA209637.
+    "fda_application": re.compile(r"\b(NDA|BLA|ANDA)[\s-]?(\d{6})\b"),
     "pmid": re.compile(r"(?:PMID:?\s*|pubmed\.ncbi\.nlm\.nih\.gov/)(\d{6,9})"),
 }
 
@@ -116,7 +117,10 @@ class AgentResult:
 
 
 def identifiers(text: str) -> dict[str, set[str]]:
-    return {kind: set(p.findall(text)) for kind, p in _ID_PATTERNS.items()}
+    """Identifiers in a text, in one canonical spelling each."""
+    found = {kind: set(p.findall(text)) for kind, p in _ID_PATTERNS.items()}
+    found["fda_application"] = {kind + number for kind, number in found["fda_application"]}
+    return found
 
 
 def _evidence(steps: list[tuple[ToolCall, dict]]) -> dict[str, set[str]]:

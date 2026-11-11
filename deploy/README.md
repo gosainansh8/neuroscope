@@ -32,6 +32,7 @@ deploy/status.sh                        # is the database running (and costing m
 deploy/start.sh                         # start the database; wait about a minute
 deploy/ask.sh                           # /health: what the cloud database holds
 deploy/ask.sh "Is semaglutide approved for Alzheimer's disease?"
+deploy/open.sh                          # open the web page in your browser (runs a signed local proxy)
 deploy/stop.sh                          # stop the database when you are done
 ```
 
@@ -39,7 +40,7 @@ While the database is stopped, the API still responds, with a 503 saying the dat
 
 ## Who can call the API
 
-The service is deployed with `--no-allow-unauthenticated`: Google rejects any request that does not carry an identity token from an account the project allows. `deploy/ask.sh` sends yours. Nobody can reach it by guessing the URL. Do not make it public: every question spends a model call on your bill.
+The service is deployed with `--no-allow-unauthenticated`: Google rejects any request that does not carry an identity token from an account the project allows. `deploy/ask.sh` sends yours, and `deploy/open.sh` runs a local proxy that does the same for your browser. Opening the service's URL directly shows Google's "Forbidden" page, by design. Nobody can reach it by guessing the URL. Do not make it public: every question spends a model call on your bill.
 
 ## Updating
 

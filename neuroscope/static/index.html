@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NeuroScope</title>
+<style>
+  :root {
+    --bg: #f6f7f9; --panel: #ffffff; --text: #1b1f24; --muted: #5d6673; --line: #dfe3e8;
+    --accent: #1f5fbf; --accent-text: #ffffff; --ok-bg: #e6f4ea; --ok-text: #17603a;
+    --warn-bg: #fdecea; --warn-text: #9a1c12; --chip: #eef1f5; --quote: #f1f4f8;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14171b; --panel: #1c2026; --text: #e6e9ed; --muted: #9aa4b1; --line: #2e343c;
+      --accent: #6ea3f2; --accent-text: #0e1116; --ok-bg: #173524; --ok-text: #8fd9aa;
+      --warn-bg: #42201c; --warn-text: #f3a299; --chip: #262b33; --quote: #232830;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+         font: 16px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 820px; margin: 0 auto; padding: 32px 16px 48px; }
+  h1 { font-size: 1.6rem; margin: 0 0 4px; }
+  .tagline { color: var(--muted); margin: 0 0 24px; }
+  form { display: flex; gap: 8px; flex-wrap: wrap; }
+  textarea { flex: 1 1 320px; min-height: 64px; padding: 12px; border: 1px solid var(--line); border-radius: 8px;
+             background: var(--panel); color: var(--text); font: inherit; resize: vertical; }
+  button { font: inherit; cursor: pointer; border-radius: 8px; border: 1px solid var(--line); }
+  button.primary { background: var(--accent); color: var(--accent-text); border-color: var(--accent);
+                   padding: 12px 20px; font-weight: 600; }
+  button.primary:disabled { opacity: .6; cursor: default; }
+  .examples { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 24px; }
+  .examples button { background: var(--chip); color: var(--text); padding: 6px 12px; font-size: .9rem; }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 20px; margin-top: 16px; }
+  .answer h3 { font-size: 1.05rem; margin: 18px 0 6px; }
+  .answer p { margin: 8px 0; }
+  .answer ul { margin: 8px 0; padding-left: 22px; }
+  .answer blockquote { margin: 10px 0; padding: 8px 14px; background: var(--quote); border-left: 3px solid var(--accent); }
+  .answer a { color: var(--accent); }
+  .badge { display: inline-block; padding: 6px 12px; border-radius: 6px; font-size: .92rem; margin-top: 14px; }
+  .badge.ok { background: var(--ok-bg); color: var(--ok-text); }
+  .badge.warn { background: var(--warn-bg); color: var(--warn-text); }
+  details { margin-top: 14px; color: var(--muted); font-size: .92rem; }
+  details ol { margin: 8px 0 0; padding-left: 22px; }
+  code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .88em; overflow-wrap: anywhere; }
+  .error { background: var(--warn-bg); color: var(--warn-text); border-color: transparent; }
+  .muted { color: var(--muted); }
+  footer { margin-top: 28px; color: var(--muted); font-size: .88rem; }
+  [hidden] { display: none; }
+</style>
+</head>
+<body>
+<main>
+  <h1>NeuroScope</h1>
+  <p class="tagline">Sourced answers about Alzheimer's drug development, from ClinicalTrials.gov, FDA records, and PubMed.</p>
+
+  <form id="ask-form">
+    <textarea id="question" name="question" maxlength="500" required
+              placeholder="Ask about a drug's trials, FDA status, or published evidence"></textarea>
+    <button class="primary" id="submit" type="submit">Ask</button>
+  </form>
+  <div class="examples" id="examples">
+    <button type="button">Is semaglutide approved for Alzheimer's disease?</button>
+    <button type="button">What is the regulatory status of lecanemab, and what trials is it in?</button>
+    <button type="button">What does the literature say about brain swelling with donanemab?</button>
+    <button type="button">Is masitinib FDA approved? It finished a Phase 3 trial.</button>
+  </div>
+
+  <div id="status" class="panel muted" hidden></div>
+  <div id="result" class="panel" hidden>
+    <div id="answer" class="answer"></div>
+    <div id="badge" class="badge"></div>
+    <details id="lookups-box"><summary id="lookups-summary"></summary><ol id="lookups"></ol></details>
+    <p class="muted" id="model-line"></p>
+  </div>
+
+  <footer>
+    <div id="health">Checking the database…</div>
+    <p>Answers are written by a language model using only lookups in this database, and every trial ID, FDA
+       application number, and PubMed ID is checked against those lookups. The check confirms a source is real,
+       not that it supports the sentence it is attached to. This is not medical advice.</p>
+  </footer>
+</main>
+<script>
+"use strict";
+const $ = (id) => document.getElementById(id);
+const escapeHtml = (s) => s.replace(/[&<>"']/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+// Identifiers become links to their public source. Applied to already-escaped text only.
+function linkIdentifiers(html) {
+  return html
+    .replace(/\bNCT\d{8}\b/g, (m) => `<a href="https://clinicaltrials.gov/study/${m}" target="_blank" rel="noopener">${m}</a>`)
+    .replace(/\bPMID:?\s*(\d{6,9})\b/g, (m, id) => `<a href="https://pubmed.ncbi.nlm.nih.gov/${id}/" target="_blank" rel="noopener">${m}</a>`)
+    .replace(/\b(NDA|BLA|ANDA)[\s-]?(\d{6})\b/g, (m, kind, num) =>
+      `<a href="https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&amp;ApplNo=${num}" target="_blank" rel="noopener">${m}</a>`);
+}
+
+// A small, safe renderer for the Markdown the model writes: the text is escaped first,
+// then only headings, lists, quotes, bold, and italics are turned into tags.
+function renderAnswer(text) {
+  const inline = (s) => linkIdentifiers(escapeHtml(s))
+    .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+    .replace(/(^|[^*])\*([^*\n]+)\*/g, "$1<em>$2</em>");
+  const out = [];
+  let list = false;
+  const closeList = () => { if (list) { out.push("</ul>"); list = false; } };
+  for (const raw of text.split("\n")) {
+    const line = raw.trim();
+    if (!line || /^-{3,}$/.test(line)) { closeList(); continue; }
+    let m;
+    if ((m = line.match(/^#{1,6}\s+(.*)$/))) { closeList(); out.push(`<h3>${inline(m[1])}</h3>`); }
+    else if ((m = line.match(/^[*-]\s+(.*)$/))) { if (!list) { out.push("<ul>"); list = true; } out.push(`<li>${inline(m[1])}</li>`); }
+    else if ((m = line.match(/^>\s?(.*)$/))) { closeList(); out.push(`<blockquote>${inline(m[1])}</blockquote>`); }
+    else { closeList(); out.push(`<p>${inline(line)}</p>`); }
+  }
+  closeList();
+  return out.join("");
+}
+
+function showStatus(message, isError) {
+  const box = $("status");
+  box.textContent = message;
+  box.className = "panel " + (isError ? "error" : "muted");
+  box.hidden = false;
+}
+
+async function ask(question) {
+  $("result").hidden = true;
+  $("submit").disabled = true;
+  showStatus("Looking this up in the database… this usually takes 10 to 30 seconds.", false);
+  try {
+    const resp = await fetch("ask", { method: "POST", headers: { "content-type": "application/json" },
+                                      body: JSON.stringify({ question }) });
+    const data = await resp.json().catch(() => ({}));
+    if (!resp.ok) {
+      const detail = typeof data.detail === "string" ? data.detail
+        : resp.status === 422 ? "Please enter a question between 3 and 500 characters."
+        : `The request failed (HTTP ${resp.status}).`;
+      showStatus(detail, true);
+      return;
+    }
+    $("status").hidden = true;
+    $("answer").innerHTML = renderAnswer(data.answer);
+    const cited = Object.values(data.cited).flat().length;
+    const bad = Object.values(data.unsupported_citations).flat();
+    const badge = $("badge");
+    if (bad.length) {
+      badge.className = "badge warn";
+      badge.textContent = `Warning: ${bad.length} identifier(s) did not come from any lookup and should not be trusted: ${bad.join(", ")}`;
+    } else if (cited) {
+      badge.className = "badge ok";
+      badge.textContent = `Citation check passed: all ${cited} cited identifiers came from database lookups.`;
+    } else {
+      badge.className = "badge";
+      badge.textContent = "This answer cites no trial, FDA, or PubMed identifiers.";
+    }
+    $("lookups-summary").textContent = `${data.lookups.length} database lookup(s) made`;
+    const list = $("lookups");
+    list.textContent = "";
+    for (const l of data.lookups) {
+      const li = document.createElement("li");
+      const code = document.createElement("code");
+      code.textContent = `${l.tool}(${JSON.stringify(l.arguments)})` + (l.error ? `  error: ${l.error}` : "");
+      li.appendChild(code);
+      list.appendChild(li);
+    }
+    $("model-line").textContent = (data.model ? `Model: ${data.model}. ` : "") +
+      (data.stopped_early ? "The step limit was reached before the model finished." : "");
+    $("result").hidden = false;
+  } catch (err) {
+    showStatus("Could not reach the server. " + err, true);
+  } finally {
+    $("submit").disabled = false;
+  }
+}
+
+$("ask-form").addEventListener("submit", (e) => { e.preventDefault(); const q = $("question").value.trim(); if (q) ask(q); });
+$("question").addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); $("ask-form").requestSubmit(); } });
+$("examples").addEventListener("click", (e) => {
+  if (e.target.tagName === "BUTTON") { $("question").value = e.target.textContent; $("ask-form").requestSubmit(); }
+});
+
+fetch("health").then((r) => r.json().then((d) => ({ ok: r.ok, d }))).then(({ ok, d }) => {
+  $("health").textContent = ok
+    ? `Database: ${d.trials.toLocaleString()} trials, ${d.drugs.toLocaleString()} drugs, ${d.drugs_with_fda_approval} with an FDA approval record, ${d.document_chunks.toLocaleString()} abstract passages. Trials last retrieved ${d.trials_last_retrieved}.`
+    : (d.detail || "The database is not reachable.");
+}).catch(() => { $("health").textContent = "Could not reach the server."; });
+</script>
+</body>
+</html>
