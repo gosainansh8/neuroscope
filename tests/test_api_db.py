@@ -90,3 +90,89 @@ def test_web_page_is_served_and_self_contained(client):
     assert "<script src" not in page and "<link" not in page and "<img" not in page and "@import" not in page
     # Model output is escaped before any markup is added, and identifiers link to their sources.
     assert "escapeHtml(s)" in page and "clinicaltrials.gov/study/" in page and "pubmed.ncbi.nlm.nih.gov/" in page
+
+
+# --- Limits for a public deployment ---------------------------------------------
+
+@pytest.fixture(autouse=True)
+def fresh_visitor_counts():
+    api._visitor_hits.clear()
+    yield
+    api._visitor_hits.clear()
+
+
+def answering_model(text="Lecanemab has one trial here (NCT95000001)."):
+    """A model that looks up trials and answers, for any number of questions."""
+    class Repeating:
+        model, calls = "scripted", 0
+
+        def start(self, *args):
+            Repeating.calls += 1
+            return ModelTurn([ToolCall("get_trials", {"drug": "lecanemab"})])
+
+        def send_tool_results(self, results):
+            return ModelTurn(text=text)
+    api.app.dependency_overrides[api.get_model] = lambda: Repeating()
+    return Repeating
+
+
+def test_repeated_question_is_served_from_cache_without_the_model(client, conn):
+    model = answering_model()
+    first = client.post("/ask", json={"question": "What trials is lecanemab in?"}).json()
+    again = client.post("/ask", json={"question": "  what trials is  LECANEMAB in? "}).json()   # same question
+    assert (first["cached"], again["cached"]) == (False, True) and again["answer"] == first["answer"]
+    assert model.calls == 1
+    assert conn.execute("SELECT questions FROM api_usage WHERE day = current_date").fetchone()[0] == 1
+    assert client.get("/health").json()["questions_today"] == 1
+
+
+def test_answers_with_unsupported_citations_are_not_cached(client, conn):
+    answering_model("Approved under NDA123456.")
+    client.post("/ask", json={"question": "Is it approved?"})
+    assert conn.execute("SELECT COUNT(*) FROM api_answer_cache").fetchone()[0] == 0
+
+
+def test_daily_cap_stops_model_calls_but_cached_answers_still_work(client, monkeypatch):
+    monkeypatch.setenv("NEUROSCOPE_DAILY_QUESTION_LIMIT", "2")
+    monkeypatch.setenv("NEUROSCOPE_VISITOR_LIMIT", "100")
+    model = answering_model()
+    assert client.post("/ask", json={"question": "question one"}).status_code == 200
+    assert client.post("/ask", json={"question": "question two"}).status_code == 200
+    blocked = client.post("/ask", json={"question": "question three"})
+    assert blocked.status_code == 429 and "limit for today" in blocked.json()["detail"]
+    assert model.calls == 2
+    assert client.post("/ask", json={"question": "question one"}).json()["cached"] is True
+
+
+def test_monthly_cap(client, conn, monkeypatch):
+    monkeypatch.setenv("NEUROSCOPE_MONTHLY_QUESTION_LIMIT", "3")
+    conn.execute("INSERT INTO api_usage (day, questions) VALUES (date_trunc('month', current_date)::date, 3) "
+                 "ON CONFLICT (day) DO UPDATE SET questions = 3")
+    conn.commit()
+    model = answering_model()
+    blocked = client.post("/ask", json={"question": "anything new"})
+    assert blocked.status_code == 429 and "for the month" in blocked.json()["detail"] and model.calls == 0
+
+
+def test_per_visitor_limit_uses_the_real_forwarded_address(client, monkeypatch):
+    monkeypatch.setenv("NEUROSCOPE_VISITOR_LIMIT", "2")
+    answering_model()
+    # The caller controls the first entries of X-Forwarded-For; only the last one counts.
+    def post(n, spoofed):
+        return client.post("/ask", json={"question": f"question number {n}"},
+                           headers={"x-forwarded-for": f"{spoofed}, 203.0.113.9"})
+    assert post(1, "1.1.1.1").status_code == 200 and post(2, "2.2.2.2").status_code == 200
+    limited = post(3, "3.3.3.3")
+    assert limited.status_code == 429 and "last 10 minutes" in limited.json()["detail"]
+    # A different visitor is unaffected.
+    other = client.post("/ask", json={"question": "question number 4"}, headers={"x-forwarded-for": "198.51.100.7"})
+    assert other.status_code == 200
+
+
+def test_visitor_window_expires():
+    api.check_visitor("192.0.2.1", now=0.0)
+    for t in (1.0, 2.0, 3.0, 4.0):
+        api.check_visitor("192.0.2.1", now=t)
+    with pytest.raises(HTTPException):
+        api.check_visitor("192.0.2.1", now=5.0)
+    api.check_visitor("192.0.2.1", now=700.0)          # the earlier questions have aged out

@@ -12,9 +12,14 @@ Endpoints:
     GET  /health   is the database reachable, and how much data it holds
     POST /ask      {"question": "..."} -> the agent's answer, its lookups, and the citation check
 
-The API has no login of its own. On Cloud Run it is deployed so that only
-signed-in callers the project allows can reach it (see deploy/README.md);
-each question costs a model call, so it should never be left open to the public.
+The API has no login. Every question that reaches the model costs money, so
+/ask is protected by limits that hold even when the service is public:
+  - a daily and a monthly cap on questions sent to the model, counted in the
+    database (NEUROSCOPE_DAILY_QUESTION_LIMIT, NEUROSCOPE_MONTHLY_QUESTION_LIMIT)
+  - a per-visitor limit (NEUROSCOPE_VISITOR_LIMIT questions per 10 minutes)
+  - a 24-hour answer cache: a repeated question is answered without the model
+When a limit is reached the answer is HTTP 429 with a plain explanation.
+The caps bound the cost; they do not stop one visitor from using up the day.
 
 If the database is stopped, both endpoints answer 503 with a message saying
 so, rather than failing obscurely.
@@ -22,12 +27,19 @@ so, rather than failing obscurely.
 
 from __future__ import annotations
 
+import hashlib
+import os
+import re
+import threading
+import time
+from collections import defaultdict, deque
 from pathlib import Path
 from typing import Iterator
 
 import psycopg
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse
+from psycopg.types.json import Jsonb
 from pydantic import BaseModel, Field
 
 from .agent import GeminiModel, answer_question, build_tools
@@ -36,6 +48,83 @@ from .db import connect
 app = FastAPI(title="NeuroScope", description="Sourced answers about Alzheimer's drug development.")
 
 INDEX_HTML = Path(__file__).resolve().parent / "static" / "index.html"
+
+VISITOR_WINDOW_S = 600
+CACHE_HOURS = 24
+
+
+def _limit(name: str, default: int) -> int:
+    return int(os.environ.get(name, default))
+
+
+class Limits:
+    """Read from the environment on each request, so they can be changed without a rebuild."""
+
+    @property
+    def daily(self) -> int:
+        return _limit("NEUROSCOPE_DAILY_QUESTION_LIMIT", 50)
+
+    @property
+    def monthly(self) -> int:
+        return _limit("NEUROSCOPE_MONTHLY_QUESTION_LIMIT", 500)
+
+    @property
+    def per_visitor(self) -> int:
+        return _limit("NEUROSCOPE_VISITOR_LIMIT", 5)
+
+
+limits = Limits()
+_visitor_hits: dict[str, deque] = defaultdict(deque)
+_visitor_lock = threading.Lock()
+
+
+def client_ip(request: Request) -> str:
+    """The caller's address. Behind Cloud Run the real address is the LAST entry of
+    X-Forwarded-For; earlier entries are whatever the caller chose to send."""
+    forwarded = request.headers.get("x-forwarded-for", "")
+    parts = [p.strip() for p in forwarded.split(",") if p.strip()]
+    return parts[-1] if parts else (request.client.host if request.client else "unknown")
+
+
+def check_visitor(ip: str, now: float | None = None) -> None:
+    """Allow at most `per_visitor` model questions per address per window. Kept in memory:
+    the service runs as a single instance, and the database caps are the real ceiling."""
+    now = time.monotonic() if now is None else now
+    with _visitor_lock:
+        hits = _visitor_hits[ip]
+        while hits and now - hits[0] > VISITOR_WINDOW_S:
+            hits.popleft()
+        if len(hits) >= limits.per_visitor:
+            raise HTTPException(status_code=429, detail=(
+                f"You have asked {limits.per_visitor} questions in the last 10 minutes. "
+                "Please wait a few minutes and try again."))
+        hits.append(now)
+
+
+def reserve_question(conn: psycopg.Connection) -> None:
+    """Count one question against the caps, or refuse it. One atomic statement per check,
+    so two requests at once cannot both take the last slot."""
+    month = conn.execute("SELECT COALESCE(SUM(questions), 0) FROM api_usage "
+                         "WHERE day >= date_trunc('month', current_date)").fetchone()[0]
+    if month >= limits.monthly:
+        conn.commit()
+        raise HTTPException(status_code=429, detail=(
+            "This demo has reached its question limit for the month. Example questions that were "
+            "asked recently still work. Please come back next month."))
+    row = conn.execute(
+        "INSERT INTO api_usage (day, questions) VALUES (current_date, 1) "
+        "ON CONFLICT (day) DO UPDATE SET questions = api_usage.questions + 1 "
+        "WHERE api_usage.questions < %s RETURNING questions", (limits.daily,)).fetchone()
+    conn.commit()
+    if row is None:
+        raise HTTPException(status_code=429, detail=(
+            "This demo has reached its question limit for today. Example questions that were "
+            "asked recently still work. Please come back tomorrow."))
+
+
+def question_key(question: str) -> str:
+    normalized = re.sub(r"\s+", " ", question.strip().lower())
+    return hashlib.sha256(normalized.encode("utf-8")).hexdigest()
 
 DATABASE_DOWN = ("The database is not reachable. If it was stopped to save cost, start it with "
                  "deploy/start.sh and try again in a minute.")
@@ -59,6 +148,7 @@ class Answer(BaseModel):
     citations_verified: bool
     stopped_early: bool
     model: str | None = None
+    cached: bool = False                 # served from a recent identical question; no model call
 
 
 def get_conn() -> Iterator[psycopg.Connection]:
@@ -102,20 +192,42 @@ def health(conn: psycopg.Connection = Depends(get_conn)) -> dict:
         "(SELECT COUNT(*) FROM v_drug_fda_approval), (SELECT COUNT(*) FROM chunks), "
         "(SELECT COUNT(*) FROM chunks WHERE embedding IS NOT NULL), "
         "(SELECT MAX(last_retrieved_at)::date::text FROM trials)").fetchone()
+    today = conn.execute("SELECT COALESCE((SELECT questions FROM api_usage WHERE day = current_date), 0)"
+                         ).fetchone()[0]
     return {"status": "ok", "trials": trials, "drugs": drugs, "drugs_with_fda_approval": fda,
-            "document_chunks": chunks, "chunks_with_embeddings": embedded, "trials_last_retrieved": latest}
+            "document_chunks": chunks, "chunks_with_embeddings": embedded, "trials_last_retrieved": latest,
+            "questions_today": today, "daily_question_limit": limits.daily}
 
 
 @app.post("/ask", response_model=Answer)
-def ask(body: Question, conn: psycopg.Connection = Depends(get_conn), model=Depends(get_model),
-        embedder=Depends(get_embedder)) -> Answer:
+def ask(body: Question, request: Request, conn: psycopg.Connection = Depends(get_conn),
+        model=Depends(get_model), embedder=Depends(get_embedder)) -> Answer:
+    key = question_key(body.question)
+    cached = conn.execute(
+        "SELECT response FROM api_answer_cache WHERE question_key = %s "
+        "AND created_at > now() - make_interval(hours => %s)", (key, CACHE_HOURS)).fetchone()
+    conn.commit()
+    if cached:
+        return Answer(**{**cached[0], "cached": True})
+
+    check_visitor(client_ip(request))
+    reserve_question(conn)
     try:
         result = answer_question(body.question, model, build_tools(conn, embedder))
     except RuntimeError as exc:                      # the model service failed or timed out
         raise HTTPException(status_code=502, detail=str(exc)) from exc
-    return Answer(
+    answer = Answer(
         answer=result.answer,
         lookups=[Lookup(tool=c.name, arguments=c.args, error=r.get("error")) for c, r in result.steps],
         cited=result.cited, unsupported_citations=result.unsupported,
         citations_verified=not any(result.unsupported.values()),
         stopped_early=result.stopped_early, model=getattr(model, "model", None))
+    if answer.citations_verified and not answer.stopped_early:
+        # Only complete answers whose citations checked out are worth repeating.
+        conn.execute(
+            "INSERT INTO api_answer_cache (question_key, question, response) VALUES (%s, %s, %s) "
+            "ON CONFLICT (question_key) DO UPDATE SET question = EXCLUDED.question, "
+            "response = EXCLUDED.response, created_at = now()",
+            (key, body.question, Jsonb(answer.model_dump())))
+        conn.commit()
+    return answer

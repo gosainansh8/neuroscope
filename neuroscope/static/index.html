@@ -166,6 +166,7 @@ async function ask(question) {
       list.appendChild(li);
     }
     $("model-line").textContent = (data.model ? `Model: ${data.model}. ` : "") +
+      (data.cached ? "Saved answer from the last 24 hours. " : "") +
       (data.stopped_early ? "The step limit was reached before the model finished." : "");
     $("result").hidden = false;
   } catch (err) {
@@ -183,7 +184,7 @@ $("examples").addEventListener("click", (e) => {
 
 fetch("health").then((r) => r.json().then((d) => ({ ok: r.ok, d }))).then(({ ok, d }) => {
   $("health").textContent = ok
-    ? `Database: ${d.trials.toLocaleString()} trials, ${d.drugs.toLocaleString()} drugs, ${d.drugs_with_fda_approval} with an FDA approval record, ${d.document_chunks.toLocaleString()} abstract passages. Trials last retrieved ${d.trials_last_retrieved}.`
+    ? `Database: ${d.trials.toLocaleString()} trials, ${d.drugs.toLocaleString()} drugs, ${d.drugs_with_fda_approval} with an FDA approval record, ${d.document_chunks.toLocaleString()} abstract passages. Trials last retrieved ${d.trials_last_retrieved}. Questions answered today: ${d.questions_today} of ${d.daily_question_limit}.`
     : (d.detail || "The database is not reachable.");
 }).catch(() => { $("health").textContent = "Could not reach the server."; });
 </script>

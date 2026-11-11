@@ -20,7 +20,8 @@ docker compose up -d                    # the local database is the source of th
 
 deploy/1_setup.sh                       # APIs, database instance (5-10 min), password, service account
 deploy/2_load_data.sh                   # copy the local database to the cloud and compare row counts
-deploy/3_deploy_service.sh              # build the container and deploy the API (a few minutes)
+deploy/3_deploy_service.sh              # build and deploy the website and API, private (a few minutes)
+deploy/3_deploy_service.sh --public     # ...or public: anyone with the link can use it
 ```
 
 Each script can be re-run. `1_setup.sh` keeps anything that already exists.
@@ -38,9 +39,24 @@ deploy/stop.sh                          # stop the database when you are done
 
 While the database is stopped, the API still responds, with a 503 saying the database is stopped.
 
-## Who can call the API
+## Who can use it
 
-The service is deployed with `--no-allow-unauthenticated`: Google rejects any request that does not carry an identity token from an account the project allows. `deploy/ask.sh` sends yours, and `deploy/open.sh` runs a local proxy that does the same for your browser. Opening the service's URL directly shows Google's "Forbidden" page, by design. Nobody can reach it by guessing the URL. Do not make it public: every question spends a model call on your bill.
+**Private (the default).** Google rejects any request that does not carry an identity token from an account the project allows. `deploy/ask.sh` sends yours, and `deploy/open.sh` runs a local proxy that does the same for your browser. Opening the service's URL directly shows Google's "Forbidden" page.
+
+**Public (`--public`).** Anyone with the link can open the page and ask questions. Every question that reaches the model costs money, so the API enforces limits that do not depend on who is asking:
+
+| Limit | Default | Setting |
+|---|---|---|
+| Questions sent to the model per day | 50 | `NEUROSCOPE_DAILY_QUESTION_LIMIT` |
+| Questions sent to the model per month | 500 | `NEUROSCOPE_MONTHLY_QUESTION_LIMIT` |
+| Questions per visitor per 10 minutes | 5 | `NEUROSCOPE_VISITOR_LIMIT` |
+| Repeated questions | answered from a 24-hour cache, no model call | |
+
+Set the variables before running the deploy script to change them. The daily and monthly counts are stored in the database, so they survive restarts. When a cap is reached the page says so, and cached answers (including the example questions, once asked) keep working.
+
+What the caps do: put a ceiling on model spending. At roughly half a cent per question (an estimate, not a quoted price), 500 questions a month is a few dollars at most. What they do not do: stop one person from using up the day's questions, which makes the page show "limit reached" to everyone until the next day. Visitors cannot change or read anything beyond the five read-only lookups.
+
+To go back to private, re-run `deploy/3_deploy_service.sh` without `--public`.
 
 ## Updating
 

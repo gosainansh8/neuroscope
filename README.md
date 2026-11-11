@@ -30,7 +30,7 @@ Upgrading an existing database: pull, then run `python -m neuroscope.db init` ag
 
 ```bash
 # 1. Tests. REQUIRE_DB_TESTS=1 turns a missing database into an error instead of silent skips.
-REQUIRE_DB_TESTS=1 pytest -rs                 # expect: 215 passed, 0 skipped
+REQUIRE_DB_TESTS=1 pytest -rs                 # expect: 221 passed, 0 skipped
 
 # 2. Live check: 25 Alzheimer's studies in pages of 10, then re-fetch the same
 #    25 by NCT ID and confirm nothing duplicated. Writes live_review.md.
@@ -216,7 +216,9 @@ curl -s -X POST localhost:8080/ask -H 'content-type: application/json' -d '{"que
 
 `POST /ask` returns the answer, each lookup the model made, the identifiers it cited, any citations no lookup supports, and `citations_verified`. `GET /health` reports what the database holds. If the database is unreachable, both answer 503 with a message saying so; if the model service fails, `/ask` answers 502 with the reason.
 
-`deploy/README.md` covers putting this on Google Cloud: Cloud SQL for the database, Cloud Run for the API (private, at most one instance, none when idle), and `deploy/start.sh` / `deploy/stop.sh` to run the database only when needed.
+`/ask` enforces limits so a public deployment cannot run up model costs: a daily and a monthly cap on questions sent to the model (50 and 500 by default, counted in the database), five questions per visitor per ten minutes, and a 24-hour cache that answers a repeated question without calling the model. A reached limit is HTTP 429 with a plain explanation.
+
+`deploy/README.md` covers putting this on Google Cloud: Cloud SQL for the database, Cloud Run for the website and API (private by default, public with `--public`; at most one instance, none when idle), and `deploy/start.sh` / `deploy/stop.sh` to run the database only when needed.
 
 ## Data integrity
 
@@ -252,7 +254,7 @@ Dockerfile, deploy/      container and Google Cloud deployment scripts
 neuroscope/live_check.py live two-run verification
 neuroscope/review.py     per-trial Markdown review
 neuroscope/report.py     database summary
-tests/                   215 tests; all fixtures synthetic (fake NCT9xxxxxxx IDs), names from live records
+tests/                   221 tests; all fixtures synthetic (fake NCT9xxxxxxx IDs), names from live records
 ```
 
 ## Known limitations
