@@ -17,6 +17,7 @@ packages = ["neuroscope"]
 
 [project.optional-dependencies]
 dev = ["pytest>=8"]
+vertex = ["google-genai>=1.0"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

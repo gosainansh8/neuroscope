@@ -6,7 +6,7 @@ Milestone 1: the structured data layer. Pulls Alzheimer's trials from ClinicalTr
 
 Milestone 2: FDA approval. Loads approval records from Drugs@FDA and indications from FDA labels, matched to the same canonical drugs. Approval status comes only from these records.
 
-Milestone 3 (first half): documents. Loads PubMed abstracts for the most-studied drugs, links each to the drugs it names, and offers keyword search. There are no embeddings, agents, or cloud deployment yet.
+Milestone 3: documents. Loads PubMed abstracts for the most-studied drugs, links each to the drugs it names, and offers keyword search. Semantic search is built and tested but needs a Google Cloud project to run. There are no agents or cloud deployment yet.
 
 ## Setup
 
@@ -26,7 +26,7 @@ Upgrading an existing database: pull, then run `python -m neuroscope.db init` ag
 
 ```bash
 # 1. Tests. REQUIRE_DB_TESTS=1 turns a missing database into an error instead of silent skips.
-REQUIRE_DB_TESTS=1 pytest -rs                 # expect: 191 passed, 0 skipped
+REQUIRE_DB_TESTS=1 pytest -rs                 # expect: 198 passed, 0 skipped
 
 # 2. Live check: 25 Alzheimer's studies in pages of 10, then re-fetch the same
 #    25 by NCT ID and confirm nothing duplicated. Writes live_review.md.
@@ -135,7 +135,30 @@ A document is linked to a drug only when a trusted name of that drug (a verified
 
 Search is Postgres full-text search: it matches word stems (`abnormality` finds `abnormalities`) and ranks by term frequency. It is not semantic search. `--drug` accepts any trusted name, including brands and codes. Every hit prints its source link and publication date.
 
-First load (2026-11-10): 823 abstracts for 67 drugs, 1,312 chunks, 801 abstracts linked to 223 drugs. `chunks.embedding` is empty; adding embeddings needs an embedding provider and is not built.
+First load (2026-11-10): 823 abstracts for 67 drugs, 1,312 chunks, 801 abstracts linked to 223 drugs.
+
+### Semantic search (Vertex AI embeddings)
+
+Keyword search cannot connect "brain swelling" to an abstract that says "cerebral edema". Embeddings can: each chunk is turned into 768 numbers that place it by meaning, and a search finds the chunks nearest the question.
+
+One-time setup (needs a Google Cloud project with billing enabled):
+
+```bash
+brew install --cask google-cloud-sdk             # the gcloud tool
+gcloud auth application-default login            # sign in; stores credentials on this machine only
+gcloud services enable aiplatform.googleapis.com --project YOUR_PROJECT_ID
+pip install -e ".[vertex]"
+# then set GOOGLE_CLOUD_PROJECT=YOUR_PROJECT_ID in .env and re-source it
+```
+
+```bash
+python -m neuroscope.embed status                # how many chunks have embeddings
+python -m neuroscope.embed run --limit 50        # try a small batch first
+python -m neuroscope.embed run                   # the rest; safe to interrupt and re-run
+python -m neuroscope.search "brain swelling side effects" --semantic --drug lecanemab
+```
+
+The model is `text-embedding-005` (768 dimensions, matching `chunks.embedding`). Each chunk records the model that embedded it; a chunk is embedded again only if it is new or the model changes. Semantic search compares only chunks embedded by the current model and reports cosine similarity. The code path to Vertex AI is covered by tests with a stand-in embedder; it has not yet been run against the live service.
 
 ## Data integrity
 
@@ -162,11 +185,12 @@ neuroscope/ingest.py     per-study transactions, snapshots, change log
 neuroscope/curate.py     review and correction CLI
 neuroscope/fda.py        FDA approvals (Drugs@FDA) and label indications
 neuroscope/pubmed.py     PubMed abstracts, chunking, and drug links
-neuroscope/search.py     keyword search over chunks
+neuroscope/embed.py      chunk embeddings (Vertex AI)
+neuroscope/search.py     keyword and semantic search over chunks
 neuroscope/live_check.py live two-run verification
 neuroscope/review.py     per-trial Markdown review
 neuroscope/report.py     database summary
-tests/                   191 tests; all fixtures synthetic (fake NCT9xxxxxxx IDs), names from live records
+tests/                   198 tests; all fixtures synthetic (fake NCT9xxxxxxx IDs), names from live records
 ```
 
 ## Known limitations

@@ -1,13 +1,16 @@
-"""Keyword search over stored document chunks.
+"""Search over stored document chunks: by keyword, or by meaning.
 
 Usage:
     python -m neuroscope.search "amyloid related imaging abnormalities"
     python -m neuroscope.search "cognitive decline" --drug lecanemab --limit 5
+    python -m neuroscope.search "brain swelling side effects" --semantic
 
-This is Postgres full-text search (word stems, ranked by term frequency), not
-semantic search: it finds the words you type, not their meaning. Every hit
-shows its source link and publication date. `--drug` accepts any trusted name
-of a drug and keeps only documents linked to it.
+Default is Postgres full-text search (word stems, ranked by term frequency):
+it finds the words you type, not their meaning. `--semantic` embeds the
+question and returns the nearest chunks by meaning; it needs embeddings
+(`python -m neuroscope.embed run`) and only sees chunks that have one.
+Every hit shows its source link and publication date. `--drug` accepts any
+trusted name of a drug and keeps only documents linked to it.
 """
 
 from __future__ import annotations
@@ -30,7 +33,7 @@ class Hit:
     published_date: str | None
     journal: str | None
     snippet: str
-    rank: float
+    rank: float                    # keyword: term-frequency rank; semantic: cosine similarity (0 to 1)
     drugs: list[str]
 
 
@@ -69,16 +72,51 @@ def search(conn: psycopg.Connection, query: str, drug: str | None = None, limit:
     return [Hit(*r) for r in rows]
 
 
+def semantic_search(conn: psycopg.Connection, embedder, query: str, drug: str | None = None,
+                    limit: int = 5) -> list[Hit]:
+    """Nearest chunks to the question by cosine distance, best chunk per document.
+    Only chunks embedded by the embedder's own model are compared."""
+    from .embed import to_pgvector
+    drug_id = None
+    if drug:
+        drug_id = resolve_drug(conn, drug)
+        if drug_id is None:
+            raise ValueError(f"no drug with the trusted name {drug!r}")
+    vector = to_pgvector(embedder.embed_query(query))
+    rows = conn.execute(
+        """
+        SELECT * FROM (
+            SELECT DISTINCT ON (d.id) d.title, d.url, d.source_type, d.published_date::text, d.journal,
+                   left(c.text, 300),
+                   1 - (c.embedding <=> %(v)s::vector) AS similarity,
+                   ARRAY(SELECT dr.canonical_name FROM document_drugs dd JOIN drugs dr ON dr.id = dd.drug_id
+                         WHERE dd.document_id = d.id ORDER BY 1)
+            FROM chunks c
+            JOIN documents d ON d.id = c.document_id
+            WHERE c.embedding IS NOT NULL AND c.embedding_model = %(model)s
+              AND (%(drug)s::int IS NULL OR EXISTS (SELECT 1 FROM document_drugs dd
+                                                    WHERE dd.document_id = d.id AND dd.drug_id = %(drug)s))
+            ORDER BY d.id, c.embedding <=> %(v)s::vector
+        ) best ORDER BY similarity DESC LIMIT %(limit)s
+        """, {"v": vector, "model": embedder.model, "drug": drug_id, "limit": limit}).fetchall()
+    return [Hit(*r) for r in rows]
+
+
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("query")
     p.add_argument("--drug", help="only documents linked to this drug")
     p.add_argument("--limit", type=int, default=5)
+    p.add_argument("--semantic", action="store_true", help="search by meaning (needs embeddings)")
     args = p.parse_args(argv)
     with connect() as conn:
         try:
-            hits = search(conn, args.query, args.drug, args.limit)
-        except ValueError as exc:
+            if args.semantic:
+                from .embed import VertexEmbedder
+                hits = semantic_search(conn, VertexEmbedder(), args.query, args.drug, args.limit)
+            else:
+                hits = search(conn, args.query, args.drug, args.limit)
+        except (ValueError, RuntimeError) as exc:
             print(exc)
             return 2
     if not hits:
@@ -88,6 +126,8 @@ def main(argv: list[str] | None = None) -> int:
         print(f"{n}. {h.title}")
         print(f"   {h.journal or h.source_type}, published {h.published_date or 'date unknown'} | {h.url}")
         print(f"   drugs: {', '.join(h.drugs) or '(none linked)'}")
+        if args.semantic:
+            print(f"   similarity {h.rank:.2f}")
         print(f"   ...{h.snippet}...\n")
     return 0
 
