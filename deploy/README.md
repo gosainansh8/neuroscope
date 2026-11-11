@@ -8,6 +8,8 @@ What gets created in your project:
 | Cloud Run service `neuroscope-api` | The agent's HTTP API, at most one small instance, none when idle | Nothing while idle; within the free tier at this usage |
 | Secret `neuroscope-database-url` | The database address and password | Negligible |
 | Service account `neuroscope-run` | The identity the API runs as: may connect to the database, call Vertex AI, and read that one secret | Free |
+| A role on the default compute service account | Lets Google's build service read the uploaded source and store the built image | Free |
+| Container image in Artifact Registry | The built website and API | Free under 0.5 GB |
 
 The database is the only piece with a running cost, so **stop it when you are not using it**.
 

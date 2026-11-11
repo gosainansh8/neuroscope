@@ -64,4 +64,14 @@ done
 grant gcloud secrets add-iam-policy-binding "$SECRET" --project "$PROJECT_ID" \
     --member "serviceAccount:$SERVICE_ACCOUNT_EMAIL" --role roles/secretmanager.secretAccessor --quiet
 
+# `gcloud run deploy --source` builds the container with Cloud Build, which runs as the project's
+# default compute service account. On new projects that account has no roles, and the build fails
+# with "does not have storage.objects.get access". This role lets it read the uploaded source,
+# write build logs, and store the built image; nothing else.
+PROJECT_NUMBER="$(gcloud projects describe "$PROJECT_ID" --format='value(projectNumber)')"
+grant gcloud projects add-iam-policy-binding "$PROJECT_ID" \
+    --member "serviceAccount:${PROJECT_NUMBER}-compute@developer.gserviceaccount.com" \
+    --role roles/cloudbuild.builds.builder --condition=None --quiet
+echo "Build permission granted to the default compute service account."
+
 echo "Setup done. Next: deploy/2_load_data.sh"
