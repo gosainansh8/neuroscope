@@ -59,7 +59,8 @@ class VertexEmbedder:
         self.model = model
         self._types = types
         self._client = genai.Client(vertexai=True, project=project,
-                                    location=location or os.environ.get("GOOGLE_CLOUD_LOCATION", "us-central1"))
+                                    location=location or os.environ.get("GOOGLE_CLOUD_LOCATION", "us-central1"),
+                                    http_options=types.HttpOptions(timeout=60_000))   # fail, don't hang
 
     def _embed(self, texts: Sequence[str], task_type: str) -> list[list[float]]:
         from google.genai import errors
@@ -72,6 +73,8 @@ class VertexEmbedder:
             message = (getattr(exc, "message", None) or str(exc)).split(". If you ")[0]
             raise RuntimeError(f"Vertex AI request failed ({getattr(exc, 'code', '?')} "
                                f"{getattr(exc, 'status', '')}): {message}") from exc
+        except Exception as exc:                 # timeouts and connection errors from the HTTP layer
+            raise RuntimeError(f"Vertex AI request did not complete: {type(exc).__name__}: {exc}") from exc
         return [list(e.values) for e in resp.embeddings]
 
     def embed_documents(self, texts: Sequence[str]) -> list[list[float]]:

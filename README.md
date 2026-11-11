@@ -6,7 +6,9 @@ Milestone 1: the structured data layer. Pulls Alzheimer's trials from ClinicalTr
 
 Milestone 2: FDA approval. Loads approval records from Drugs@FDA and indications from FDA labels, matched to the same canonical drugs. Approval status comes only from these records.
 
-Milestone 3: documents. Loads PubMed abstracts for the most-studied drugs, links each to the drugs it names, and offers keyword search. Semantic search uses Vertex AI embeddings and needs a Google Cloud project. There are no agents or cloud deployment yet.
+Milestone 3: documents. Loads PubMed abstracts for the most-studied drugs, links each to the drugs it names, and offers keyword search. Semantic search uses Vertex AI embeddings and needs a Google Cloud project.
+
+Milestone 4: an agent. Answers questions by calling read-only lookups over the trials, FDA records, and abstracts, cites its sources, and has its citations checked in code. There is no cloud deployment yet.
 
 ## Setup
 
@@ -26,7 +28,7 @@ Upgrading an existing database: pull, then run `python -m neuroscope.db init` ag
 
 ```bash
 # 1. Tests. REQUIRE_DB_TESTS=1 turns a missing database into an error instead of silent skips.
-REQUIRE_DB_TESTS=1 pytest -rs                 # expect: 198 passed, 0 skipped
+REQUIRE_DB_TESTS=1 pytest -rs                 # expect: 207 passed, 0 skipped
 
 # 2. Live check: 25 Alzheimer's studies in pages of 10, then re-fetch the same
 #    25 by NCT ID and confirm nothing duplicated. Writes live_review.md.
@@ -51,6 +53,7 @@ python -m neuroscope.fda load                              # FDA approvals (down
 python -m neuroscope.fda labels --save-raw data/raw/fda/labels.jsonl   # FDA label indications
 python -m neuroscope.pubmed load --save-raw data/raw/pubmed/ad.xml     # PubMed abstracts
 python -m neuroscope.search "amyloid related imaging abnormalities" --drug lecanemab
+python -m neuroscope.agent "Is semaglutide approved for Alzheimer's disease?" --show-steps
 ```
 
 ## What is allowed to merge two drug names
@@ -162,6 +165,42 @@ The model is `text-embedding-005` (768 dimensions, matching `chunks.embedding`).
 
 Embedded on 2026-11-11: all 1,312 chunks, in about one minute. On three plain-language questions ("brain swelling side effects", "drugs that calm aggressive behavior in dementia", "does the medicine slow memory loss"), keyword search returned nothing and semantic search returned relevant abstracts, such as the ARIA papers for the first. Ranking is approximate: similarity scores cluster between 0.55 and 0.75, and a broad review can outrank a specific study. Results are a starting point for reading, not an answer.
 
+## The agent
+
+```bash
+python -m neuroscope.agent "What is the regulatory status of lecanemab, and what trials is it in?"
+python -m neuroscope.agent "Is masitinib FDA approved? It finished a Phase 3 trial." --show-steps
+```
+
+The model (Gemini on Vertex AI) cannot see the database. It can only call five read-only lookups in `neuroscope/tools.py`, read what they return, and write an answer:
+
+| Lookup | Returns |
+|---|---|
+| `find_drug` | the canonical drug and its verified names, or "not found" with suggestions |
+| `get_trials` | trial counts and the most relevant trials, with NCT IDs |
+| `get_fda_status` | approval records with application numbers, and the label's indication text |
+| `search_literature` | PubMed abstracts by meaning, with PMIDs |
+| `list_pipeline` | drugs by trial phase, with whether an FDA record exists |
+
+Each lookup returns its identifiers and the caveats that belong to the data ("trial phase is not regulatory status", "no FDA record is not proof of non-approval").
+
+Two things keep answers honest:
+
+1. **Instructions.** Use only what the lookups return; cite every claim by its identifier; approval comes only from `get_fda_status`; say a drug is approved for Alzheimer's only when the label text says so, and quote it; say what is missing when the data does not answer.
+2. **A check in code.** After the model answers, every NCT ID, FDA application number, and PMID in the answer is compared with what the lookups returned in that run. Any identifier that no lookup returned is printed as a warning. This catches invented citations. It does not check that a correctly cited source supports the sentence it is attached to; that still needs a reader.
+
+Checked live on 2026-11-11 with `gemini-3.8-flash`:
+
+| Question | Answer |
+|---|---|
+| Lecanemab's status and trials | Approved (BLA761269, 2023-01-06), label quoted, 8 trials listed; 10 identifiers, all verified |
+| Is semaglutide approved for Alzheimer's? | No: approved for other uses, with the label's indications quoted |
+| Is masitinib approved? It finished Phase 3 | No matched FDA record; states that finishing Phase 3 is not approval |
+| Brain swelling with donanemab | Summarizes five abstracts on ARIA-E with PMIDs, and notes the abstracts lack incidence figures |
+| Lecanemab's revenue last quarter | Says the database does not hold revenue data |
+
+Settings: `NEUROSCOPE_AGENT_MODEL` (default `gemini-3.8-flash`) and `NEUROSCOPE_AGENT_LOCATION` (default `global`; Gemini is not served from `us-central1` for this project, while embeddings are). A question costs roughly 2,000 to 9,000 input tokens. Requests time out after 60 seconds.
+
 ## Data integrity
 
 - Phase and recruitment status live on trials only. `v_drug_pipeline` summarizes trial phases and says so; it does not represent regulatory status.
@@ -189,13 +228,19 @@ neuroscope/fda.py        FDA approvals (Drugs@FDA) and label indications
 neuroscope/pubmed.py     PubMed abstracts, chunking, and drug links
 neuroscope/embed.py      chunk embeddings (Vertex AI)
 neuroscope/search.py     keyword and semantic search over chunks
+neuroscope/tools.py      read-only lookups the agent can call
+neuroscope/agent.py      the agent loop, Gemini adapter, and citation check
 neuroscope/live_check.py live two-run verification
 neuroscope/review.py     per-trial Markdown review
 neuroscope/report.py     database summary
-tests/                   198 tests; all fixtures synthetic (fake NCT9xxxxxxx IDs), names from live records
+tests/                   207 tests; all fixtures synthetic (fake NCT9xxxxxxx IDs), names from live records
 ```
 
 ## Known limitations
+
+- The agent's citation check verifies that identifiers are real, not that the cited source supports the claim. The model also writes its own literature search queries, using its own vocabulary (it turned "brain swelling" into "ARIA-E").
+- Agent answers are not reproducible word for word, and a request to Vertex AI can time out (one did during testing and succeeded on retry). There is no automatic retry.
+- The agent has no memory between questions and no evaluation set beyond the five questions above.
 
 - Drug classes typed in as interventions (`cholinesterase inhibitors`, `ssri`) exist as drug rows and collect document links like a drug would.
 - Document links are whole-word name matches. A short or common name can match text that is not about the drug (`insulin`, `saline`), and names under four characters never link.
