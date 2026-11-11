@@ -6,7 +6,7 @@ Milestone 1: the structured data layer. Pulls Alzheimer's trials from ClinicalTr
 
 Milestone 2: FDA approval. Loads approval records from Drugs@FDA and indications from FDA labels, matched to the same canonical drugs. Approval status comes only from these records.
 
-Milestone 3: documents. Loads PubMed abstracts for the most-studied drugs, links each to the drugs it names, and offers keyword search. Semantic search is built and tested but needs a Google Cloud project to run. There are no agents or cloud deployment yet.
+Milestone 3: documents. Loads PubMed abstracts for the most-studied drugs, links each to the drugs it names, and offers keyword search. Semantic search uses Vertex AI embeddings and needs a Google Cloud project. There are no agents or cloud deployment yet.
 
 ## Setup
 
@@ -158,7 +158,9 @@ python -m neuroscope.embed run                   # the rest; safe to interrupt a
 python -m neuroscope.search "brain swelling side effects" --semantic --drug lecanemab
 ```
 
-The model is `text-embedding-005` (768 dimensions, matching `chunks.embedding`). Each chunk records the model that embedded it; a chunk is embedded again only if it is new or the model changes. Semantic search compares only chunks embedded by the current model and reports cosine similarity. The code path to Vertex AI is covered by tests with a stand-in embedder; it has not yet been run against the live service.
+The model is `text-embedding-005` (768 dimensions, matching `chunks.embedding`). Each chunk records the model that embedded it; a chunk is embedded again only if it is new or the model changes. Semantic search compares only chunks embedded by the current model and reports cosine similarity. Tests use a stand-in embedder, so they need no network or credentials.
+
+Embedded on 2026-11-11: all 1,312 chunks, in about one minute. On three plain-language questions ("brain swelling side effects", "drugs that calm aggressive behavior in dementia", "does the medicine slow memory loss"), keyword search returned nothing and semantic search returned relevant abstracts, such as the ARIA papers for the first. Ranking is approximate: similarity scores cluster between 0.55 and 0.75, and a broad review can outrank a specific study. Results are a starting point for reading, not an answer.
 
 ## Data integrity
 
