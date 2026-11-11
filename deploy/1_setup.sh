@@ -44,12 +44,24 @@ fi
 gcloud iam service-accounts describe "$SERVICE_ACCOUNT_EMAIL" --project "$PROJECT_ID" >/dev/null 2>&1 \
     || gcloud iam service-accounts create "$SERVICE_ACCOUNT" --project "$PROJECT_ID" \
            --display-name "NeuroScope API (Cloud Run)"
+# A new service account can take up to a minute to be visible to every Google system;
+# granting it a role before then fails with "does not exist". Retry instead of stopping.
+grant() {
+    local attempt
+    for attempt in 1 2 3 4 5 6; do
+        if "$@" >/dev/null 2>/tmp/neuroscope-grant.err; then return 0; fi
+        echo "  permission not accepted yet (attempt $attempt of 6); waiting 15 seconds..."
+        sleep 15
+    done
+    cat /tmp/neuroscope-grant.err
+    return 1
+}
 # Least privilege: connect to the database, call Vertex AI, read this one secret.
 for role in roles/cloudsql.client roles/aiplatform.user; do
-    gcloud projects add-iam-policy-binding "$PROJECT_ID" --member "serviceAccount:$SERVICE_ACCOUNT_EMAIL" \
-        --role "$role" --condition=None --quiet >/dev/null
+    grant gcloud projects add-iam-policy-binding "$PROJECT_ID" --member "serviceAccount:$SERVICE_ACCOUNT_EMAIL" \
+        --role "$role" --condition=None --quiet
 done
-gcloud secrets add-iam-policy-binding "$SECRET" --project "$PROJECT_ID" \
-    --member "serviceAccount:$SERVICE_ACCOUNT_EMAIL" --role roles/secretmanager.secretAccessor --quiet >/dev/null
+grant gcloud secrets add-iam-policy-binding "$SECRET" --project "$PROJECT_ID" \
+    --member "serviceAccount:$SERVICE_ACCOUNT_EMAIL" --role roles/secretmanager.secretAccessor --quiet
 
 echo "Setup done. Next: deploy/2_load_data.sh"
