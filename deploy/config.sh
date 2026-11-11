@@ -1,0 +1,15 @@
+# Shared settings for the deploy scripts. Source this; do not run it.
+# The project comes from your environment (.env), never from this file.
+: "${GOOGLE_CLOUD_PROJECT:?Set GOOGLE_CLOUD_PROJECT first (e.g. set -a; source .env; set +a)}"
+PROJECT_ID="$GOOGLE_CLOUD_PROJECT"
+REGION="${NEUROSCOPE_REGION:-us-central1}"
+SQL_INSTANCE="${NEUROSCOPE_SQL_INSTANCE:-neuroscope-db}"
+DB_NAME="neuroscope"
+DB_USER="neuroscope"
+SERVICE="neuroscope-api"
+SERVICE_ACCOUNT="neuroscope-run"
+SERVICE_ACCOUNT_EMAIL="${SERVICE_ACCOUNT}@${PROJECT_ID}.iam.gserviceaccount.com"
+SECRET="neuroscope-database-url"
+CONNECTION_NAME="${PROJECT_ID}:${REGION}:${SQL_INSTANCE}"
+PROXY_VERSION="v2.18.2"
+PROXY_PORT="${NEUROSCOPE_PROXY_PORT:-5433}"

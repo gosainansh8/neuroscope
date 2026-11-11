@@ -10,3 +10,6 @@ data/raw/
 live_review.md
 review.md
 .vscode/
+
+# Deployment helper downloads
+deploy/.bin/

@@ -8,7 +8,9 @@ Milestone 2: FDA approval. Loads approval records from Drugs@FDA and indications
 
 Milestone 3: documents. Loads PubMed abstracts for the most-studied drugs, links each to the drugs it names, and offers keyword search. Semantic search uses Vertex AI embeddings and needs a Google Cloud project.
 
-Milestone 4: an agent. Answers questions by calling read-only lookups over the trials, FDA records, and abstracts, cites its sources, and has its citations checked in code. There is no cloud deployment yet.
+Milestone 4: an agent. Answers questions by calling read-only lookups over the trials, FDA records, and abstracts, cites its sources, and has its citations checked in code.
+
+Milestone 5: deployment. A small HTTP API around the agent, a container, and scripts that put the database on Cloud SQL and the API on Cloud Run, with the database stoppable when not in use.
 
 ## Setup
 
@@ -28,7 +30,7 @@ Upgrading an existing database: pull, then run `python -m neuroscope.db init` ag
 
 ```bash
 # 1. Tests. REQUIRE_DB_TESTS=1 turns a missing database into an error instead of silent skips.
-REQUIRE_DB_TESTS=1 pytest -rs                 # expect: 207 passed, 0 skipped
+REQUIRE_DB_TESTS=1 pytest -rs                 # expect: 213 passed, 0 skipped
 
 # 2. Live check: 25 Alzheimer's studies in pages of 10, then re-fetch the same
 #    25 by NCT ID and confirm nothing duplicated. Writes live_review.md.
@@ -201,6 +203,19 @@ Checked live on 2026-11-11 with `gemini-3.8-flash`:
 
 Settings: `NEUROSCOPE_AGENT_MODEL` (default `gemini-3.8-flash`) and `NEUROSCOPE_AGENT_LOCATION` (default `global`; Gemini is not served from `us-central1` for this project, while embeddings are). A question costs roughly 2,000 to 9,000 input tokens. Requests time out after 60 seconds.
 
+## HTTP API and deployment
+
+```bash
+pip install -e ".[vertex,api]"
+uvicorn neuroscope.api:app --port 8080
+curl -s localhost:8080/health
+curl -s -X POST localhost:8080/ask -H 'content-type: application/json' -d '{"question": "Is lecanemab approved?"}'
+```
+
+`POST /ask` returns the answer, each lookup the model made, the identifiers it cited, any citations no lookup supports, and `citations_verified`. `GET /health` reports what the database holds. If the database is unreachable, both answer 503 with a message saying so; if the model service fails, `/ask` answers 502 with the reason.
+
+`deploy/README.md` covers putting this on Google Cloud: Cloud SQL for the database, Cloud Run for the API (private, at most one instance, none when idle), and `deploy/start.sh` / `deploy/stop.sh` to run the database only when needed.
+
 ## Data integrity
 
 - Phase and recruitment status live on trials only. `v_drug_pipeline` summarizes trial phases and says so; it does not represent regulatory status.
@@ -230,10 +245,12 @@ neuroscope/embed.py      chunk embeddings (Vertex AI)
 neuroscope/search.py     keyword and semantic search over chunks
 neuroscope/tools.py      read-only lookups the agent can call
 neuroscope/agent.py      the agent loop, Gemini adapter, and citation check
+neuroscope/api.py        HTTP API around the agent
+Dockerfile, deploy/      container and Google Cloud deployment scripts
 neuroscope/live_check.py live two-run verification
 neuroscope/review.py     per-trial Markdown review
 neuroscope/report.py     database summary
-tests/                   207 tests; all fixtures synthetic (fake NCT9xxxxxxx IDs), names from live records
+tests/                   213 tests; all fixtures synthetic (fake NCT9xxxxxxx IDs), names from live records
 ```
 
 ## Known limitations

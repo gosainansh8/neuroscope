@@ -1,0 +1,11 @@
+.git
+.venv
+.env
+.pytest_cache
+__pycache__
+*.egg-info
+data/raw
+data/validation
+tests
+deploy/.bin
+live_review.md
