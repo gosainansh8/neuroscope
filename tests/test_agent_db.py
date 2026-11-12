@@ -173,3 +173,30 @@ def test_attribution_flags_a_citation_attached_to_the_wrong_drug():
         ("NCT95000001", ["lecanemab"], ["semaglutide"]), ("NDA999040", ["semaglutide"], ["lecanemab"])]
     # A sentence that names no drug is not judged.
     assert check_attribution("This was studied in NCT95000001.", steps) == []
+
+
+# --- Follow-up questions -------------------------------------------------------------
+
+def test_follow_up_passes_history_and_still_checks_citations_this_turn(conn, tmp_path):
+    seed(conn, tmp_path)
+    received = {}
+
+    class Remembering(ScriptedModel):
+        def start(self, system, tool_specs, question, history=None):
+            received["history"] = history
+            return super().start(system, tool_specs, question)
+
+    history = [{"question": "Is lecanemab approved?", "answer": "Yes, under BLA999001.", "extra": "dropped"}] * 5
+    model = Remembering([ModelTurn(text="Its trial is NCT95000001, approved under BLA999001.")])
+    result = answer_question("What trials is it in?", model, build_tools(conn), history=history)
+    # Only the last 3 turns are sent, with only question and answer.
+    assert received["history"] == [{"question": "Is lecanemab approved?", "answer": "Yes, under BLA999001."}] * 3
+    # Repeating identifiers from earlier turns without looking them up again is flagged.
+    assert result.unsupported == {"nct": ["NCT95000001"], "fda_application": ["BLA999001"], "pmid": []}
+    assert "Earlier questions and answers" in model.system
+
+
+def test_without_history_the_model_is_called_as_before(conn, tmp_path):
+    seed(conn, tmp_path)
+    model = ScriptedModel([ModelTurn(text="No lookups needed.")])      # its start() takes no history
+    assert answer_question("Hello there", model, build_tools(conn)).answer == "No lookups needed."

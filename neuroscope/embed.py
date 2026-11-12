@@ -26,7 +26,8 @@ from __future__ import annotations
 import argparse
 import os
 import sys
-from typing import Protocol, Sequence
+import time
+from typing import Callable, Protocol, Sequence, TypeVar
 
 import psycopg
 
@@ -35,6 +36,30 @@ from .db import connect
 EMBEDDING_MODEL = "text-embedding-005"
 EMBEDDING_DIM = 768                       # must match chunks.embedding vector(768) in db/schema.sql
 BATCH_SIZE = 40                           # about 12k tokens per request at 220-word chunks
+
+# Statuses worth retrying: rate limited, or the service failed or timed out. A 400, 403, or 404
+# means the request itself is wrong (bad model name, API disabled), so it is not retried.
+RETRY_STATUS = {429, 500, 502, 503, 504}
+T = TypeVar("T")
+
+
+def call_with_retry(fn: Callable[[], T], attempts: int = 3, base_delay_s: float = 2.0,
+                    sleep: Callable[[float], None] = time.sleep) -> T:
+    """Call fn, retrying transient failures with a growing wait (2s, then 4s).
+
+    An exception with an HTTP status is retried only for RETRY_STATUS. One without a status
+    (a timeout or dropped connection from the HTTP layer) is retried too.
+    """
+    for attempt in range(1, attempts + 1):
+        try:
+            return fn()
+        except Exception as exc:
+            code = getattr(exc, "code", None)
+            transient = code in RETRY_STATUS if isinstance(code, int) else True
+            if not transient or attempt == attempts:
+                raise
+            sleep(base_delay_s * 2 ** (attempt - 1))
+    raise AssertionError("unreachable")
 
 
 class Embedder(Protocol):
@@ -65,9 +90,9 @@ class VertexEmbedder:
     def _embed(self, texts: Sequence[str], task_type: str) -> list[list[float]]:
         from google.genai import errors
         try:
-            resp = self._client.models.embed_content(
+            resp = call_with_retry(lambda: self._client.models.embed_content(
                 model=self.model, contents=list(texts),
-                config=self._types.EmbedContentConfig(task_type=task_type, output_dimensionality=EMBEDDING_DIM))
+                config=self._types.EmbedContentConfig(task_type=task_type, output_dimensionality=EMBEDDING_DIM)))
         except errors.APIError as exc:
             # One readable line: the status and Google's own first sentence, which names the fix.
             message = (getattr(exc, "message", None) or str(exc)).split(". If you ")[0]

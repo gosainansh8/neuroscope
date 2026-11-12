@@ -105,3 +105,59 @@ def test_vertex_embedder_explains_missing_setup(monkeypatch):
     monkeypatch.delenv("GOOGLE_CLOUD_PROJECT", raising=False)
     with pytest.raises(RuntimeError, match="GOOGLE_CLOUD_PROJECT"):
         VertexEmbedder()
+
+
+# --- Retry and hybrid search -------------------------------------------------------
+
+from neuroscope.embed import call_with_retry  # noqa: E402
+from neuroscope.search import hybrid_search  # noqa: E402
+
+
+class StatusError(Exception):
+    def __init__(self, code):
+        super().__init__(f"HTTP {code}")
+        self.code = code
+
+
+def test_retry_recovers_from_transient_failures_but_not_bad_requests():
+    waits, calls = [], []
+
+    def flaky():
+        calls.append(1)
+        if len(calls) < 3:
+            raise StatusError(504)                     # seen live: DEADLINE_EXCEEDED
+        return "ok"
+    assert call_with_retry(flaky, sleep=waits.append) == "ok" and waits == [2.0, 4.0]
+
+    def timeout():
+        raise TimeoutError("read timed out")           # no status code: retried
+    waits.clear()
+    with pytest.raises(TimeoutError):
+        call_with_retry(timeout, sleep=waits.append)
+    assert waits == [2.0, 4.0]
+
+    def not_found():
+        raise StatusError(404)                         # a wrong model name: retrying cannot help
+    waits.clear()
+    with pytest.raises(StatusError):
+        call_with_retry(not_found, sleep=waits.append)
+    assert waits == []
+
+
+APOE = article("900000014", "Lecanemab appropriate use.", [
+    (None, "Lecanemab treatment decisions. APOE4 carriers, especially homozygotes, have a higher risk of ARIA.")])
+
+
+def test_hybrid_search_finds_exact_terms_that_meaning_search_misses(conn):
+    store(conn, parse_articles(article_set(EDEMA, SLEEP, OTHER, APOE)))
+    fake = FakeEmbedder()
+    embed_chunks(conn, fake)
+    # The fake embedder knows nothing about "APOE4", so meaning-based search ranks it by noise.
+    hits = hybrid_search(conn, fake, "APOE4", drug="lecanemab", limit=2)
+    assert hits[0].title == "Lecanemab appropriate use." and "**APOE4**" in hits[0].snippet
+    # Paraphrases still work through the meaning-based half.
+    assert hybrid_search(conn, fake, "brain swelling", limit=1)[0].title == "Lecanemab safety findings."
+    # A document found by both methods outranks one found by only one.
+    both = hybrid_search(conn, fake, "lecanemab swelling edema", limit=4)
+    assert both[0].title == "Lecanemab safety findings."
+    assert hybrid_search(conn, fake, "zebrafish", drug="Belsomra", limit=3)[0].drugs == ["suvorexant"]

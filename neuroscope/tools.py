@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import psycopg
 
-from .search import resolve_drug, search, semantic_search
+from .search import hybrid_search, resolve_drug, search
 
 TRIAL_URL = "https://clinicaltrials.gov/study/{}"
 
@@ -130,17 +130,18 @@ def get_fda_status(conn: psycopg.Connection, drug: str) -> dict:
 
 def search_literature(conn: psycopg.Connection, query: str, drug: str | None = None, limit: int = 5,
                       embedder=None) -> dict:
-    """PubMed abstracts matching a question. By meaning when an embedder is given, else by keyword."""
+    """PubMed abstracts matching a question: keyword and meaning combined when an embedder is
+    given, keyword only otherwise. Excerpts are centred on the matching words."""
     if drug and not _drug(conn, drug):
         return _unknown(conn, drug)
-    hits = (semantic_search(conn, embedder, query, drug, limit) if embedder
+    hits = (hybrid_search(conn, embedder, query, drug, limit) if embedder
             else search(conn, query, drug, limit))
     return {
-        "mode": "semantic" if embedder else "keyword", "query": query, "drug_filter": drug,
+        "mode": "hybrid" if embedder else "keyword", "query": query, "drug_filter": drug,
         "results": [{"pmid": (h.url or "").rstrip("/").rsplit("/", 1)[-1], "title": h.title, "journal": h.journal,
                      "published_date": h.published_date, "url": h.url, "linked_drugs": h.drugs[:8],
                      "excerpt": h.snippet.replace("**", "")} for h in hits],
-        "caveat": "Abstracts only, for the most-studied drugs. Semantic results are the nearest texts, "
+        "caveat": "Abstracts only, for the most-studied drugs. Results are the best matches found, "
                   "relevant or not; read the excerpt before citing it.",
     }
 

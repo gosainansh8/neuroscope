@@ -38,10 +38,11 @@ import psycopg
 
 from . import tools
 from .db import connect
+from .embed import call_with_retry
 
 DEFAULT_MODEL = "gemini-3.8-flash"
 MAX_STEPS = 8
-REQUEST_TIMEOUT_MS = 60_000               # a stalled request fails instead of hanging
+REQUEST_TIMEOUT_MS = 45_000               # a stalled request fails (and is retried) instead of hanging
 
 SYSTEM_PROMPT = """You answer questions about Alzheimer's disease drug development using the NeuroScope database.
 
@@ -52,7 +53,8 @@ Rules:
 4. "FDA-approved" means approved for at least one use. Say a drug is approved for Alzheimer's disease only if the label text returned by the tool says so, and quote the relevant words.
 5. Give dates as the tools give them, and say which source date applies when it matters.
 6. Pass on the caveats that come with tool results when they affect the answer.
-7. Be concise and plain. Start with the direct answer, then the supporting facts with their citations."""
+7. Be concise and plain. Start with the direct answer, then the supporting facts with their citations.
+8. Earlier questions and answers in this conversation are context for understanding a follow-up (for example, what "it" refers to). They are not evidence: look up again, in this turn, any fact you cite."""
 
 TOOL_SPECS: list[dict[str, Any]] = [
     {"name": "find_drug",
@@ -103,7 +105,8 @@ class ModelTurn:
 
 
 class ChatModel(Protocol):
-    def start(self, system: str, tool_specs: list[dict], question: str) -> ModelTurn: ...
+    def start(self, system: str, tool_specs: list[dict], question: str,
+              history: list[dict] | None = None) -> ModelTurn: ...
     def send_tool_results(self, results: list[tuple[ToolCall, dict]]) -> ModelTurn: ...
 
 
@@ -230,10 +233,18 @@ def run_tool(registry: dict[str, Callable[..., dict]], call: ToolCall) -> dict:
         return {"error": f"{call.name} could not run: {exc}"}
 
 
+MAX_HISTORY_TURNS = 3
+
+
 def answer_question(question: str, model: ChatModel, registry: dict[str, Callable[..., dict]],
-                    max_steps: int = MAX_STEPS) -> AgentResult:
+                    max_steps: int = MAX_STEPS, history: list[dict] | None = None) -> AgentResult:
+    """Answer one question. `history` holds earlier {"question", "answer"} turns of the same
+    conversation (oldest first, at most MAX_HISTORY_TURNS kept) so follow-ups can be understood.
+    Citations are still checked only against lookups made in this turn."""
     steps: list[tuple[ToolCall, dict]] = []
-    turn = model.start(SYSTEM_PROMPT, TOOL_SPECS, question)
+    history = [{"question": h["question"], "answer": h["answer"]} for h in (history or [])][-MAX_HISTORY_TURNS:]
+    turn = (model.start(SYSTEM_PROMPT, TOOL_SPECS, question, history) if history
+            else model.start(SYSTEM_PROMPT, TOOL_SPECS, question))
     for _ in range(max_steps):
         if not turn.tool_calls:
             break
@@ -272,8 +283,8 @@ class GeminiModel:
     def _generate(self) -> ModelTurn:
         from google.genai import errors
         try:
-            resp = self._client.models.generate_content(model=self.model, contents=self._history,
-                                                        config=self._config)
+            resp = call_with_retry(lambda: self._client.models.generate_content(
+                model=self.model, contents=self._history, config=self._config))
         except errors.APIError as exc:
             message = (getattr(exc, "message", None) or str(exc)).split(". If you ")[0]
             raise RuntimeError(f"Vertex AI request failed ({getattr(exc, 'code', '?')} "
@@ -289,14 +300,19 @@ class GeminiModel:
         calls = [ToolCall(fc.name, dict(fc.args or {})) for fc in (resp.function_calls or [])]
         return ModelTurn(calls, None if calls else resp.text)
 
-    def start(self, system: str, tool_specs: list[dict], question: str) -> ModelTurn:
+    def start(self, system: str, tool_specs: list[dict], question: str,
+              history: list[dict] | None = None) -> ModelTurn:
         t = self._types
         declarations = [t.FunctionDeclaration(name=s["name"], description=s["description"],
                                               parameters_json_schema=s["parameters"]) for s in tool_specs]
         self._config = t.GenerateContentConfig(
             system_instruction=system, temperature=0, tools=[t.Tool(function_declarations=declarations)],
             automatic_function_calling=t.AutomaticFunctionCallingConfig(disable=True))
-        self._history = [t.Content(role="user", parts=[t.Part(text=question)])]
+        self._history = []
+        for turn in history or []:
+            self._history.append(t.Content(role="user", parts=[t.Part(text=turn["question"])]))
+            self._history.append(t.Content(role="model", parts=[t.Part(text=turn["answer"])]))
+        self._history.append(t.Content(role="user", parts=[t.Part(text=question)]))
         return self._generate()
 
     def send_tool_results(self, results: list[tuple[ToolCall, dict]]) -> ModelTurn:

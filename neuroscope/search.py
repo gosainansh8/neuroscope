@@ -16,6 +16,7 @@ trusted name of a drug and keeps only documents linked to it.
 from __future__ import annotations
 
 import argparse
+import re
 import sys
 from dataclasses import dataclass
 
@@ -102,16 +103,76 @@ def semantic_search(conn: psycopg.Connection, embedder, query: str, drug: str | 
     return [Hit(*r) for r in rows]
 
 
+def _any_word_query(query: str) -> str:
+    """'lecanemab APOE4 ARIA' -> 'lecanemab or APOE4 or ARIA', so a chunk matching some words still counts."""
+    words = re.findall(r"[\w-]+", query)
+    return " or ".join(words) if words else query
+
+
+def hybrid_search(conn: psycopg.Connection, embedder, query: str, drug: str | None = None,
+                  limit: int = 5, pool: int = 30) -> list[Hit]:
+    """Keyword and meaning-based search combined by reciprocal rank fusion.
+
+    Each method ranks its best `pool` chunks; a chunk scores 1/(60 + rank) for each method that
+    found it, so one found by both rises to the top. Keyword search catches exact terms (APOE4,
+    a trial code) that meaning-based search can miss; meaning-based search catches paraphrases
+    ("brain swelling" for "edema") that keyword search misses. The excerpt is centred on the
+    matching words when there are any. Hit.rank is the fused score (higher is better).
+    """
+    from .embed import to_pgvector
+    drug_id = None
+    if drug:
+        drug_id = resolve_drug(conn, drug)
+        if drug_id is None:
+            raise ValueError(f"no drug with the trusted name {drug!r}")
+    vector = to_pgvector(embedder.embed_query(query))
+    rows = conn.execute(
+        """
+        WITH q AS (SELECT websearch_to_tsquery('english', %(words)s) AS q),
+        allowed AS (
+            SELECT c.id, c.document_id, c.text, c.tsv, c.embedding, c.embedding_model FROM chunks c
+            WHERE %(drug)s::int IS NULL OR EXISTS (SELECT 1 FROM document_drugs dd
+                                                   WHERE dd.document_id = c.document_id AND dd.drug_id = %(drug)s)),
+        kw AS (
+            SELECT id, row_number() OVER (ORDER BY score DESC) AS r FROM (
+                SELECT a.id, ts_rank(a.tsv, q.q) AS score FROM allowed a, q WHERE a.tsv @@ q.q
+                ORDER BY score DESC LIMIT %(pool)s) k),
+        sem AS (
+            SELECT id, row_number() OVER (ORDER BY dist) AS r FROM (
+                SELECT a.id, a.embedding <=> %(v)s::vector AS dist FROM allowed a
+                WHERE a.embedding IS NOT NULL AND a.embedding_model = %(model)s
+                ORDER BY dist LIMIT %(pool)s) s),
+        fused AS (
+            SELECT id, SUM(1.0 / (60 + r)) AS score FROM (SELECT * FROM kw UNION ALL SELECT * FROM sem) x GROUP BY id),
+        best AS (
+            SELECT DISTINCT ON (a.document_id) a.document_id, a.text, f.score
+            FROM fused f JOIN allowed a ON a.id = f.id ORDER BY a.document_id, f.score DESC)
+        SELECT d.title, d.url, d.source_type, d.published_date::text, d.journal,
+               ts_headline('english', b.text, q.q, 'MaxWords=45, MinWords=20, StartSel=**, StopSel=**'),
+               b.score::float,
+               ARRAY(SELECT dr.canonical_name FROM document_drugs dd JOIN drugs dr ON dr.id = dd.drug_id
+                     WHERE dd.document_id = d.id ORDER BY 1)
+        FROM best b JOIN documents d ON d.id = b.document_id, q
+        ORDER BY b.score DESC, d.published_date DESC NULLS LAST LIMIT %(limit)s
+        """, {"words": _any_word_query(query), "v": vector, "model": embedder.model, "drug": drug_id,
+              "pool": pool, "limit": limit}).fetchall()
+    return [Hit(*r) for r in rows]
+
+
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("query")
     p.add_argument("--drug", help="only documents linked to this drug")
     p.add_argument("--limit", type=int, default=5)
     p.add_argument("--semantic", action="store_true", help="search by meaning (needs embeddings)")
+    p.add_argument("--hybrid", action="store_true", help="keyword and meaning combined (needs embeddings)")
     args = p.parse_args(argv)
     with connect() as conn:
         try:
-            if args.semantic:
+            if args.hybrid:
+                from .embed import VertexEmbedder
+                hits = hybrid_search(conn, VertexEmbedder(), args.query, args.drug, args.limit)
+            elif args.semantic:
                 from .embed import VertexEmbedder
                 hits = semantic_search(conn, VertexEmbedder(), args.query, args.drug, args.limit)
             else:

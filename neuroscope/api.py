@@ -139,8 +139,15 @@ DATABASE_DOWN = ("The database is not reachable. If it was stopped to save cost,
                  "deploy/start.sh and try again in a minute.")
 
 
+class Turn(BaseModel):
+    """An earlier question and answer in the same conversation, sent back by the page."""
+    question: str = Field(min_length=1, max_length=500)
+    answer: str = Field(min_length=1, max_length=6000)
+
+
 class Question(BaseModel):
     question: str = Field(min_length=3, max_length=500)
+    history: list[Turn] = Field(default_factory=list, max_length=3)
 
 
 class Lookup(BaseModel):
@@ -267,7 +274,8 @@ def changes(days: int = 7, conn: psycopg.Connection = Depends(get_conn)) -> dict
 def ask(body: Question, request: Request, conn: psycopg.Connection = Depends(get_conn),
         model=Depends(get_model), embedder=Depends(get_embedder)) -> Answer:
     key = question_key(body.question)
-    cached = conn.execute(
+    follow_up = bool(body.history)        # a follow-up depends on earlier turns, so it is never cached
+    cached = None if follow_up else conn.execute(
         "SELECT response FROM api_answer_cache WHERE question_key = %s "
         "AND created_at > now() - make_interval(hours => %s)", (key, CACHE_HOURS)).fetchone()
     conn.commit()
@@ -277,7 +285,8 @@ def ask(body: Question, request: Request, conn: psycopg.Connection = Depends(get
     check_visitor(client_ip(request))
     reserve_question(conn)
     try:
-        result = answer_question(body.question, model, build_tools(conn, embedder))
+        result = answer_question(body.question, model, build_tools(conn, embedder),
+                                 history=[t.model_dump() for t in body.history])
     except RuntimeError as exc:                      # the model service failed or timed out
         log.error("model request failed: %s", exc)
         raise HTTPException(status_code=502, detail=MODEL_UNAVAILABLE) from exc
@@ -288,7 +297,8 @@ def ask(body: Question, request: Request, conn: psycopg.Connection = Depends(get
         citations_verified=not any(result.unsupported.values()),
         stopped_early=result.stopped_early, model=getattr(model, "model", None),
         attribution_warnings=result.attribution_warnings)
-    if answer.citations_verified and not answer.stopped_early and not answer.attribution_warnings:
+    if (answer.citations_verified and not answer.stopped_early and not answer.attribution_warnings
+            and not follow_up):
         # Only complete answers whose citations checked out are worth repeating.
         conn.execute(
             "INSERT INTO api_answer_cache (question_key, question, response) VALUES (%s, %s, %s) "

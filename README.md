@@ -32,7 +32,7 @@ Upgrading an existing database: pull, then run `python -m neuroscope.db init` ag
 
 ```bash
 # 1. Tests. REQUIRE_DB_TESTS=1 turns a missing database into an error instead of silent skips.
-REQUIRE_DB_TESTS=1 pytest -rs                 # expect: 243 passed, 0 skipped
+REQUIRE_DB_TESTS=1 pytest -rs                 # expect: 248 passed, 0 skipped
 
 # 2. Live check: 25 Alzheimer's studies in pages of 10, then re-fetch the same
 #    25 by NCT ID and confirm nothing duplicated. Writes live_review.md.
@@ -207,6 +207,12 @@ Checked live on 2026-11-11 with `gemini-3.8-flash`:
 | Brain swelling with donanemab | Summarizes five abstracts on ARIA-E with PMIDs, and notes the abstracts lack incidence figures |
 | Lecanemab's revenue last quarter | Says the database does not hold revenue data |
 
+Since the first version, three changes came from the evaluation:
+
+- **Automatic retry.** A Vertex AI request that is rate limited, fails with a server error, or times out is retried twice, after 2 and then 4 seconds. A request that is wrong (a bad model name, a disabled API) is not retried. Two evaluation answers were lost to timeouts before this.
+- **Hybrid literature search.** `search_literature` combines keyword search (any of the words) with meaning-based search by reciprocal rank fusion: each method ranks its best 30 passages, and a passage found by both rises to the top. Excerpts start at the matching words. For "APOE4" with lecanemab, meaning-based search alone returned 0 excerpts mentioning APOE4 in its top five; hybrid returns 2, led by "Lecanemab: Appropriate Use Recommendations". Paraphrases ("brain swelling" for ARIA) still work.
+- **Follow-up questions.** The page sends up to three earlier questions and answers with a follow-up, so "What happened to its Phase 3 trials?" after a question about gantenerumab is understood. Earlier turns are context only: citations are still checked against lookups made in the current turn, so an identifier repeated from an earlier answer without a fresh lookup is flagged. Follow-ups are never cached. "New topic" or an example question starts over.
+
 Settings: `NEUROSCOPE_AGENT_MODEL` (default `gemini-3.8-flash`) and `NEUROSCOPE_AGENT_LOCATION` (default `global`; Gemini is not served from `us-central1` for this project, while embeddings are). A question costs roughly 2,000 to 9,000 input tokens. Requests time out after 60 seconds.
 
 ## Keeping the data current
@@ -301,14 +307,14 @@ Dockerfile, deploy/      container and Google Cloud deployment scripts
 neuroscope/live_check.py live two-run verification
 neuroscope/review.py     per-trial Markdown review
 neuroscope/report.py     database summary
-tests/                   243 tests; all fixtures synthetic (fake NCT9xxxxxxx IDs), names from live records
+tests/                   248 tests; all fixtures synthetic (fake NCT9xxxxxxx IDs), names from live records
 ```
 
 ## Known limitations
 
 - The agent's citation check verifies that identifiers are real, not that the cited source supports the claim. The model also writes its own literature search queries, using its own vocabulary (it turned "brain swelling" into "ARIA-E").
-- Agent answers are not reproducible word for word, and a request to Vertex AI can time out (one did during testing and succeeded on retry). There is no automatic retry.
-- The agent has no memory between questions and no evaluation set beyond the five questions above.
+- Agent answers are not reproducible word for word. Requests to Vertex AI are retried, but a long outage still fails the question.
+- Follow-ups remember at most the three previous turns, and only within one page visit.
 
 - Drug classes typed in as interventions (`cholinesterase inhibitors`, `ssri`) exist as drug rows and collect document links like a drug would.
 - Document links are whole-word name matches. A short or common name can match text that is not about the drug (`insulin`, `saline`), and names under four characters never link.

@@ -91,6 +91,10 @@
   button.primary:hover { transform: translateY(-1px); }
   button.primary:disabled { opacity: .55; cursor: default; transform: none; }
   .hint { color: var(--faint); font-size: .8rem; margin: 8px 4px 0; }
+  .followup { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 10px 2px 0; font-size: .85rem;
+              color: var(--muted); }
+  .followup b { color: var(--text); font-weight: 600; }
+  .followup .icon-btn { margin-left: auto; }
 
   /* Examples */
   .examples { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin: 18px 0 8px; }
@@ -242,6 +246,10 @@
     </button>
   </form>
   <p class="hint">Press Enter to ask, Shift+Enter for a new line.</p>
+  <div id="followup" class="followup" hidden aria-live="polite">
+    <span>Follow-ups continue from: <b id="followup-q"></b></span>
+    <button type="button" class="icon-btn" id="new-topic">New topic</button>
+  </div>
 
   <div class="examples" id="examples">
     <button type="button" class="example"><small class="fda">Approval</small><span>Is semaglutide approved for Alzheimer's disease?</span></button>
@@ -408,13 +416,29 @@ function stopProgress() { clearInterval(stepTimer); $("progress").hidden = true;
 
 function showError(message) { $("error-text").textContent = message; $("error").hidden = false; }
 
+// Earlier turns of this conversation, sent with a follow-up so "it" can be understood.
+// The server checks citations against fresh lookups each turn; this is context only.
+let history = [];
+function setHistory(turns) {
+  history = turns.slice(-3);
+  const box = $("followup");
+  if (!history.length) {
+    box.hidden = true;
+    textarea.placeholder = "e.g. Is lecanemab approved, and what trials is it in?";
+    return;
+  }
+  $("followup-q").textContent = history[history.length - 1].question;
+  box.hidden = false;
+  textarea.placeholder = "Ask a follow-up, e.g. What about its side effects?";
+}
+
 async function ask(question) {
   $("result").hidden = true; $("error").hidden = true;
   $("submit").disabled = true;
   startProgress();
   try {
     const resp = await fetch("ask", { method: "POST", headers: { "content-type": "application/json" },
-                                      body: JSON.stringify({ question }) });
+                                      body: JSON.stringify({ question, history }) });
     const data = await resp.json().catch(() => ({}));
     if (!resp.ok) {
       showError(typeof data.detail === "string" ? data.detail
@@ -442,6 +466,8 @@ async function ask(question) {
       chip.className = "chip neutral"; chip.textContent = "No citations in this answer";
     }
     $("cache-chip").hidden = !data.cached;
+    setHistory([...history, { question, answer: data.answer.slice(0, 6000) }]);
+    textarea.value = ""; autosize();          // ready for a follow-up, which starts empty
     $("result").hidden = false;
     $("result").scrollIntoView({ behavior: "smooth", block: "start" });
   } catch (err) {
@@ -457,9 +483,10 @@ const autosize = () => { textarea.style.height = "auto"; textarea.style.height =
 textarea.addEventListener("input", autosize);
 $("ask-form").addEventListener("submit", (e) => { e.preventDefault(); const q = textarea.value.trim(); if (q) ask(q); });
 textarea.addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); $("ask-form").requestSubmit(); } });
+$("new-topic").addEventListener("click", () => { setHistory([]); textarea.value = ""; autosize(); textarea.focus(); });
 $("examples").addEventListener("click", (e) => {
   const btn = e.target.closest(".example");
-  if (btn) { textarea.value = btn.querySelector("span").textContent; autosize(); $("ask-form").requestSubmit(); }
+  if (btn) { setHistory([]); textarea.value = btn.querySelector("span").textContent; autosize(); $("ask-form").requestSubmit(); }
 });
 $("copy").addEventListener("click", async () => {
   try { await navigator.clipboard.writeText($("answer").innerText); $("copy").textContent = "Copied"; }

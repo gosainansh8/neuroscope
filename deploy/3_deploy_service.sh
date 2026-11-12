@@ -21,7 +21,7 @@ gcloud run deploy "$SERVICE" --project "$PROJECT_ID" --region "$REGION" --source
     --set-secrets "DATABASE_URL=${SECRET}:latest" \
     --set-env-vars "GOOGLE_CLOUD_PROJECT=${PROJECT_ID},GOOGLE_CLOUD_LOCATION=${REGION},NEUROSCOPE_DAILY_QUESTION_LIMIT=${DAILY},NEUROSCOPE_MONTHLY_QUESTION_LIMIT=${MONTHLY},NEUROSCOPE_VISITOR_LIMIT=${VISITOR}" \
     $ACCESS \
-    --memory 512Mi --cpu 1 --min-instances 0 --max-instances 1 --timeout 180 --quiet
+    --memory 512Mi --cpu 1 --min-instances 0 --max-instances 1 --timeout 300 --quiet
 
 echo "Deployed: $(gcloud run services describe "$SERVICE" --project "$PROJECT_ID" --region "$REGION" --format='value(status.url)')"
 if [ "$ACCESS" = "--allow-unauthenticated" ]; then

@@ -233,3 +233,25 @@ def test_changes_lists_new_registrations_status_changes_and_latest_approvals(con
     assert [(a["drug"], a["approved"]) for a in body["latest_fda_approvals"]] == [("lecanemab", "2023-01-06"),
                                                                                   ("donepezil", "1996-11-25")]
     assert body["days"] == 7 and body["last_refresh"] is None
+
+
+def test_follow_up_is_answered_with_history_and_never_cached(client, conn):
+    seen = []
+
+    class Recording:
+        model, calls = "scripted", 0
+
+        def start(self, system, tool_specs, question, history=None):
+            seen.append(history)
+            return ModelTurn([ToolCall("get_trials", {"drug": "lecanemab"})])
+
+        def send_tool_results(self, results):
+            return ModelTurn(text="Lecanemab is in NCT95000001.")
+    api.app.dependency_overrides[api.get_model] = lambda: Recording()
+    turn = {"question": "Is lecanemab approved?", "answer": "Yes."}
+    for _ in range(2):
+        r = client.post("/ask", json={"question": "What trials is it in?", "history": [turn]})
+        assert r.status_code == 200 and r.json()["cached"] is False
+    assert seen == [[turn], [turn]]
+    assert conn.execute("SELECT COUNT(*) FROM api_answer_cache").fetchone()[0] == 0
+    assert client.post("/ask", json={"question": "What trials is it in?", "history": [turn] * 4}).status_code == 422
