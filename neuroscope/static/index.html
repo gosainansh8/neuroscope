@@ -116,7 +116,7 @@
   /* Examples: two quiet suggestions */
   .examples { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; margin: 10px 4px 0;
               font-size: .96rem; color: var(--faint); }
-  .example { border: 0; background: none; padding: 0; color: var(--muted); font-size: .96rem; cursor: pointer;
+  .example { white-space: nowrap; border: 0; background: none; padding: 0; color: var(--muted); font-size: .96rem; cursor: pointer;
              text-decoration: underline; text-decoration-color: var(--panel-border); text-underline-offset: 3px; }
   .example:hover { color: var(--accent); text-decoration-color: currentColor; }
   .readout .quota b { color: var(--accent-2); }
@@ -302,7 +302,8 @@
   .change-list .title { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
                         margin-top: 2px; color: var(--text); }
   .change-list .brand { font-weight: 650; color: var(--text); }
-  .change-list .delta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 4px; }
+  .change-list .delta { display: grid; gap: 2px; margin-top: 4px; }
+  .change-list .delta .new::before { content: "→ "; color: var(--faint); font-weight: 400; }
   .change-list .old { text-decoration: line-through; color: var(--faint); }
   .change-list .new { font-weight: 600; color: var(--text); }
   .change-list .meta { display: block; margin-top: 3px; color: var(--faint); font: .78rem/1.45 var(--mono); letter-spacing: .02em; }
@@ -400,8 +401,8 @@
 
   <div class="examples" id="examples">
     <span>Try:</span>
-    <button type="button" class="example">Is semaglutide approved for Alzheimer's disease?</button>
-    <button type="button" class="example">What does the literature say about brain swelling with donanemab?</button>
+    <button type="button" class="example">Is semaglutide approved for Alzheimer's?</button>
+    <button type="button" class="example">What is known about brain swelling with donanemab?</button>
   </div>
 
   <section id="progress" class="card progress" hidden aria-live="polite">
@@ -856,19 +857,33 @@ function fillList(id, items, emptyText) {
 }
 const FIELD_LABELS = { overall_status: "Status", phase_label: "Phase", has_results: "Results posted",
                        why_stopped: "Reason stopped", primary_completion_date: "Primary completion" };
-const pretty = (v) => (v || "none").replace(/_/g, " ").toLowerCase();
+const STATUS_LABELS = { RECRUITING: "Recruiting", NOT_YET_RECRUITING: "Not yet recruiting",
+  ACTIVE_NOT_RECRUITING: "Active, not recruiting", ENROLLING_BY_INVITATION: "Enrolling by invitation",
+  COMPLETED: "Completed", TERMINATED: "Terminated", WITHDRAWN: "Withdrawn", SUSPENDED: "Suspended",
+  UNKNOWN: "Unknown", AVAILABLE: "Available", NO_LONGER_AVAILABLE: "No longer available" };
+const pretty = (v) => {
+  if (v === null || v === undefined || v === "") return "None";
+  const t = String(v);
+  if (STATUS_LABELS[t.toUpperCase()]) return STATUS_LABELS[t.toUpperCase()];
+  if (t === "true" || t === "false") return t === "true" ? "Yes" : "No";
+  const d = /^(\d{4})-(\d{2})-(\d{2})$/.exec(t);
+  if (d) return new Date(Date.UTC(+d[1], +d[2] - 1, +d[3])).toLocaleDateString("en-US",
+                  { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" });
+  const words = t.replace(/_/g, " ");
+  return words === words.toUpperCase() ? words.charAt(0) + words.slice(1).toLowerCase() : words;
+};
 fetch("changes?days=7").then((r) => r.ok ? r.json() : null).then((d) => {
   if (!d) return;
   fillList("chg-new", d.new_trials.slice(0, 5).map((t) => {
     const li = el("li");
     li.append(idLink(TRIAL_URL(t.nct_id), t.nct_id), el("span", "title", t.title),
-              el("span", "meta", `Posted ${t.first_posted} · ${t.phase}` + (t.drugs.length ? ` · ${t.drugs.slice(0, 2).join(", ")}` : "")));
+              el("span", "meta", `Posted ${pretty(t.first_posted)} · ${t.phase}` + (t.drugs.length ? ` · ${t.drugs.slice(0, 2).join(", ")}` : "")));
     return li;
   }), "No trials first posted this week.");
   fillList("chg-status", d.trial_changes.slice(0, 5).map((c) => {
     const li = el("li");
     const delta = el("div", "delta");
-    delta.append(el("span", "old", pretty(c.old)), document.createTextNode("→"), el("span", "new", pretty(c.new)));
+    delta.append(el("span", "old", pretty(c.old)), el("span", "new", pretty(c.new)));
     li.append(idLink(TRIAL_URL(c.nct_id), c.nct_id), el("span", "meta", FIELD_LABELS[c.field] || c.field), delta);
     return li;
   }), "No status changes this week.");
@@ -877,7 +892,7 @@ fetch("changes?days=7").then((r) => r.ok ? r.json() : null).then((d) => {
     const name = el("div");
     name.append(el("span", "brand", a.brand || a.drug), document.createTextNode(a.brand ? ` (${a.drug})` : ""));
     li.append(name, idLink(FDA_URL(a.application_number.replace(/^\D+/, "")), a.application_number),
-              el("span", "meta", `Approved ${a.approved}`));
+              el("span", "meta", `Approved ${pretty(a.approved)}`));
     return li;
   }), "No Alzheimer's approvals on record.");
   $("changes-sub").textContent = d.last_refresh
