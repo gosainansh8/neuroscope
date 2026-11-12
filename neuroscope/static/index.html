@@ -36,7 +36,7 @@
     }
   }
   * { box-sizing: border-box; }
-  html { -webkit-text-size-adjust: 100%; }
+  html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
   body {
     margin: 0; min-height: 100vh; color: var(--text); background: var(--bg);
     background-image:
@@ -63,7 +63,7 @@
   .hero h2 { font-size: clamp(1.7rem, 4.6vw, 2.45rem); line-height: 1.15; letter-spacing: -.025em; margin: 0 0 12px; }
   .hero h2 .grad { background: linear-gradient(90deg, var(--accent), var(--accent-2)); -webkit-background-clip: text;
                    background-clip: text; color: transparent; }
-  .hero p { color: var(--muted); margin: 0; max-width: 640px; font-size: 1.05rem; }
+  .hero p { color: var(--muted); margin: 0; font-size: 1.05rem; }
   .sources-line { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
   .src-tag { display: inline-flex; align-items: center; gap: 6px; font-size: .82rem; font-weight: 600; padding: 4px 10px;
              border-radius: 999px; }
@@ -73,7 +73,7 @@
   .src-tag.paper { color: var(--paper); background: var(--paper-soft); }
 
   /* Stats: a quiet line, not a feature */
-  .stats { display: flex; flex-wrap: wrap; gap: 4px 0; margin: 14px 0 0; color: var(--faint); font-size: .8rem; }
+  .stats { display: flex; flex-wrap: wrap; gap: 4px 0; margin: 14px 0 0; color: var(--faint); font-size: .9rem; }
   .stats span + span::before { content: "·"; margin: 0 8px; }
   .stats b { color: var(--muted); font-weight: 600; font-variant-numeric: tabular-nums; }
 
@@ -81,13 +81,13 @@
   .card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--radius);
           box-shadow: var(--shadow); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
   /* The question box is the main thing on the page: larger, with a soft gradient edge */
-  form.card { display: flex; align-items: flex-end; gap: 12px; padding: 12px 12px 12px 8px; border-radius: 18px;
+  form.card { display: flex; align-items: center; gap: 12px; padding: 10px 10px 10px 8px; border-radius: 18px;
               border: 1.5px solid transparent;
               background: linear-gradient(var(--panel-solid), var(--panel-solid)) padding-box,
                           linear-gradient(135deg, rgba(91, 91, 214, .55), rgba(20, 158, 147, .45)) border-box;
               box-shadow: var(--shadow), 0 10px 40px rgba(91, 91, 214, .14); }
   form.card:focus-within { box-shadow: var(--shadow), 0 0 0 5px var(--accent-soft), 0 12px 44px rgba(91, 91, 214, .22); }
-  textarea { flex: 1; min-height: 64px; max-height: 240px; padding: 14px 14px; border: 0; outline: none; resize: none;
+  textarea { flex: 1; height: 54px; min-height: 54px; max-height: 240px; padding: 14px 14px; border: 0; outline: none; resize: none;
              background: transparent; color: var(--text); font: inherit; font-size: 1.08rem; line-height: 1.5; }
   textarea::placeholder { color: var(--faint); }
   button { font: inherit; cursor: pointer; }
@@ -104,8 +104,8 @@
 
   /* Examples: two quiet suggestions */
   .examples { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; margin: 10px 4px 0;
-              font-size: .8rem; color: var(--faint); }
-  .example { border: 0; background: none; padding: 0; color: var(--muted); font-size: .8rem; cursor: pointer;
+              font-size: .9rem; color: var(--faint); }
+  .example { border: 0; background: none; padding: 0; color: var(--muted); font-size: .9rem; cursor: pointer;
              text-decoration: underline; text-decoration-color: var(--panel-border); text-underline-offset: 3px; }
   .example:hover { color: var(--accent); text-decoration-color: currentColor; }
 
@@ -185,6 +185,33 @@
   details summary::before { content: "▸ "; } details[open] summary::before { content: "▾ "; }
   details[open] summary { margin-bottom: 12px; }
 
+  /* Tabs: sticky links to each part of the page */
+  /* The header (logo, tabs, tag) stays at the top while scrolling. */
+  header.brand { position: sticky; top: 0; z-index: 10; margin: -28px -16px 0; padding: 14px 16px;
+                 background: color-mix(in srgb, var(--bg) 82%, transparent);
+                 backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+                 border-bottom: 1px solid var(--panel-border); }
+  .tabs { display: flex; gap: 2px; margin-left: 14px; min-width: 0; overflow-x: auto; scrollbar-width: none; }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tabs a { flex: none; padding: 6px 12px; border-radius: 999px; font-size: .84rem; font-weight: 550; color: var(--muted);
+            text-decoration: none; transition: color .15s ease, background .15s ease; }
+  .tabs a:hover { color: var(--text); background: var(--accent-soft); }
+  .tabs a[aria-current="true"] { color: var(--accent); background: var(--accent-soft); }
+  #ask, #how, #changes, #faq { scroll-margin-top: 78px; }
+  @media (max-width: 620px) { header.brand .pill { display: none; } .tabs { margin-left: 6px; } .tabs a { padding: 6px 8px; } }
+
+  /* FAQ */
+  .faq { margin-top: 30px; padding: 20px; }
+  .faq h3 { margin: 0 0 12px; font-size: 1.1rem; letter-spacing: -.01em; }
+  .faq details { border-top: 1px solid var(--panel-border); padding: 12px 2px; }
+  .faq details:first-of-type { border-top: 0; }
+  .faq summary { color: var(--text); font-weight: 600; font-size: .95rem; list-style: none; }
+  .faq summary::-webkit-details-marker { display: none; }
+  .faq summary::before { content: "+"; display: inline-block; width: 18px; color: var(--accent); font-weight: 700; }
+  .faq details[open] summary::before { content: "−"; }
+  .faq details[open] summary { margin-bottom: 6px; }
+  .faq details p { margin: 0 0 0 18px; color: var(--muted); font-size: .9rem; }
+
   /* What changed */
   .changes { margin-top: 30px; padding: 20px; }
   .changes-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; margin-bottom: 14px; }
@@ -238,22 +265,6 @@
     .flow-steps li::after { top: auto; bottom: -15px; right: 50%; transform: translateX(50%) rotate(135deg); }
   }
 
-  /* Side by side on wide screens: the steps on the left, this week's news on the right.
-     The row is wider than the rest of the page, centred on it. */
-  .side { display: grid; grid-template-columns: 320px 1fr; gap: 16px; align-items: stretch; margin-top: 30px;
-          width: min(1180px, calc(100vw - 32px)); margin-left: calc(50% - min(590px, 50vw - 16px)); }
-  .side > .card { margin-top: 0; }
-  .side .flow-steps { grid-template-columns: 1fr; gap: 10px; }
-  .side .flow-steps li { display: grid; grid-template-columns: 26px 1fr; gap: 0 10px; padding: 10px 12px; }
-  .side .flow-steps li > .ic { grid-row: span 3; width: 26px; height: 26px; margin: 0; }
-  .side .flow-steps li > b { margin-bottom: 1px; }
-  .side .flow-steps .tools, .side .flow-steps .src { grid-column: 2; }
-  .side .flow-steps li::after { top: auto; bottom: -9px; right: auto; left: 23px; width: 7px; height: 7px;
-                                transform: rotate(135deg); }
-  @media (max-width: 980px) {
-    .side { grid-template-columns: 1fr; width: auto; margin-left: 0; }
-  }
-
   footer { margin-top: 34px; color: var(--faint); font-size: .84rem; display: grid; gap: 8px; }
   footer .how { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; margin: 6px 0 10px;
                 padding-top: 22px; border-top: 1px solid var(--panel-border); }
@@ -278,10 +289,16 @@
       <g transform="translate(5 5)" fill="none" stroke="#fff" stroke-linecap="round" stroke-linejoin="round"><g transform="scale(.8)" stroke-width="2"><path d="M11.5 4.6C9.6 3.6 7.3 4.5 6.9 6.5 4.9 6.9 3.7 8.9 4.4 10.9c-1.4 1.2-1.4 3.6.1 4.8-.3 2.1 1.3 4 3.4 3.9.8 1.5 2.7 1.9 3.6.8z"/><path d="M12.5 4.6c1.9-1 4.2-.1 4.6 1.9 2 .4 3.2 2.4 2.5 4.4 1.4 1.2 1.4 3.6-.1 4.8.3 2.1-1.3 4-3.4 3.9-.8 1.5-2.7 1.9-3.6.8z"/><path d="M7.3 9.3c1.4.1 2.5.9 2.9 2.2M6.5 13.7c1.6-.3 3 .3 3.7 1.6M9.4 6.7c.6.6.9 1.4.8 2.2"/><path d="M16.7 9.3c-1.4.1-2.5.9-2.9 2.2M17.5 13.7c-1.6-.3-3 .3-3.7 1.6M14.6 6.7c-.6.6-.9 1.4-.8 2.2"/></g><circle cx="16" cy="16" r="5" fill="rgba(255,255,255,.22)" stroke-width="1.8"/><path d="M19.6 19.6 24 24" stroke-width="2.6"/></g>
     </svg>
     <h1>NeuroScope</h1>
+    <nav class="tabs" aria-label="Sections">
+      <a href="#ask">Ask</a>
+      <a href="#how">How it works</a>
+      <a href="#changes">This week</a>
+      <a href="#faq">FAQ</a>
+    </nav>
     <span class="pill">Alzheimer's</span>
   </header>
 
-  <section class="hero">
+  <section class="hero" id="ask">
     <h2>Drug development answers, <span class="grad">with every source checked.</span></h2>
     <p>Ask about any Alzheimer's drug's trials, FDA approval, or published evidence. Answers come only from public records, and every citation is verified against the database.</p>
     <div class="sources-line">
@@ -355,8 +372,7 @@
     </div>
   </article>
 
-  <div class="side">
-  <section class="card flow" aria-labelledby="flow-title">
+  <section class="card flow" id="how" aria-labelledby="flow-title">
     <h3 id="flow-title">How an answer is found</h3>
     <p>The model never sees the database directly. It can only ask for these lookups, and every citation is checked afterwards.</p>
     <ol class="flow-steps">
@@ -405,7 +421,46 @@
       </div>
     </div>
   </section>
-  </div>
+
+  <section class="card faq" id="faq" aria-labelledby="faq-title">
+    <h3 id="faq-title">FAQ</h3>
+    <details>
+      <summary>What is NeuroScope?</summary>
+      <p>A question-answering tool for Alzheimer's drug development. You ask about a drug's trials, FDA approval, or published evidence, and the answer comes only from public records, with every source linked.</p>
+    </details>
+    <details>
+      <summary>Where does the information come from?</summary>
+      <p>Three public sources: ClinicalTrials.gov for trials, the FDA's Drugs@FDA database and drug labels for approvals and indications, and PubMed for published abstracts. All three are refreshed automatically every Monday.</p>
+    </details>
+    <details>
+      <summary>How does it avoid making things up?</summary>
+      <p>The language model never sees the database directly. It can only ask for a few read-only lookups and must write its answer from what they return. Afterwards, code (not the model) checks that every trial ID, FDA application number, and PubMed ID in the answer actually came from one of those lookups, and flags any that did not.</p>
+    </details>
+    <details>
+      <summary>Does "FDA-approved" mean approved for Alzheimer's disease?</summary>
+      <p>Not necessarily. FDA records show a drug was approved for at least one use. Semaglutide, for example, is approved for diabetes and weight loss, not Alzheimer's. Whether a use includes Alzheimer's is shown only by the drug's label, which answers quote directly.</p>
+    </details>
+    <details>
+      <summary>What does "no matched FDA approval record" mean?</summary>
+      <p>That no FDA approval could be matched to the drug's name in the database. It usually means the drug is not approved, but it is not proof: names are matched exactly, and only US FDA data is included. Approval is never inferred from a drug reaching Phase 3 or Phase 4.</p>
+    </details>
+    <details>
+      <summary>Can I trust every answer?</summary>
+      <p>Treat answers as a well-sourced starting point. The citation check confirms that each cited record is real and was looked up, not that it supports the exact sentence it is attached to, so follow the links for anything important. In testing on 39 questions with known answers, the agent got 38 to 39 right with no invented citations.</p>
+    </details>
+    <details>
+      <summary>Why is there a daily question limit?</summary>
+      <p>Each new question costs a call to the language model, so this public demo answers up to 50 new questions a day. Questions asked recently are answered from saved answers and do not count.</p>
+    </details>
+    <details>
+      <summary>Is this medical advice?</summary>
+      <p>No. NeuroScope summarizes public research and regulatory records. It does not recommend treatments. Talk to a doctor about any medical decision.</p>
+    </details>
+    <details>
+      <summary>How was it built?</summary>
+      <p>Python and Postgres with vector search, Gemini on Google Cloud for answers and embeddings, and Cloud Run for hosting. The code is on <a href="https://github.com/gosainansh8/neuroscope" target="_blank" rel="noopener">GitHub</a>.</p>
+    </details>
+  </section>
 
   <footer>
     <div class="how">
@@ -589,7 +644,7 @@ async function ask(question) {
 }
 
 const textarea = $("question");
-const autosize = () => { textarea.style.height = "auto"; textarea.style.height = Math.min(textarea.scrollHeight, 220) + "px"; };
+const autosize = () => { textarea.style.height = "54px"; textarea.style.height = Math.min(Math.max(textarea.scrollHeight, 54), 240) + "px"; };
 textarea.addEventListener("input", autosize);
 $("ask-form").addEventListener("submit", (e) => { e.preventDefault(); const q = textarea.value.trim(); if (q) ask(q); });
 textarea.addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); $("ask-form").requestSubmit(); } });
@@ -651,6 +706,15 @@ fetch("changes?days=7").then((r) => r.ok ? r.json() : null).then((d) => {
     : `Data retrieved ${d.trials_last_retrieved}`;
   $("changes").hidden = false;
 }).catch(() => {});
+
+// Mark the tab for the section currently in view.
+const tabLinks = [...document.querySelectorAll(".tabs a")];
+const spy = new IntersectionObserver((entries) => {
+  entries.forEach((en) => {
+    if (en.isIntersecting) tabLinks.forEach((a) => a.setAttribute("aria-current", String(a.hash === "#" + en.target.id)));
+  });
+}, { rootMargin: "-40% 0px -55% 0px" });
+["ask", "how", "changes", "faq"].forEach((id) => { const el = document.getElementById(id); if (el) spy.observe(el); });
 
 fetch("health").then((r) => r.json().then((d) => ({ ok: r.ok, d }))).then(({ ok, d }) => {
   if (!ok) { $("health").textContent = d.detail || "The database is not reachable."; return; }
