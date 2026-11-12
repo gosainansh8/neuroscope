@@ -359,12 +359,12 @@ def compare_diseases(conn: psycopg.Connection, aspect: str, diseases: list[str] 
                        (ARRAY_AGG(DISTINCT p.canonical_name))[1:4]
                 FROM v_program_status p JOIN drug_mechanisms m ON m.drug_id = p.drug_id
                 WHERE p.disease = %s AND COALESCE(p.highest_phase, 0) >= %s AND (NOT %s OR p.program_status = 'active')
-                  AND m.mechanism_of_action <> 'Diagnostic agent'
+                  AND m.mechanism_of_action <> 'Diagnostic agent' AND m.mechanism_of_action NOT ILIKE 'unknown%%'
                 GROUP BY 1 ORDER BY 2 DESC, 1 LIMIT %s
                 """, (slug, min_phase, active_only, limit)).fetchall()
             with_mech = conn.execute(
                 "SELECT COUNT(DISTINCT p.drug_id) FROM v_program_status p JOIN drug_mechanisms m ON m.drug_id = p.drug_id "
-                "WHERE p.disease = %s AND COALESCE(p.highest_phase, 0) >= %s AND (NOT %s OR p.program_status = 'active')",
+                "WHERE m.mechanism_of_action NOT ILIKE 'unknown%%' AND p.disease = %s AND COALESCE(p.highest_phase, 0) >= %s AND (NOT %s OR p.program_status = 'active')",
                 (slug, min_phase, active_only)).fetchone()[0]
             out[slug] = {"drugs_considered": base, "drugs_with_known_mechanism": with_mech,
                          "top": [{"mechanism": m, "n_drugs": n, "share_of_drugs_with_mechanism":

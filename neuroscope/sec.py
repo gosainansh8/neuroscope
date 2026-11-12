@@ -56,7 +56,7 @@ _TAG_RE = re.compile(r"<(script|style|ix:header)[^>]*>.*?</\1>|<[^>]+>", re.IGNO
 GENERIC = {"insulin", "glucose", "saline", "water", "oxygen", "vehicle", "placebo", "multiple", "optional",
            "biological", "intrathecal", "standard", "control", "vitamin", "caffeine", "alcohol", "nicotine",
            "sodium", "potassium", "calcium", "magnesium", "iron", "zinc", "protein", "albumin", "human albumin",
-           "immunoglobulin", "gene therapy", "stem cells", "stem cell", "cell therapy", "exercise", "diet", "lithium", "melatonin", "sugar"}
+           "immunoglobulin", "gene therapy", "stem cells", "stem cell", "cell therapy", "creatinine", "creatine", "exercise", "diet", "lithium", "melatonin", "sugar"}
 
 
 def user_agent() -> str:
