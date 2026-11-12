@@ -32,7 +32,7 @@ Upgrading an existing database: pull, then run `python -m neuroscope.db init` ag
 
 ```bash
 # 1. Tests. REQUIRE_DB_TESTS=1 turns a missing database into an error instead of silent skips.
-REQUIRE_DB_TESTS=1 pytest -rs                 # expect: 221 passed, 0 skipped
+REQUIRE_DB_TESTS=1 pytest -rs                 # expect: 233 passed, 0 skipped
 
 # 2. Live check: 25 Alzheimer's studies in pages of 10, then re-fetch the same
 #    25 by NCT ID and confirm nothing duplicated. Writes live_review.md.
@@ -205,6 +205,30 @@ Checked live on 2026-11-11 with `gemini-3.8-flash`:
 
 Settings: `NEUROSCOPE_AGENT_MODEL` (default `gemini-3.8-flash`) and `NEUROSCOPE_AGENT_LOCATION` (default `global`; Gemini is not served from `us-central1` for this project, while embeddings are). A question costs roughly 2,000 to 9,000 input tokens. Requests time out after 60 seconds.
 
+## Evaluation
+
+```bash
+python -m neuroscope.evaluate                        # all 39 cases, about 15 minutes, a few cents
+python -m neuroscope.evaluate --category trials      # one category
+```
+
+`evals/cases.json` holds 39 questions whose correct answers were taken from the database: approvals and dates, drugs approved only for other uses, drugs with no FDA record, trials, literature, the pipeline, and questions the data cannot answer. Each case lists what a correct answer must contain (a yes/no, dates, words, record IDs, the lookups made), so scoring is done by code, not by a model. Every case also fails if the answer cites an identifier no lookup returned. A separate heuristic flags a citation placed next to a different drug than the record belongs to.
+
+Results on 2026-11-12 with `gemini-3.8-flash` (full reports in `evals/results/`):
+
+| Run | Passed | Invented citations | Misattributed citations |
+|---|---|---|---|
+| First full run | 37 of 39 | 0 | 0 |
+| Final full run | **39 of 39** (129 of 129 checks) | 0 | 0 |
+
+The first run's failures, and what they showed:
+
+- Two answers did not arrive: Vertex AI timed out ("deadline exceeded"). The agent has no automatic retry.
+- One case was written wrongly: it expected "which drug works best?" to be declined as out of scope, but the agent answered it well from the literature (no single best drug, with cited reviews). The case was corrected.
+- In a re-run, "Is there published evidence on lecanemab and APOE4?" failed: meaning-based search for the short term "APOE4" returned general lecanemab papers, the excerpts shown to the model start at the beginning of each passage rather than at the match, and the agent searched repeatedly until it hit its step limit. It passed in the final run. Combining keyword and meaning-based search would fix the underlying weakness.
+
+Answers vary from run to run, so a single 39 of 39 is not a guarantee. The cases are also tied to this data snapshot; after a refresh some expected IDs or dates may need updating.
+
 ## Web page, HTTP API, and deployment
 
 ```bash
@@ -252,13 +276,14 @@ neuroscope/pubmed.py     PubMed abstracts, chunking, and drug links
 neuroscope/embed.py      chunk embeddings (Vertex AI)
 neuroscope/search.py     keyword and semantic search over chunks
 neuroscope/tools.py      read-only lookups the agent can call
-neuroscope/agent.py      the agent loop, Gemini adapter, and citation check
+neuroscope/agent.py      the agent loop, Gemini adapter, citation and attribution checks
+neuroscope/evaluate.py   scores the agent against evals/cases.json
 neuroscope/api.py        HTTP API around the agent, and the web page (static/index.html)
 Dockerfile, deploy/      container and Google Cloud deployment scripts
 neuroscope/live_check.py live two-run verification
 neuroscope/review.py     per-trial Markdown review
 neuroscope/report.py     database summary
-tests/                   221 tests; all fixtures synthetic (fake NCT9xxxxxxx IDs), names from live records
+tests/                   233 tests; all fixtures synthetic (fake NCT9xxxxxxx IDs), names from live records
 ```
 
 ## Known limitations
