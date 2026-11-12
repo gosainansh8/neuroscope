@@ -318,7 +318,7 @@ tests/                   243 tests; all fixtures synthetic (fake NCT9xxxxxxx IDs
 - FDA data covers the United States only; there is no EMA or other regulator data.
 
 - Until aliases are reviewed, the same drug can exist twice as auto-created drugs (e.g. `bapineuzumab` and `AAB-001`); records naming both become conflicts.
-- Since the weekly refresh runs in the cloud, apply correction files to the cloud database too (`deploy/cloud.sh python -m neuroscope.curate apply FILE.csv`), or the two copies drift apart.
+- Correction files are not applied automatically. Use `deploy/apply_corrections.sh FILE.csv`: it dry-runs the file on the cloud database, asks, then applies it to the cloud (what the live site uses) and to the local copy, so they stay matched. A file with an error stops at the dry run.
 - Instruction-like names are not cleaned by rule (`Donepezil drug treatment`, `Administer Leqemi 10 mg/kg, every two weeks.`). The ones in the first full load were mapped by hand; new ones need `curate map`.
 - Some descriptive single-trial drug names remain where no specific drug applies (`administration of stable isotope-labelled leucine`, cell-therapy product descriptions). Category names like `Standard of Care medication for early Alzheimer's Disease` are now marked as classes.
 - Formulation and extract variants are kept as separate drugs on purpose (`AGB101` vs levetiracetam, `EGb 761` vs ginkgo biloba, intranasal insulin vs insulin).

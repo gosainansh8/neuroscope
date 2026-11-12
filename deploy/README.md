@@ -75,6 +75,8 @@ deploy/cloud.sh python -m neuroscope.curate apply data/curation/your_file.csv --
 
 `deploy/cloud.sh` runs any command against the cloud database through the proxy.
 
+To apply a correction file, use `deploy/apply_corrections.sh FILE.csv` rather than applying it to one database: it shows a dry run on the cloud database, asks for confirmation, then applies the file to the cloud and to your local database (add `--dry-run` to only look, `--yes` to skip the question). Cloud paper links follow at the next weekly refresh.
+
 ## Updating
 
 - Code change: `deploy/3_deploy_service.sh`, then `deploy/4_schedule_refresh.sh` so the job uses the same code.
