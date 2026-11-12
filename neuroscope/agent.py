@@ -114,6 +114,7 @@ class AgentResult:
     cited: dict[str, list[str]]            # identifiers in the answer that tool results support
     unsupported: dict[str, list[str]]      # identifiers in the answer that no tool returned
     stopped_early: bool = False
+    attribution_warnings: list[dict] = field(default_factory=list)   # citations next to the wrong drug
 
 
 def identifiers(text: str) -> dict[str, set[str]]:
@@ -137,6 +138,73 @@ def check_citations(answer: str, steps: list[tuple[ToolCall, dict]]) -> tuple[di
         cited[kind] = sorted(ids & evidence[kind])
         unsupported[kind] = sorted(ids - evidence[kind])
     return cited, unsupported
+
+
+_SENTENCE_SPLIT = re.compile(r"(?<=[.!?])\s+|\n+")
+
+
+def _owners(steps: list[tuple[ToolCall, dict]]) -> tuple[dict[str, set[str]], dict[str, str]]:
+    """Which drug each identifier came from, and a map from every drug name seen to its drug.
+
+    A trial ID belongs to the drug whose get_trials call returned it, an FDA
+    application to the drug whose get_fda_status returned it, and a PMID to the
+    drugs the abstract is linked to.
+    """
+    owners: dict[str, set[str]] = {}
+    name_to_drug: dict[str, str] = {}
+
+    def add_name(name: str, drug: str) -> None:
+        key = _norm(re.sub(r"^\[[^\]]*\]", "", name))
+        if len(key) >= 4:
+            name_to_drug.setdefault(key, drug)
+
+    for call, result in steps:
+        drug = result.get("canonical_name")
+        if drug:
+            add_name(drug, drug)
+            for alias in (result.get("verified_names") or []) + (result.get("brand_names") or []):
+                add_name(alias, drug)
+        if call.name == "get_trials" and drug:
+            for t in result.get("trials") or []:
+                owners.setdefault(t["nct_id"], set()).add(drug)
+        elif call.name == "get_fda_status" and drug:
+            for a in result.get("applications") or []:
+                owners.setdefault(a["application_number"], set()).add(drug)
+            for n in ((result.get("label") or {}).get("application_numbers") or []):
+                owners.setdefault(n, set()).add(drug)
+        elif call.name == "search_literature":
+            for r in result.get("results") or []:
+                owners.setdefault(r["pmid"], set()).update(r.get("linked_drugs") or [])
+                for linked in r.get("linked_drugs") or []:
+                    add_name(linked, linked)
+    return owners, name_to_drug
+
+
+def check_attribution(answer: str, steps: list[tuple[ToolCall, dict]]) -> list[dict]:
+    """Flag a citation whose sentence names drugs from this run, none of which the cited record belongs to.
+
+    This catches "drug A ... (NCT of drug B)". It is a heuristic: a sentence that
+    names no drug is not judged, and a record shared by several drugs is only
+    attributed to the drugs whose lookups returned it.
+    """
+    owners, name_to_drug = _owners(steps)
+    warnings = []
+    for sentence in _SENTENCE_SPLIT.split(answer):
+        flat = _norm(sentence)
+        mentioned = {drug for key, drug in name_to_drug.items() if key in flat}
+        if not mentioned:
+            continue
+        for ids in identifiers(sentence).values():
+            for ident in sorted(ids):
+                owned_by = owners.get(ident, set())
+                if owned_by and not (mentioned & owned_by):
+                    warnings.append({"identifier": ident, "sentence": sentence.strip()[:300],
+                                     "record_belongs_to": sorted(owned_by), "sentence_names": sorted(mentioned)})
+    return warnings
+
+
+def _norm(text: str) -> str:
+    return re.sub(r"[^a-z0-9]", "", text.lower())
 
 
 def build_tools(conn: psycopg.Connection, embedder=None) -> dict[str, Callable[..., dict]]:
@@ -176,7 +244,7 @@ def answer_question(question: str, model: ChatModel, registry: dict[str, Callabl
     text = (turn.text or "").strip() or ("I could not finish within the step limit." if stopped
                                          else "The model returned no answer.")
     cited, unsupported = check_citations(text, steps)
-    return AgentResult(text, steps, cited, unsupported, stopped)
+    return AgentResult(text, steps, cited, unsupported, stopped, check_attribution(text, steps))
 
 
 class GeminiModel:

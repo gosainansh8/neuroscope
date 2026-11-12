@@ -150,3 +150,26 @@ def test_agent_survives_bad_tool_calls_and_stops_at_the_step_limit(conn, tmp_pat
     stuck = answer_question("?", looping, build_tools(conn), max_steps=3)
     assert stuck.stopped_early is True and len(stuck.steps) == 3 and "step limit" in stuck.answer
     assert isinstance(stuck, AgentResult)
+
+
+# --- Attribution check -----------------------------------------------------------
+
+from neuroscope.agent import check_attribution  # noqa: E402
+
+
+def test_attribution_flags_a_citation_attached_to_the_wrong_drug():
+    steps = [
+        (ToolCall("get_trials", {"drug": "lecanemab"}), {"canonical_name": "lecanemab", "verified_names": ["Leqembi", "BAN2401"],
+                                                       "trials": [{"nct_id": "NCT95000001"}]}),
+        (ToolCall("get_fda_status", {"drug": "semaglutide"}), {"canonical_name": "semaglutide", "brand_names": ["OZEMPIC"],
+                                                              "applications": [{"application_number": "NDA999040"}]}),
+        (ToolCall("search_literature", {}), {"results": [{"pmid": "900000021", "linked_drugs": ["lecanemab"]}]}),
+    ]
+    ok = "Leqembi is in NCT95000001. Ozempic was approved under NDA 999040. Lecanemab causes ARIA (PMID 900000021)."
+    assert check_attribution(ok, steps) == []
+    wrong = "Semaglutide was tested in NCT95000001. Lecanemab was approved under NDA999040."
+    flagged = check_attribution(wrong, steps)
+    assert [(w["identifier"], w["record_belongs_to"], w["sentence_names"]) for w in flagged] == [
+        ("NCT95000001", ["lecanemab"], ["semaglutide"]), ("NDA999040", ["semaglutide"], ["lecanemab"])]
+    # A sentence that names no drug is not judged.
+    assert check_attribution("This was studied in NCT95000001.", steps) == []

@@ -1,0 +1,74 @@
+{
+ "model": "gemini-3.8-flash",
+ "rows": [
+  {
+   "id": "lit-donepezil-severe",
+   "category": "literature",
+   "question": "What does the literature say about donepezil in severe Alzheimer's disease?",
+   "passed": true,
+   "checks": {
+    "cites 1+ PubMed IDs": {
+     "passed": true,
+     "detail": "3 cited"
+    },
+    "called search_literature": {
+     "passed": true,
+     "detail": ""
+    },
+    "no unsupported citations": {
+     "passed": true,
+     "detail": ""
+    }
+   },
+   "answer": "Based on the literature retrieved from PubMed:\n\n* **Moderate-to-Severe Disease Trials:** In a study evaluating donepezil and memantine for moderate-to-severe Alzheimer's disease, patients assigned to treatment showed a benefit of 1.9 points on average (95% CI, 1.3 to 2.5) and a score on the Bristol Activities of Daily Living Scale (BADLS) that was lower by 3.0 points (indicating less impairment; 95% CI, 1.8 to 4.3; P < 0.001 for both comparisons) (PMID 22397651).\n* **Systematic Review Evidence:** A 2018 Cochrane systematic review (\"Donepezil for dementia due to Alzheimer's disease\") evaluated clinical trials across disease stages, specifically including four studies in severe Alzheimer's disease, assessing the efficacy and safety of donepezil 10 mg/day compared to placebo (PMID 29923184). \n* **Combination Studies:** A randomized controlled trial in moderate to severe Alzheimer's disease evaluated patients with moderate to severe disease who were already receiving baseline donepezil therapy (PMID 14734594).\n\n*(Note on FDA status: Donepezil is FDA-approved under NDA 020690, NDA 022568, and other applications. Its official FDA label explicitly states: \"ARICEPT is indicated for the treatment of dementia of the Alzheimer\u2019s type. Efficacy has been demonstrated in patients with mild, moderate, and severe Alzheimer\u2019s disease.\")*\n\n**Caveat:** The literature database contains abstract excerpts only for selected studies; full-text details, specific subgroup scores for severe-only cohorts, and complete adverse-event profiles are not fully detailed in the excerpts.",
+   "lookups": [
+    {
+     "tool": "find_drug",
+     "arguments": {
+      "name": "donepezil"
+     }
+    },
+    {
+     "tool": "search_literature",
+     "arguments": {
+      "drug": "donepezil",
+      "query": "severe Alzheimer's disease efficacy cognitive function clinical trials"
+     }
+    },
+    {
+     "tool": "search_literature",
+     "arguments": {
+      "drug": "donepezil",
+      "query": "Donepezil severe Alzheimer's disease placebo randomized"
+     }
+    },
+    {
+     "tool": "search_literature",
+     "arguments": {
+      "drug": "donepezil",
+      "limit": 8,
+      "query": "Donepezil and memantine for moderate-to-severe Alzheimer's disease BADLS"
+     }
+    },
+    {
+     "tool": "get_fda_status",
+     "arguments": {
+      "drug": "donepezil"
+     }
+    },
+    {
+     "tool": "search_literature",
+     "arguments": {
+      "limit": 5,
+      "drug": "donepezil",
+      "query": "donepezil severe Alzheimer's disease cognition functioning"
+     }
+    }
+   ],
+   "attribution_warnings": [],
+   "seconds": 27.1,
+   "input_tokens": 19997,
+   "output_tokens": 580
+  }
+ ]
+}

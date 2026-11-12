@@ -1,0 +1,89 @@
+{
+ "model": "gemini-3.8-flash",
+ "rows": [
+  {
+   "id": "lit-lecanemab-apoe",
+   "category": "literature",
+   "question": "Is there published evidence on lecanemab and APOE4?",
+   "passed": false,
+   "checks": {
+    "mentions /APOE/": {
+     "passed": false,
+     "detail": ""
+    },
+    "cites 1+ PubMed IDs": {
+     "passed": false,
+     "detail": "0 cited"
+    },
+    "called search_literature": {
+     "passed": true,
+     "detail": ""
+    },
+    "no unsupported citations": {
+     "passed": true,
+     "detail": ""
+    }
+   },
+   "answer": "I could not finish within the step limit.",
+   "lookups": [
+    {
+     "tool": "find_drug",
+     "arguments": {
+      "name": "lecanemab"
+     }
+    },
+    {
+     "tool": "search_literature",
+     "arguments": {
+      "query": "APOE4",
+      "drug": "lecanemab"
+     }
+    },
+    {
+     "tool": "search_literature",
+     "arguments": {
+      "drug": "lecanemab",
+      "query": "apolipoprotein E4 ARIA"
+     }
+    },
+    {
+     "tool": "search_literature",
+     "arguments": {
+      "drug": "lecanemab",
+      "query": "apoe genotyping lecanemab",
+      "limit": 5
+     }
+    },
+    {
+     "tool": "search_literature",
+     "arguments": {
+      "query": "lecanemab APOE4"
+     }
+    },
+    {
+     "tool": "find_drug",
+     "arguments": {
+      "name": "apoe genotyping"
+     }
+    },
+    {
+     "tool": "search_literature",
+     "arguments": {
+      "query": "lecanemab",
+      "drug": "apoe genotyping"
+     }
+    },
+    {
+     "tool": "get_fda_status",
+     "arguments": {
+      "drug": "lecanemab"
+     }
+    }
+   ],
+   "attribution_warnings": [],
+   "seconds": 26.5,
+   "input_tokens": 28376,
+   "output_tokens": 219
+  }
+ ]
+}

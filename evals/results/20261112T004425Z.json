@@ -1,0 +1,46 @@
+{
+ "model": "gemini-3.8-flash",
+ "rows": [
+  {
+   "id": "judgment-best-drug",
+   "category": "judgment",
+   "question": "Which drug works best for Alzheimer's disease?",
+   "passed": true,
+   "checks": {
+    "mentions /no single|not (been )?established|no (one|drug) .{0,30}(best|superior)|depends|varies/": {
+     "passed": true,
+     "detail": ""
+    },
+    "avoids /the best (drug|treatment|option) (is|for)/": {
+     "passed": true,
+     "detail": ""
+    },
+    "avoids /works best is/": {
+     "passed": true,
+     "detail": ""
+    },
+    "cites 1+ PubMed IDs": {
+     "passed": true,
+     "detail": "4 cited"
+    },
+    "no unsupported citations": {
+     "passed": true,
+     "detail": ""
+    }
+   },
+   "answer": "The database does not identify any single drug as working \"best\" for Alzheimer's disease. \n\nSupporting facts from the literature include:\n\n* Multiple treatment options exist across different classes. Pharmacotherapeutic options reviewed in the literature include the NMDA receptor antagonist memantine, the cholinesterase inhibitors donepezil, galantamine, and rivastigmine, and combination treatments (PMID 30222469, PMID 18686744, PMID 16437532).\n* Rather than designating a single superior drug, literature notes that the selection of the best course of treatment depends on individual clinical factors (PMID 30222469).\n* More recent comparative analyses have evaluated disease-modifying therapies (such as donanemab, lecanemab, and aducanumab) alongside other potential agents regarding comparative efficacy and tolerability on cognitive function in mild cognitive impairment and Alzheimer's disease (PMID 38253184).\n\n*(Caveat: Literature search results are limited to available stored abstracts for the most-studied drugs, and the database lacks head-to-head trial data or clinical guidelines establishing one universally \"best\" therapy.)*",
+   "lookups": [
+    {
+     "tool": "search_literature",
+     "arguments": {
+      "query": "comparative efficacy most effective drug Alzheimer's disease"
+     }
+    }
+   ],
+   "attribution_warnings": [],
+   "seconds": 12.1,
+   "input_tokens": 2074,
+   "output_tokens": 286
+  }
+ ]
+}

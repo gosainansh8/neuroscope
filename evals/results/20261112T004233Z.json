@@ -1,0 +1,1772 @@
+{
+ "model": "gemini-3.8-flash",
+ "rows": [
+  {
+   "id": "fda-lecanemab",
+   "category": "approval",
+   "question": "Is lecanemab FDA approved for Alzheimer's disease?",
+   "passed": true,
+   "checks": {
+    "verdict": {
+     "passed": true,
+     "detail": "expected yes, got yes"
+    },
+    "mentions /2023-01-06/": {
+     "passed": true,
+     "detail": ""
+    },
+    "cites an expected record": {
+     "passed": true,
+     "detail": "BLA761269, BLA761375"
+    },
+    "called get_fda_status": {
+     "passed": true,
+     "detail": ""
+    },
+    "no unsupported citations": {
+     "passed": true,
+     "detail": ""
+    }
+   },
+   "answer": "Yes, lecanemab is FDA-approved for Alzheimer's disease.\n\n**Supporting Facts and Citations:**\n* **Approval Records:** Lecanemab has FDA approval records under Biologics License Applications **BLA761269** (approved on 2023-01-06) and **BLA761375** (approved on 2025-08-29), sponsored by Eisai Inc.\n* **Indication:** The FDA label text explicitly indicates its use for Alzheimer's disease, stating:  \n  > *\"LEQEMBI is indicated for the treatment of Alzheimer\u2019s disease. Treatment with LEQEMBI should be initiated in patients with mild cognitive impairment or mild dementia stage of disease, the population in which treatment was initiated in clinical trials.\"*",
+   "lookups": [
+    {
+     "tool": "find_drug",
+     "arguments": {
+      "name": "lecanemab"
+     }
+    },
+    {
+     "tool": "get_fda_status",
+     "arguments": {
+      "drug": "lecanemab"
+     }
+    }
+   ],
+   "attribution_warnings": [],
+   "seconds": 40.8,
+   "input_tokens": 2467,
+   "output_tokens": 217
+  },
+  {
+   "id": "fda-donanemab",
+   "category": "approval",
+   "question": "Is donanemab approved for Alzheimer's disease?",
+   "passed": true,
+   "checks": {
+    "verdict": {
+     "passed": true,
+     "detail": "expected yes, got yes"
+    },
+    "mentions /2024-07-02/": {
+     "passed": true,
+     "detail": ""
+    },
+    "cites an expected record": {
+     "passed": true,
+     "detail": "BLA761248"
+    },
+    "called get_fda_status": {
+     "passed": true,
+     "detail": ""
+    },
+    "no unsupported citations": {
+     "passed": true,
+     "detail": ""
+    }
+   },
+   "answer": "Yes, donanemab (brand name Kisunla) is FDA-approved for the treatment of Alzheimer's disease.\n\n**Supporting Details:**\n* **FDA Application:** Approved under BLA761248 (sponsor: Eli Lilly and Co.) with an original approval date of 2024-07-02.\n* **Approved Indication:** According to the FDA label (effective date: 2025-12-30 under BLA761248), Kisunla is indicated as follows:\n  > \"KISUNLA TM is indicated for the treatment of Alzheimer's disease. Treatment with KISUNLA should be initiated in patients with mild cognitive impairment or mild dementia stage of disease, the population in which treatment was initiated in the clinical trials.\"",
+   "lookups": [
+    {
+     "tool": "find_drug",
+     "arguments": {
+      "name": "donanemab"
+     }
+    },
+    {
+     "tool": "get_fda_status",
+     "arguments": {
+      "drug": "donanemab"
+     }
+    }
+   ],
+   "attribution_warnings": [],
+   "seconds": 13.1,
+   "input_tokens": 2434,
+   "output_tokens": 211
+  },
+  {
+   "id": "fda-kisunla-brand",
+   "category": "approval",
+   "question": "Is Kisunla approved, and when?",
+   "passed": true,
+   "checks": {
+    "verdict": {
+     "passed": true,
+     "detail": "expected yes, got yes"
+    },
+    "mentions /2024-07-02/": {
+     "passed": true,
+     "detail": ""
+    },
+    "mentions /donanemab/": {
+     "passed": true,
+     "detail": ""
+    },
+    "cites an expected record": {
+     "passed": true,
+     "detail": "BLA761248"
+    },
+    "no unsupported citations": {
+     "passed": true,
+     "detail": ""
+    }
+   },
+   "answer": "Yes, Kisunla (donanemab) is FDA-approved. It received its original FDA approval on **2024-07-02** under application **BLA761248** (sponsor: ELI LILLY CO).\n\n**Indication and Label Details:**\nAccording to the FDA label for **BLA761248**, Kisunla is approved for Alzheimer's disease:\n> \"KISUNLA TM is indicated for the treatment of Alzheimer's disease. Treatment with KISUNLA should be initiated in patients with mild cognitive impairment or mild dementia stage of disease, the population in which treatment was initiated in the clinical trials.\"",
+   "lookups": [
+    {
+     "tool": "find_drug",
+     "arguments": {
+      "name": "Kisunla"
+     }
+    },
+    {
+     "tool": "get_fda_status",
+     "arguments": {
+      "drug": "donanemab"
+     }
+    }
+   ],
+   "attribution_warnings": [],
+   "seconds": 8.5,
+   "input_tokens": 2257,
+   "output_tokens": 184
+  },
+  {
+   "id": "fda-donepezil-date",
+   "category": "approval",
+   "question": "When was donepezil first approved by the FDA?",
+   "passed": true,
+   "checks": {
+    "mentions /1996-11-25/": {
+     "passed": true,
+     "detail": ""
+    },
+    "called get_fda_status": {
+     "passed": true,
+     "detail": ""
+    },
+    "no unsupported citations": {
+     "passed": true,
+     "detail": ""
+    }
+   },
+   "answer": "Donepezil was first approved by the FDA on **November 25, 1996** under application **NDA020690** (sponsor: EISAI INC).\n\n### Supporting Facts\n* **FDA Approval & Indication:** Donepezil has an FDA approval record, with its earliest approval granted under **NDA020690** on **1996-11-25**. It is approved for Alzheimer's disease; the retrieved label text (effective date 2021-12-30, associated with **NDA020690** and **NDA022568**) states:\n  > *\"ARICEPT is indicated for the treatment of dementia of the Alzheimer\u2019s type. Efficacy has been demonstrated in patients with mild, moderate, and severe Alzheimer\u2019s disease.\"*\n* **Caveat:** Per the FDA approval records, approval indicates authorization by the US FDA for at least one use, with the specific indication confirmed by the label text.",
+   "lookups": [
+    {
+     "tool": "find_drug",
+     "arguments": {
+      "name": "donepezil"
+     }
+    },
+    {
+     "tool": "get_fda_status",
+     "arguments": {
+      "drug": "donepezil"
+     }
+    }
+   ],
+   "attribution_warnings": [],
+   "seconds": 15.8,
+   "input_tokens": 2359,
+   "output_tokens": 255
+  },
+  {
+   "id": "fda-memantine-date",
+   "category": "approval",
+   "question": "When was memantine first approved by the FDA?",
+   "passed": true,
+   "checks": {
+    "mentions /2003-10-16/": {
+     "passed": true,
+     "detail": ""
+    },
+    "no unsupported citations": {
+     "passed": true,
+     "detail": ""
+    }
+   },
+   "answer": "Memantine was first approved by the FDA on **October 16, 2003**.\n\n### Supporting Details\n* **Initial Approval:** NDA021487 (Sponsor: AbbVie), approved on 2003-10-16.\n* **Subsequent Approvals:** \n  * NDA021627 (Sponsor: Allergan), approved on 2005-04-18.\n  * NDA022525 (Sponsor: AbbVie), approved on 2010-06-21.\n* **Indication:** According to the FDA label text, memantine is *\"indicated for the treatment of moderate to severe dementia of the Alzheimer\u2019s type\"* (ANDA214651).",
+   "lookups": [
+    {
+     "tool": "find_drug",
+     "arguments": {
+      "name": "memantine"
+     }
+    },
+    {
+     "tool": "get_fda_status",
+     "arguments": {
+      "drug": "memantine"
+     }
+    }
+   ],
+   "attribution_warnings": [],
+   "seconds": 33.4,
+   "input_tokens": 2273,
+   "output_tokens": 208
+  },
+  {
+   "id": "fda-galantamine",
+   "category": "approval",
+   "question": "Is galantamine approved for Alzheimer's disease?",
+   "passed": true,
+   "checks": {
+    "verdict": {
+     "passed": true,
+     "detail": "expected yes, got yes"
+    },
+    "called get_fda_status": {
+     "passed": true,
+     "detail": ""
+    },
+    "no unsupported citations": {
+     "passed": true,
+     "detail": ""
+    }
+   },
+   "answer": "Yes, galantamine is FDA-approved for Alzheimer's disease.\n\n**Supporting Details & Citations:**\n* **FDA Approval:** Galantamine holds multiple approved New Drug Applications (NDAs), including NDA021169 (originally approved on 2001-02-28), NDA021224 (approved 2001-06-22), and NDA021615 (approved 2005-04-01), sponsored by Janssen Pharmaceuticals under brand names including RAZADYNE and RAZADYNE ER.\n* **Label Indication:** According to the FDA label text (associated with ANDA090957, effective date 2026-07-02), it is explicitly indicated for Alzheimer's disease:\n  > *\"Galantamine tablets are indicated for the treatment of mild to moderate dementia of the Alzheimer\u2019s type.\"*",
+   "lookups": [
+    {
+     "tool": "find_drug",
+     "arguments": {
+      "name": "galantamine"
+     }
+    },
+    {
+     "tool": "get_fda_status",
+     "arguments": {
+      "drug": "galantamine"
+     }
+    }
+   ],
+   "attribution_warnings": [],
+   "seconds": 9.0,
+   "input_tokens": 2198,
+   "output_tokens": 241
+  },
+  {
+   "id": "fda-brexpiprazole",
+   "category": "approval",
+   "question": "Is brexpiprazole approved for anything related to Alzheimer's disease?",
+   "passed": true,
+   "checks": {
+    "verdict": {
+     "passed": true,
+     "detail": "expected yes, got yes"
+    },
+    "mentions /agitation/": {
+     "passed": true,
+     "detail": ""
+    },
+    "cites an expected record": {
+     "passed": true,
+     "detail": "NDA205422"
+    },
+    "no unsupported citations": {
+     "passed": true,
+     "detail": ""
+    }
+   },
+   "answer": "Yes, brexpiprazole (brand name Rexulti) is FDA-approved for a condition related to Alzheimer's disease. \n\nAccording to FDA records under application **NDA205422** (sponsor Otsuka, first approved on 2015-07-10; label effective date 2026-06-02):\n\n* Brexpiprazole is indicated for the **\"Treatment of agitation associated with dementia due to Alzheimer's disease\"**.\n* The label includes the following limitation of use: **\"REXULTI is not indicated as an as needed ('prn') treatment for agitation associated with dementia due to Alzheimer's disease\"**.\n\n*(Note: Per FDA status records, FDA approval means approved for at least one indication; specific relevance to Alzheimer's disease is determined by the label indication text quoted above).*",
+   "lookups": [
+    {
+     "tool": "find_drug",
+     "arguments": {
+      "name": "brexpiprazole"
+     }
+    },
+    {
+     "tool": "get_fda_status",
+     "arguments": {
+      "drug": "brexpiprazole"
+     }
+    }
+   ],
+   "attribution_warnings": [],
+   "seconds": 9.0,
+   "input_tokens": 2391,
+   "output_tokens": 221
+  },
+  {
+   "id": "fda-auvelity",
+   "category": "approval",
+   "question": "What is Auvelity approved for?",
+   "passed": true,
+   "checks": {
+    "mentions /agitation/": {
+     "passed": true,
+     "detail": ""
+    },
+    "mentions /depress/": {
+     "passed": true,
+     "detail": ""
+    },
+    "cites an expected record": {
+     "passed": true,
+     "detail": "NDA215430"
+    },
+    "no unsupported citations": {
+     "passed": true,
+     "detail": ""
+    }
+   },
+   "answer": "Auvelity (canonical name: dextromethorphan + bupropion) is FDA-approved for:\n\n1. **Major depressive disorder (MDD)** in adults.\n2. **Agitation associated with dementia due to Alzheimer\u2019s disease**.\n\n### Supporting Details & Citations\n* **FDA Application:** NDA215430 (Sponsor: AXSOME; original approval date: 2022-08-18).\n* **FDA Label Indications (Effective Date: 2026-08-17):** \n  * \"AUVELITY is indicated for the treatment of major depressive disorder (MDD) in adults.\"\n  * \"AUVELITY is indicated for the treatment of agitation associated with dementia due to Alzheimer\u2019s disease.\"\n* **Limitations of Use:** The label notes that \"AUVELITY is not indicated as an as needed (\u201cprn\u201d) treatment for agitation associated with dementia due to Alzheimer\u2019s disease.\"",
+   "lookups": [
+    {
+     "tool": "find_drug",
+     "arguments": {
+      "name": "Auvelity"
+     }
+    },
+    {
+     "tool": "get_fda_status",
+     "arguments": {
+      "drug": "dextromethorphan + bupropion"
+     }
+    }
+   ],
+   "attribution_warnings": [],
+   "seconds": 8.5,
+   "input_tokens": 2342,
+   "output_tokens": 247
+  },
+  {
+   "id": "fda-leqembi-maker",
+   "category": "approval",
+   "question": "Who makes Leqembi and when was it first approved?",
+   "passed": true,
+   "checks": {
+    "mentions /2023-01-06/": {
+     "passed": true,
+     "detail": ""
+    },
+    "mentions /Eisai/": {
+     "passed": true,
+     "detail": ""
+    },
+    "no unsupported citations": {
+     "passed": true,
+     "detail": ""
+    }
+   },
+   "answer": "**Leqembi** (canonical name: lecanemab) is sponsored/made by **EISAI INC** and was first approved by the US FDA on **2023-01-06**.\n\n### Supporting Facts\n* **FDA Application:** BLA 761269 (Sponsor: EISAI INC) has an original approval date of 2023-01-06. (A subsequent application, BLA 761375, is listed with an approval date of 2025-08-29).\n* **Indication:** The label explicitly states: *\"LEQEMBI is indicated for the treatment of Alzheimer\u2019s disease. Treatment with LEQEMBI should be initiated in patients with mild cognitive impairment or mild dementia stage of disease, the population in which treatment was initiated in clinical trials.\"* (BLA 761269, BLA 761375).",
+   "lookups": [
+    {
+     "tool": "find_drug",
+     "arguments": {
+      "name": "Leqembi"
+     }
+    },
+    {
+     "tool": "get_fda_status",
+     "arguments": {
+      "drug": "lecanemab"
+     }
+    }
+   ],
+   "attribution_warnings": [],
+   "seconds": 9.4,
+   "input_tokens": 2473,
+   "output_tokens": 247
+  },
+  {
+   "id": "fda-flortaucipir",
+   "category": "approval",
+   "question": "Is flortaucipir FDA approved?",
+   "passed": true,
+   "checks": {
+    "verdict": {
+     "passed": true,
+     "detail": "expected yes, got yes"
+    },
+    "mentions /2020-05-28/": {
+     "passed": true,
+     "detail": ""
+    },
+    "cites an expected record": {
+     "passed": true,
+     "detail": "NDA212123"
+    },
+    "no unsupported citations": {
+     "passed": true,
+     "detail": ""
+    }
+   },
+   "answer": "**Yes**, flortaucipir is FDA-approved under the brand name **TAUVID**.\n\n### Approval Details\n* **Application Number**: NDA212123\n* **Sponsor**: Avid Radiopharmaceuticals Inc.\n* **Original Approval Date**: 2020-05-28\n\n### Indication\nAccording to its FDA label, TAUVID is a radioactive diagnostic agent with the following indication:\n> \"TAUVID is indicated for use with positron emission tomography (PET) imaging of the brain to estimate the density and distribution of aggregated tau neurofibrillary tangles (NFTs) in adult patients with cognitive impairment who are being evaluated for Alzheimer's disease (AD).\"\n\n**Limitations of Use**:\n> \"TAUVID is not indicated for use in the evaluation of patients for chronic traumatic encephalopathy (CTE).\" (NDA212123)",
+   "lookups": [
+    {
+     "tool": "find_drug",
+     "arguments": {
+      "name": "flortaucipir"
+     }
+    },
+    {
+     "tool": "get_fda_status",
+     "arguments": {
+      "drug": "[18F]Flortaucipir"
+     }
+    }
+   ],
+   "attribution_warnings": [],
+   "seconds": 10.7,
+   "input_tokens": 2473,
+   "output_tokens": 230
+  },
+  {
+   "id": "other-semaglutide",
+   "category": "approved-other-use",
+   "question": "Is semaglutide approved for Alzheimer's disease?",
+   "passed": true,
+   "checks": {
+    "verdict": {
+     "passed": true,
+     "detail": "expected no, got no"
+    },
+    "mentions /diabetes/": {
+     "passed": true,
+     "detail": ""
+    },
+    "called get_fda_status": {
+     "passed": true,
+     "detail": ""
+    },
+    "no unsupported citations": {
+     "passed": true,
+     "detail": ""
+    }
+   },
+   "answer": "**No, semaglutide is not approved for Alzheimer's disease.**\n\n### Supporting Facts\n\n* **FDA Approval Status:** Semaglutide is FDA-approved for other indications under brand names including Ozempic, Rybelsus, and Wegovy (approved under NDA 209637, NDA 213051, NDA 213182, NDA 215256, and NDA 218316; first approval date: 2017-12-05; FDA export date: 2026-11-06).\n* **Approved Indications:** The FDA label text for Ozempic (NDA 209637, effective date: 2026-07-30) shows it is indicated only:\n  * *\"as an adjunct to diet and exercise to improve glycemic control in adults with type 2 diabetes mellitus.\"*\n  * *\"to reduce the risk of major adverse cardiovascular events (cardiovascular death, non-fatal myocardial infarction or non-fatal stroke) in adults with type 2 diabetes mellitus and established cardiovascular disease.\"*\n  * *\"to reduce the risk of sustained eGFR decline, end-stage kidney disease, and cardiovascular death in adults with type 2 diabetes mellitus and chronic kidney disease.\"*\n* The label text does not mention Alzheimer's disease.\n* **Clinical Trials:** Semaglutide is being investigated in Alzheimer's disease clinical trials (such as Phase 2 trials NCT06072963, NCT07200622, and NCT07135245), but clinical trial participation and phase status do not indicate regulatory approval.",
+   "lookups": [
+    {
+     "tool": "find_drug",
+     "arguments": {
+      "name": "semaglutide"
+     }
+    },
+    {
+     "tool": "get_fda_status",
+     "arguments": {
+      "drug": "semaglutide"
+     }
+    },
+    {
+     "tool": "get_trials",
+     "arguments": {
+      "drug": "semaglutide",
+      "limit": 3
+     }
+    }
+   ],
+   "attribution_warnings": [],
+   "seconds": 34.2,
+   "input_tokens": 4350,
+   "output_tokens": 431
+  },
+  {
+   "id": "other-metformin",
+   "category": "approved-other-use",
+   "question": "Is metformin approved for Alzheimer's disease?",
+   "passed": true,
+   "checks": {
+    "verdict": {
+     "passed": true,
+     "detail": "expected no, got no"
+    },
+    "mentions /diabetes/": {
+     "passed": true,
+     "detail": ""
+    },
+    "no unsupported citations": {
+     "passed": true,
+     "detail": ""
+    }
+   },
+   "answer": "**No**, metformin is not FDA-approved for Alzheimer's disease. \n\nWhile metformin is FDA-approved, its approval is for type 2 diabetes mellitus, not Alzheimer's disease.\n\n### Supporting Facts and Citations\n* **FDA Approval Status:** Metformin has US FDA approval records (first approved on 1995-03-03 under NDA020357; additional applications include NDA021202, NDA021591, NDA021574, NDA021748, and NDA212595).\n* **Approved Indication:** According to the FDA label (effective date 2026-09-09, ANDA090692), metformin is indicated:\n  > *\"as an adjunct to diet and exercise to improve glycemic control in adults with type 2 diabetes mellitus.\"*\n* The label's indications text does not mention Alzheimer's disease.",
+   "lookups": [
+    {
+     "tool": "find_drug",
+     "arguments": {
+      "name": "metformin"
+     }
+    },
+    {
+     "tool": "get_fda_status",
+     "arguments": {
+      "drug": "metformin"
+     }
+    }
+   ],
+   "attribution_warnings": [],
+   "seconds": 40.7,
+   "input_tokens": 2332,
+   "output_tokens": 246
+  },
+  {
+   "id": "other-cobenfy",
+   "category": "approved-other-use",
+   "question": "Is Cobenfy approved for Alzheimer's disease?",
+   "passed": true,
+   "checks": {
+    "verdict": {
+     "passed": true,
+     "detail": "expected no, got no"
+    },
+    "mentions /schizophrenia/": {
+     "passed": true,
+     "detail": ""
+    },
+    "cites an expected record": {
+     "passed": true,
+     "detail": "NDA216158"
+    },
+    "no unsupported citations": {
+     "passed": true,
+     "detail": ""
+    }
+   },
+   "answer": "**No, Cobenfy is not approved for Alzheimer's disease.**\n\nSupporting facts and details:\n* Cobenfy (canonical name: xanomeline + trospium) has an FDA approval record under application **NDA216158** (original approval date: 2024-09-26).\n* However, its FDA-approved label indication does not mention Alzheimer's disease. The label's indications and usage section states: *\"COBENFY is indicated for the treatment of schizophrenia in adults. COBENFY is a combination of xanomeline, a muscarinic agonist, and trospium chloride, a muscarinic antagonist, indicated for the treatment of schizophrenia in adults.\"* (**NDA216158**).\n* **Caveat:** FDA approval in this database indicates that the drug has been approved by the US FDA for at least one use; whether it is approved specifically for Alzheimer's disease is determined solely by the FDA label text.",
+   "lookups": [
+    {
+     "tool": "find_drug",
+     "arguments": {
+      "name": "Cobenfy"
+     }
+    },
+    {
+     "tool": "get_fda_status",
+     "arguments": {
+      "drug": "xanomeline + trospium"
+     }
+    },
+    {
+     "tool": "get_fda_status",
+     "arguments": {
+      "drug": "Cobenfy"
+     }
+    }
+   ],
+   "attribution_warnings": [],
+   "seconds": 56.3,
+   "input_tokens": 3037,
+   "output_tokens": 273
+  },
+  {
+   "id": "other-risperidone",
+   "category": "approved-other-use",
+   "question": "Is risperidone FDA approved for Alzheimer's disease?",
+   "passed": true,
+   "checks": {
+    "verdict": {
+     "passed": true,
+     "detail": "expected no, got no"
+    },
+    "mentions /schizophrenia/": {
+     "passed": true,
+     "detail": ""
+    },
+    "no unsupported citations": {
+     "passed": true,
+     "detail": ""
+    }
+   },
+   "answer": "**No**, risperidone is not FDA approved for Alzheimer's disease. \n\nWhile risperidone has FDA approval records (first approved on 1993-12-29 under NDA020272, with additional approvals including NDA020588, NDA021444, NDA021346, NDA210655, and NDA212849), its approved indications do not include Alzheimer's disease.\n\nAccording to the FDA label (effective date 2026-08-20, NDA020588), risperidone is indicated for:\n> - \"Treatment of schizophrenia\"\n> - \"As monotherapy or adjunctive therapy with lithium or valproate, for the treatment of acute manic or mixed episodes associated with Bipolar I Disorder\"\n> - \"Treatment of irritability associated with autistic disorder\"\n\n*(Note: In FDA records, approval indicates approval for at least one medical use; whether that use includes Alzheimer's disease is determined solely by the label indication text.)*",
+   "lookups": [
+    {
+     "tool": "find_drug",
+     "arguments": {
+      "name": "risperidone"
+     }
+    },
+    {
+     "tool": "get_fda_status",
+     "arguments": {
+      "drug": "risperidone"
+     }
+    }
+   ],
+   "attribution_warnings": [],
+   "seconds": 11.3,
+   "input_tokens": 2766,
+   "output_tokens": 270
+  },
+  {
+   "id": "other-pimavanserin",
+   "category": "approved-other-use",
+   "question": "Is pimavanserin approved for psychosis in Alzheimer's disease?",
+   "passed": true,
+   "checks": {
+    "verdict": {
+     "passed": true,
+     "detail": "expected no, got no"
+    },
+    "mentions /Parkinson/": {
+     "passed": true,
+     "detail": ""
+    },
+    "no unsupported citations": {
+     "passed": true,
+     "detail": ""
+    }
+   },
+   "answer": "**No**, pimavanserin is not FDA-approved for psychosis in Alzheimer's disease.\n\n### Supporting Facts\n* **FDA Approval Record:** Pimavanserin is FDA-approved for at least one indication under the brand name NUPLAZID (applications **NDA207318**, approved 2016-04-29, and **NDA210793**, approved 2018-06-28; sponsor ACADIA PHARMS INC).\n* **Approved Indication:** The FDA label (effective date 2026-06-18) does not mention Alzheimer's disease. Its approved indication is restricted to Parkinson's disease psychosis:\n  > *\"NUPLAZID \u00ae is indicated for the treatment of hallucinations and delusions associated with Parkinson's disease psychosis\"* and *\"NUPLAZID is an atypical antipsychotic indicated for the treatment of hallucinations and delusions associated with Parkinson's disease psychosis.\"*",
+   "lookups": [
+    {
+     "tool": "find_drug",
+     "arguments": {
+      "name": "pimavanserin"
+     }
+    },
+    {
+     "tool": "get_fda_status",
+     "arguments": {
+      "drug": "pimavanserin"
+     }
+    }
+   ],
+   "attribution_warnings": [],
+   "seconds": 25.1,
+   "input_tokens": 2161,
+   "output_tokens": 247
+  },
+  {
+   "id": "norecord-masitinib",
+   "category": "no-fda-record",
+   "question": "Is masitinib FDA approved? It finished a Phase 3 trial.",
+   "passed": true,
+   "checks": {
+    "verdict": {
+     "passed": true,
+     "detail": "expected no, got no"
+    },
+    "mentions /no (matched )?FDA approval record|no matched FDA/": {
+     "passed": true,
+     "detail": ""
+    },
+    "called get_fda_status": {
+     "passed": true,
+     "detail": ""
+    },
+    "no unsupported citations": {
+     "passed": true,
+     "detail": ""
+    }
+   },
+   "answer": "There is **no matched FDA approval record** for masitinib. \n\nKey supporting facts and caveats:\n\n* **FDA Status:** The database shows no matched FDA approval record for masitinib. Note that this is not proof the drug is unapproved: records match by active-ingredient name, and only US FDA data is loaded.\n* **Trial Phase vs. Regulatory Approval:** Trial phase and status do not determine regulatory status\u2014completing a Phase 3 trial does not mean a drug has received FDA approval.\n* **Clinical Trials:**\n  * Masitinib has a completed Phase 3 trial: **NCT01872598** (*\"Masitinib in Patients With Mild to Moderate Alzheimer's Disease\"*, primary completion date 2020-12-01).\n  * An additional Phase 3 trial is listed as not yet recruiting: **NCT05564169** (*\"Masitinib in Patients With Mild Alzheimer's Disease\"*, primary completion date 2028-12-01).",
+   "lookups": [
+    {
+     "tool": "find_drug",
+     "arguments": {
+      "name": "masitinib"
+     }
+    },
+    {
+     "tool": "get_fda_status",
+     "arguments": {
+      "drug": "masitinib"
+     }
+    },
+    {
+     "tool": "get_trials",
+     "arguments": {
+      "drug": "masitinib"
+     }
+    }
+   ],
+   "attribution_warnings": [],
+   "seconds": 25.0,
+   "input_tokens": 2445,
+   "output_tokens": 284
+  },
+  {
+   "id": "norecord-gantenerumab",
+   "category": "no-fda-record",
+   "question": "Is gantenerumab approved?",
+   "passed": true,
+   "checks": {
+    "verdict": {
+     "passed": true,
+     "detail": "expected no, got no"
+    },
+    "called get_fda_status": {
+     "passed": true,
+     "detail": ""
+    },
+    "no unsupported citations": {
+     "passed": true,
+     "detail": ""
+    }
+   },
+   "answer": "There is no matched FDA approval record for gantenerumab. \n\nPlease note that this is not proof the drug is unapproved: records are matched by active-ingredient name, and only US FDA data is loaded in the database.",
+   "lookups": [
+    {
+     "tool": "find_drug",
+     "arguments": {
+      "name": "gantenerumab"
+     }
+    },
+    {
+     "tool": "get_fda_status",
+     "arguments": {
+      "drug": "gantenerumab"
+     }
+    }
+   ],
+   "attribution_warnings": [],
+   "seconds": 19.9,
+   "input_tokens": 2128,
+   "output_tokens": 87
+  },
+  {
+   "id": "norecord-solanezumab",
+   "category": "no-fda-record",
+   "question": "Is solanezumab FDA approved?",
+   "passed": true,
+   "checks": {
+    "verdict": {
+     "passed": true,
+     "detail": "expected no, got no"
+    },
+    "called get_fda_status": {
+     "passed": true,
+     "detail": ""
+    },
+    "no unsupported citations": {
+     "passed": true,
+     "detail": ""
+    }
+   },
+   "answer": "There is no matched FDA approval record for solanezumab in the database. \n\nThis absence of a record is not proof that the drug is unapproved; records match by active-ingredient name, and only US FDA data is loaded into the system.",
+   "lookups": [
+    {
+     "tool": "find_drug",
+     "arguments": {
+      "name": "solanezumab"
+     }
+    },
+    {
+     "tool": "get_fda_status",
+     "arguments": {
+      "drug": "solanezumab"
+     }
+    }
+   ],
+   "attribution_warnings": [],
+   "seconds": 7.4,
+   "input_tokens": 1960,
+   "output_tokens": 92
+  },
+  {
+   "id": "norecord-simufilam",
+   "category": "no-fda-record",
+   "question": "Is simufilam approved by the FDA?",
+   "passed": true,
+   "checks": {
+    "verdict": {
+     "passed": true,
+     "detail": "expected no, got no"
+    },
+    "called get_fda_status": {
+     "passed": true,
+     "detail": ""
+    },
+    "no unsupported citations": {
+     "passed": true,
+     "detail": ""
+    }
+   },
+   "answer": "There is no matched FDA approval record for simufilam. \n\nHowever, having no matched FDA approval record is not proof that the drug is unapproved, as records match by active-ingredient name and only US FDA data is loaded in the database.",
+   "lookups": [
+    {
+     "tool": "find_drug",
+     "arguments": {
+      "name": "simufilam"
+     }
+    },
+    {
+     "tool": "get_fda_status",
+     "arguments": {
+      "drug": "simufilam"
+     }
+    }
+   ],
+   "attribution_warnings": [],
+   "seconds": 7.6,
+   "input_tokens": 2155,
+   "output_tokens": 92
+  },
+  {
+   "id": "norecord-trontinemab",
+   "category": "no-fda-record",
+   "question": "Is trontinemab approved?",
+   "passed": true,
+   "checks": {
+    "verdict": {
+     "passed": true,
+     "detail": "expected no, got no"
+    },
+    "called get_fda_status": {
+     "passed": true,
+     "detail": ""
+    },
+    "no unsupported citations": {
+     "passed": true,
+     "detail": ""
+    }
+   },
+   "answer": "There is no matched FDA approval record for trontinemab. \n\nThis is not proof the drug is unapproved: records match by active-ingredient name, and only US FDA data is loaded in the database.",
+   "lookups": [
+    {
+     "tool": "find_drug",
+     "arguments": {
+      "name": "trontinemab"
+     }
+    },
+    {
+     "tool": "get_fda_status",
+     "arguments": {
+      "drug": "trontinemab"
+     }
+    }
+   ],
+   "attribution_warnings": [],
+   "seconds": 17.9,
+   "input_tokens": 2160,
+   "output_tokens": 82
+  },
+  {
+   "id": "norecord-remternetug",
+   "category": "no-fda-record",
+   "question": "Has remternetug been approved by the FDA?",
+   "passed": true,
+   "checks": {
+    "verdict": {
+     "passed": true,
+     "detail": "expected no, got no"
+    },
+    "called get_fda_status": {
+     "passed": true,
+     "detail": ""
+    },
+    "no unsupported citations": {
+     "passed": true,
+     "detail": ""
+    }
+   },
+   "answer": "There is no matched FDA approval record for remternetug. \n\nThis is not proof that the drug is unapproved; records match by active-ingredient name, and only US FDA data is loaded in the database.",
+   "lookups": [
+    {
+     "tool": "find_drug",
+     "arguments": {
+      "name": "remternetug"
+     }
+    },
+    {
+     "tool": "get_fda_status",
+     "arguments": {
+      "drug": "remternetug"
+     }
+    }
+   ],
+   "attribution_warnings": [],
+   "seconds": 17.1,
+   "input_tokens": 1970,
+   "output_tokens": 85
+  },
+  {
+   "id": "trials-lecanemab",
+   "category": "trials",
+   "question": "What Phase 3 trials is lecanemab in?",
+   "passed": true,
+   "checks": {
+    "cites an expected record": {
+     "passed": true,
+     "detail": "NCT03887455, NCT04468659, NCT06384573"
+    },
+    "called get_trials": {
+     "passed": true,
+     "detail": ""
+    },
+    "no unsupported citations": {
+     "passed": true,
+     "detail": ""
+    }
+   },
+   "answer": "According to ClinicalTrials.gov records, lecanemab is involved in the following Phase 3 and Phase 2/3 clinical trials:\n\n### **Phase 3 Trials**\n* **NCT03887455**: *\"A Study to Confirm Safety and Efficacy of Lecanemab in Participants With Early Alzheimer's Disease\"*\n  * **Sponsor:** Eisai Inc.\n  * **Status:** Active, not recruiting\n* **NCT04468659**: *\"AHEAD 3-45 Study: A Study to Evaluate Efficacy and Safety of Treatment With Lecanemab in Participants With Preclinical Alzheimer's Disease and Elevated Amyloid and Also in Participants With Early Preclinical Alzheimer's Disease and Intermediate Amyloid\"*\n  * **Sponsor:** Eisai Inc.\n  * **Status:** Active, not recruiting\n* **NCT06384573**: *\"DIAN-TU Amyloid Removal Trial (ART) in Dominantly Inherited Alzheimer's Disease\"*\n  * **Sponsor:** Washington University School of Medicine\n  * **Status:** Active, not recruiting\n* **NCT06530732**: *\"Deep Cervical Lymphatlc-Venous Anastomosis Surgery for the Treatment of Alzheimer's Disease: A Pilot Study (DIVA Study)\"*\n  * **Sponsor:** Zhejiang Provincial People's Hospital\n  * **Status:** Recruiting\n\n---\n\n### **Phase 2/3 Trials**\n* **NCT01760005**: *\"Dominantly Inherited Alzheimer Network Trial: An Opportunity to Prevent Dementia. A Study of Potential Disease Modifying Treatments in Individuals at Risk for or With a Type of Early Onset Alzheimer's Disease Caused by a Genetic Mutation. Master Protocol DIAN-TU-001\"*\n  * **Sponsor:** Washington University School of Medicine\n  * **Status:** Active, not recruiting\n* **NCT05269394**: *\"Dominantly Inherited Alzheimer Network Trial: An Opportunity to Prevent Dementia. A Study of Potential Disease Modifying Treatments in Individuals With a Type of Early Onset Alzheimer's Disease Caused by a Genetic Mutation (DIAN-TU)\"*\n  * **Sponsor:** Washington University School of Medicine\n  * **Status:** Active, not recruiting\n\n*(Note: Clinical trial phase and status do not represent regulatory approval status.)*",
+   "lookups": [
+    {
+     "tool": "find_drug",
+     "arguments": {
+      "name": "lecanemab"
+     }
+    },
+    {
+     "tool": "get_trials",
+     "arguments": {
+      "drug": "lecanemab",
+      "limit": 20
+     }
+    }
+   ],
+   "attribution_warnings": [],
+   "seconds": 27.9,
+   "input_tokens": 3922,
+   "output_tokens": 560
+  },
+  {
+   "id": "trials-donanemab",
+   "category": "trials",
+   "question": "What Phase 3 trials has donanemab been in?",
+   "passed": true,
+   "checks": {
+    "cites an expected record": {
+     "passed": true,
+     "detail": "NCT04437511, NCT05026866, NCT05508789, NCT05738486"
+    },
+    "called get_trials": {
+     "passed": true,
+     "detail": ""
+    },
+    "no unsupported citations": {
+     "passed": true,
+     "detail": ""
+    }
+   },
+   "answer": "According to ClinicalTrials.gov records, donanemab has been included in seven Phase 3 trials and one Phase 2/3 trial:\n\n### Phase 3 Trials\n* **NCT04437511** (TRAILBLAZER-ALZ 2): *A Study of Donanemab (LY3002813) in Participants With Early Alzheimer's Disease* \n  * Status: ACTIVE_NOT_RECRUITING (Primary completion: 2023-04-14; Sponsor: Eli Lilly and Company)\n* **NCT05026866** (TRAILBLAZER-ALZ 3): *A Donanemab (LY3002813) Study in Participants With Preclinical Alzheimer's Disease* \n  * Status: ACTIVE_NOT_RECRUITING (Primary completion: 2027-11-01; Sponsor: Eli Lilly and Company)\n* **NCT05108922** (TRAILBLAZER-ALZ 4): *A Study of Donanemab (LY3002813) Compared With Aducanumab in Participants With Early Symptomatic Alzheimer's Disease* \n  * Status: COMPLETED (Primary completion: 2022-09-09; Sponsor: Eli Lilly and Company)\n* **NCT05508789** (TRAILBLAZER-ALZ 5): *A Study of Donanemab (LY3002813) in Participants With Early Symptomatic Alzheimer's Disease* \n  * Status: ACTIVE_NOT_RECRUITING (Primary completion: 2028-05-01; Sponsor: Eli Lilly and Company)\n* **NCT05738486** (TRAILBLAZER-ALZ 6): *A Study of Different Donanemab (LY3002813) Dosing Regimens in Adults With Early Alzheimer's Disease* \n  * Status: ACTIVE_NOT_RECRUITING (Primary completion: 2024-05-16; Sponsor: Eli Lilly and Company)\n* **NCT07571161**: *Donanemab (LY3002813) Trial in Chinese Participants With Cognitively Unimpaired (Preclinical) Alzheimer's Disease* \n  * Status: RECRUITING (Primary completion: 2030-04-01; Sponsor: Eli Lilly and Company)\n* **NCT07602582** (TRAILBLAZER-ALZ 3-EXT): *A Study of Donanemab (LY3002813) in Participants Who Completed Study AACM* \n  * Status: RECRUITING (Primary completion: 2029-09-01; Sponsor: Eli Lilly and Company)\n\n### Phase 2/3 Trials\n* **NCT06996730**: *A Study of Donanemab, RG6289, or the Combination of Donanemab and RG6289 in Presenilin 1 (PSEN1) E280A Mutation Carriers for the Treatment of Autosomal-Dominant Alzheimer's Disease* \n  * Status: RECRUITING (Primary completion: 2030-06-01; Sponsor: Banner Health)\n\n*(Note: Clinical trial phase and status do not indicate regulatory approval status; completed Phase 3 or Phase 4 trials do not establish that a drug is approved.)*",
+   "lookups": [
+    {
+     "tool": "find_drug",
+     "arguments": {
+      "name": "donanemab"
+     }
+    },
+    {
+     "tool": "get_trials",
+     "arguments": {
+      "drug": "donanemab",
+      "limit": 20
+     }
+    }
+   ],
+   "attribution_warnings": [],
+   "seconds": 30.0,
+   "input_tokens": 4005,
+   "output_tokens": 854
+  },
+  {
+   "id": "trials-gantenerumab",
+   "category": "trials",
+   "question": "What happened to gantenerumab's Phase 3 trials?",
+   "passed": true,
+   "checks": {
+    "mentions /terminat/": {
+     "passed": true,
+     "detail": ""
+    },
+    "cites an expected record": {
+     "passed": true,
+     "detail": "NCT02051608, NCT03443973, NCT03444870, NCT04339413"
+    },
+    "no unsupported citations": {
+     "passed": true,
+     "detail": ""
+    }
+   },
+   "answer": "**Gantenerumab's major Phase 3 trials failed to show a statistically significant clinical benefit and were terminated.**\n\n### Key Findings and Trial Outcomes\n\n* **GRADUATE I and GRADUATE II Trials:** \n  In the twin Phase 3 studies evaluating gantenerumab in early Alzheimer's disease (published in *The New England Journal of Medicine*, **PMID 37966285**):\n  * **GRADUATE I (NCT03444870):** The Clinical Dementia Rating Sum of Boxes (CDR-SB) score at week 116 was 3.35 with gantenerumab versus 3.65 with placebo, a difference of -0.31 (95% CI, -0.66 to 0.05; $P = 0.10$).\n  * **GRADUATE II (NCT03443973):** The CDR-SB score at week 116 was 2.82 with gantenerumab versus 3.01 with placebo, a difference of -0.19 (95% CI, -0.55 to 0.17).\n  * Both trials were listed as **TERMINATED** on ClinicalTrials.gov (NCT03444870 with primary completion date 2022-12-28; NCT03443973 with primary completion date 2022-09-23).\n\n* **Associated Phase 3 Trials Terminated:**\n  Following these results, other Roche-sponsored Phase 3 trials were also terminated:\n  * **NCT04374253:** Long-term administration study (primary completion date 2023-03-06; terminated).\n  * **NCT04339413:** Long-term safety and tolerability study (primary completion date 2023-01-04; terminated).\n  * **NCT05256134:** Study in participants at risk for or at the earliest stages of AD (primary completion date 2023-03-13; terminated).\n\n* **Other Phase 3 / Phase 2/3 Studies:**\n  * **NCT02051608:** An earlier Phase 3 study in mild Alzheimer's disease reached **COMPLETED** status with a primary completion date of 2021-04-16.\n  * **NCT01760005 (DIAN-TU-001):** A Phase 2/3 trial in dominantly inherited Alzheimer's disease led by Washington University School of Medicine is listed as **ACTIVE_NOT_RECRUITING** (primary completion date 2028-04-01), while a related DIAN-TU study record (**NCT06424236**) was terminated (primary completion date 2023-10-06). An open-label extension of DIAN-TU-001 noted a lack of a regulatory path for gantenerumab (**PMID 40120616**).\n\n* **FDA Status:**\n  Gantenerumab has no matched FDA approval record in the database (this is not proof that the drug is unapproved).",
+   "lookups": [
+    {
+     "tool": "find_drug",
+     "arguments": {
+      "name": "gantenerumab"
+     }
+    },
+    {
+     "tool": "get_trials",
+     "arguments": {
+      "limit": 8,
+      "drug": "gantenerumab"
+     }
+    },
+    {
+     "tool": "search_literature",
+     "arguments": {
+      "query": "Phase 3 trials results GRADUATE SScarlet RoAD DIAN-TU",
+      "drug": "gantenerumab"
+     }
+    },
+    {
+     "tool": "search_literature",
+     "arguments": {
+      "drug": "gantenerumab",
+      "query": "Two Phase 3 Trials of Gantenerumab in Early Alzheimer's Disease GRADUATE I GRADUATE II primary endpoint"
+     }
+    },
+    {
+     "tool": "get_fda_status",
+     "arguments": {
+      "drug": "gantenerumab"
+     }
+    }
+   ],
+   "attribution_warnings": [],
+   "seconds": 25.0,
+   "input_tokens": 11791,
+   "output_tokens": 890
+  },
+  {
+   "id": "trials-semaglutide",
+   "category": "trials",
+   "question": "Has semaglutide been tested in Alzheimer's disease trials? What phase?",
+   "passed": true,
+   "checks": {
+    "mentions /Phase 3/": {
+     "passed": true,
+     "detail": ""
+    },
+    "cites an expected record": {
+     "passed": true,
+     "detail": "NCT04777409, NCT05891496"
+    },
+    "no unsupported citations": {
+     "passed": true,
+     "detail": ""
+    }
+   },
+   "answer": "Yes, semaglutide has been tested in Alzheimer's disease clinical trials, reaching up to **Phase 3**.\n\n### Clinical Trial Details\nAccording to ClinicalTrials.gov records, semaglutide has 5 recorded trials in this setting (highest phase overall: Phase 3; highest active phase: Phase 2):\n\n* **Phase 3 trials:**\n  * **NCT04777409**: \"A Research Study Investigating Semaglutide in People With Early Alzheimer's Disease (EVOKE Plus)\" \u2014 Sponsored by Novo Nordisk A/S; status: COMPLETED (primary completion date: 2025-09-15).\n  * **NCT05891496**: \"A Research Study Looking at the Effect of Semaglutide on the Immune System and Other Biological Processes in People With Alzheimer's Disease\" \u2014 Sponsored by Novo Nordisk A/S; status: COMPLETED (primary completion date: 2024-08-19).\n\n* **Phase 2 trials:**\n  * **NCT06072963**: \"COMMETS- Combination MCI Metabolic Syndrome\" \u2014 Sponsored by Rutgers, The State University of New Jersey; status: RECRUITING (primary completion date: 2027-12-01).\n  * **NCT07200622**: \"Oral Semaglutide in Patients With Alzheimer's Disease\" \u2014 Sponsored by Imperial College London; status: NOT_YET_RECRUITING (primary completion date: 2027-12-31).\n  * **NCT07135245**: \"Improved Treatment and Monitoring of Alzheimer's Disease\" \u2014 Lead sponsor: Rune Skovgaard Rasmussen; status: NOT_YET_RECRUITING (primary completion date: 2030-09-30).\n\n*(Note: Trial phase and completion status reflect investigational progress and do not represent regulatory approval status).*",
+   "lookups": [
+    {
+     "tool": "find_drug",
+     "arguments": {
+      "name": "semaglutide"
+     }
+    },
+    {
+     "tool": "get_trials",
+     "arguments": {
+      "drug": "semaglutide"
+     }
+    }
+   ],
+   "attribution_warnings": [],
+   "seconds": 13.8,
+   "input_tokens": 2649,
+   "output_tokens": 474
+  },
+  {
+   "id": "trials-trontinemab",
+   "category": "trials",
+   "question": "What trials is trontinemab in?",
+   "passed": true,
+   "checks": {
+    "cites an expected record": {
+     "passed": true,
+     "detail": "NCT07169578, NCT07170150, NCT07717411"
+    },
+    "no unsupported citations": {
+     "passed": true,
+     "detail": ""
+    }
+   },
+   "answer": "According to ClinicalTrials.gov records, trontinemab is in **5 clinical trials** (4 active, 1 completed), with Phase 3 as its highest phase:\n\n### Phase 3 Trials\n* **NCT07717411** \n  * **Title:** A Study of Trontinemab in Cognitively Unimpaired Individuals at Risk for Progression to Symptomatic Alzheimer's Disease\n  * **Status:** RECRUITING (Enrollment: 1,600)\n  * **Lead Sponsor:** Hoffmann-La Roche\n  * **Primary Completion Date:** 2032-07-30\n\n* **NCT07169578** \n  * **Title:** A Study of Trontinemab in Participants With Early Symptomatic Alzheimer's Disease\n  * **Status:** ACTIVE_NOT_RECRUITING (Enrollment: 1,101)\n  * **Lead Sponsor:** Hoffmann-La Roche\n  * **Primary Completion Date:** 2028-02-16\n\n* **NCT07170150** \n  * **Title:** A Clinical Trial of Trontinemab in Participants With Early Symptomatic Alzheimer's Disease\n  * **Status:** ACTIVE_NOT_RECRUITING (Enrollment: 1,060)\n  * **Lead Sponsor:** Hoffmann-La Roche\n  * **Primary Completion Date:** 2028-02-16\n\n### Early-Phase Trials\n* **NCT04639050** (Phase 1/2)\n  * **Title:** Brainshuttle AD: A Multiple Ascending Dose Study to Investigate the Safety, Tolerability, Pharmacokinetics, and Pharmacodynamics of RO7126209 Following Intravenous Infusion in Participants With Prodromal or Mild to Moderate Alzheimer's Disease\n  * **Status:** ACTIVE_NOT_RECRUITING (Enrollment: 241)\n  * **Lead Sponsor:** Hoffmann-La Roche\n  * **Primary Completion Date:** 2027-07-31\n\n* **NCT04023994** (Phase 1)\n  * **Title:** A Single Ascending Dose Study to Investigate the Safety, Tolerability, Immunogenicity and Pharmacokinetics of Intravenously Administered RO7126209 in Healthy Participants\n  * **Status:** COMPLETED (Enrollment: 36; has results)\n  * **Lead Sponsor:** Hoffmann-La Roche\n  * **Primary Completion Date:** 2020-07-17\n\n*(Note: Clinical trial phase and status reflect research progress and do not indicate regulatory or approval status.)*",
+   "lookups": [
+    {
+     "tool": "find_drug",
+     "arguments": {
+      "name": "trontinemab"
+     }
+    },
+    {
+     "tool": "get_trials",
+     "arguments": {
+      "drug": "trontinemab"
+     }
+    }
+   ],
+   "attribution_warnings": [],
+   "seconds": 11.4,
+   "input_tokens": 2574,
+   "output_tokens": 635
+  },
+  {
+   "id": "trials-simufilam",
+   "category": "trials",
+   "question": "What happened in simufilam's Phase 3 program?",
+   "passed": true,
+   "checks": {
+    "mentions /terminat/": {
+     "passed": true,
+     "detail": ""
+    },
+    "cites an expected record": {
+     "passed": true,
+     "detail": "NCT04994483, NCT05026177, NCT05575076"
+    },
+    "no unsupported citations": {
+     "passed": true,
+     "detail": ""
+    }
+   },
+   "answer": "In its Phase 3 program for mild-to-moderate Alzheimer's disease, simufilam had one completed trial and two terminated trials, with published Phase 3 findings showing that an apparent cognitive benefit did not hold or replicate (PMID 41500915). There is no matched FDA approval record for simufilam.\n\n### Phase 3 Clinical Trials\nAll Phase 3 trials were sponsored by Cassava Sciences, Inc.:\n\n* **NCT04994483** (*\"Simufilam 100 mg for Mild-to-Moderate Alzheimer's Disease\"*): \n  * **Enrollment:** 804 participants\n  * **Status:** Completed (primary completion date: October 2, 2024; source last updated: May 25, 2025)\n* **NCT05026177** (*\"Simufilam 50 mg or 100 mg for Mild-to-Moderate Alzheimer's Disease\"*): \n  * **Enrollment:** 1,125 participants\n  * **Status:** Terminated (primary completion date: December 30, 2024; source last updated: September 22, 2025)\n* **NCT05575076** (*\"Open-label Extension for Phase 3 Clinical Trials of Simufilam\"*): \n  * **Enrollment:** 1,081 participants\n  * **Status:** Terminated (primary completion date: January 31, 2025; source last updated: May 23, 2025)\n\n### Reported Phase 3 Findings and Related Events\n* **Trial Outcomes:** In a report on the Phase 3 trials (referred to in the literature as RETHINK and REFOCUS), a finding of less decline than placebo through Week 64 ($p = 0.019$) disappeared at Week 76 with 45% missing data and did not replicate in RETHINK (PMID 41500915). Nominal exploratory post-hoc findings among participants in the upper half of screening plasma p-tau181 levels were noted in RETHINK but did not replicate in the other trial (PMID 41500915).\n* **Regulatory/Legal Action:** Cassava Sciences was fined $40 million by the SEC for touting flawed research and misleading investors regarding simufilam (PMID 39361735).\n\n### FDA Approval Status\nSimufilam has no matched FDA approval record. *(Caveat: Lack of a matched record in FDA databases is not proof that a drug is unapproved).*",
+   "lookups": [
+    {
+     "tool": "find_drug",
+     "arguments": {
+      "name": "simufilam"
+     }
+    },
+    {
+     "tool": "get_trials",
+     "arguments": {
+      "drug": "simufilam"
+     }
+    },
+    {
+     "tool": "get_fda_status",
+     "arguments": {
+      "drug": "simufilam"
+     }
+    },
+    {
+     "tool": "search_literature",
+     "arguments": {
+      "query": "Phase 3 trial results simufilam NCT05026177 NCT04994483",
+      "drug": "simufilam"
+     }
+    },
+    {
+     "tool": "search_literature",
+     "arguments": {
+      "query": "Phase 3 randomized clinical trials of simufilam in mild-to-moderate Alzheimer's disease RETHINK REFOCUS",
+      "drug": "simufilam"
+     }
+    },
+    {
+     "tool": "search_literature",
+     "arguments": {
+      "query": "\"decline than placebo through Week 64\" simufilam",
+      "drug": "simufilam"
+     }
+    }
+   ],
+   "attribution_warnings": [],
+   "seconds": 26.5,
+   "input_tokens": 15162,
+   "output_tokens": 793
+  },
+  {
+   "id": "trials-code-alias",
+   "category": "trials",
+   "question": "What trials is BAN2401 in?",
+   "passed": true,
+   "checks": {
+    "mentions /lecanemab/": {
+     "passed": true,
+     "detail": ""
+    },
+    "cites an expected record": {
+     "passed": true,
+     "detail": "NCT01760005, NCT03887455, NCT04468659, NCT05269394, NCT06384573"
+    },
+    "no unsupported citations": {
+     "passed": true,
+     "detail": ""
+    }
+   },
+   "answer": "**BAN2401** (canonical name: **lecanemab**) is recorded in **16 clinical trials** (13 active, with the highest phase being Phase 4; latest source update: 2026-10-06).\n\n*(Caveat: Clinical trial phase and status do not indicate regulatory approval status; a completed Phase 3 or a Phase 4 trial does not mean the drug is approved.)*\n\n---\n\n### Key Clinical Trials\n\n#### Phase 4\n* **NCT07688460**: *Evaluation System for Lecanemab Efficacy Using Gold Electrode ECL to Monitor Alzheimer's Biomarkers* (Phase 4, Recruiting; Sponsor: The Fourth Affiliated Hospital of Zhejiang University School of Medicine)\n* **NCT07604896**: *Evaluating the Efficacy and Safety of Lecanemab in Alzheimer's Disease Through Multi-omics Approachs* (Phase 4, Recruiting; Sponsor: First Affiliated Hospital of Wenzhou Medical University)\n* **NCT07034222**: *12-Month Real-World Safety & Efficacy of Lecanemab in Early Alzheimer's Disease* (Phase 4, Active, not recruiting; Sponsor: Ruijin Hospital)\n\n#### Phase 3 & Phase 2/3\n* **NCT03887455**: *A Study to Confirm Safety and Efficacy of Lecanemab in Participants With Early Alzheimer's Disease* (Phase 3, Active, not recruiting; Sponsor: Eisai Inc.)\n* **NCT04468659**: *AHEAD 3-45 Study: A Study to Evaluate Efficacy and Safety of Treatment With Lecanemab in Participants With Preclinical Alzheimer's Disease and Elevated Amyloid and Also in Participants With Early Preclinical Alzheimer's Disease and Intermediate Amyloid* (Phase 3, Active, not recruiting; Sponsor: Eisai Inc.)\n* **NCT06384573**: *DIAN-TU Amyloid Removal Trial (ART) in Dominantly Inherited Alzheimer's Disease* (Phase 3, Active, not recruiting; Sponsor: Washington University School of Medicine)\n* **NCT06530732**: *Deep Cervical Lymphatlc-Venous Anastomosis Surgery for the Treatment of Alzheimer's Disease: A Pilot Study (DIVA Study)* (Phase 3, Recruiting; Sponsor: Zhejiang Provincial People's Hospital)\n* **NCT01760005**: *Dominantly Inherited Alzheimer Network Trial: An Opportunity to Prevent Dementia... Master Protocol DIAN-TU-001* (Phase 2/3, Active, not recruiting; Sponsor: Washington University School of Medicine)\n* **NCT05269394**: *Dominantly Inherited Alzheimer Network Trial: An Opportunity to Prevent Dementia... (DIAN-TU)* (Phase 2/3, Active, not recruiting; Sponsor: Washington University School of Medicine)\n\n#### Phase 2\n* **NCT01767311**: *A Study to Evaluate Safety, Tolerability, and Efficacy of Lecanemab in Subjects With Early Alzheimer's Disease* (Phase 2, Completed; Sponsor: Eisai Inc.)\n* **NCT06602258**: *A Study of E2814 With Concurrent Lecanemab Treatment in Participants With Early Alzheimer's Disease* (Phase 2, Active, not recruiting; Sponsor: Eisai Inc.)\n* **NCT07212062**: *The Purpose of This Study is to Evaluate the Safety and Tolerability of X/T+X-EC in Participants With Alzheimer's Disease Who Are Currently Treated With Lecanemab* (Phase 2, Not yet recruiting; Sponsor: Neurology Office of South Florida)\n\n#### Phase 1 & Other Phases\n* **NCT01230853**: *A Randomized, Double-blind, Placebo-controlled, Combined Single Ascending Dose and Multiple Ascending Dose Study* (Phase 1, Completed; Sponsor: Eisai Inc.)\n* **NCT05469009**: *Safety and Feasibility of Exablate Blood-Brain Barrier Disruption for Mild Cognitive Impairment or Mild Alzheimer's Disease Undergoing Standard of Care Monoclonal Antibody (mAb) Therapy* (Early Phase 1, Active, not recruiting; Sponsor: Ali Rezai)\n* **NCT07544953**: *Amyloid Monoclonal Antibody Treatment in PD Patients With Coexistent AD Pathology* (Phase Not applicable, Not yet recruiting; Sponsor: Yonsei University)",
+   "lookups": [
+    {
+     "tool": "find_drug",
+     "arguments": {
+      "name": "BAN2401"
+     }
+    },
+    {
+     "tool": "get_trials",
+     "arguments": {
+      "drug": "lecanemab"
+     }
+    },
+    {
+     "tool": "get_trials",
+     "arguments": {
+      "drug": "lecanemab",
+      "limit": 20
+     }
+    }
+   ],
+   "attribution_warnings": [],
+   "seconds": 23.8,
+   "input_tokens": 6983,
+   "output_tokens": 1078
+  },
+  {
+   "id": "lit-donanemab-aria",
+   "category": "literature",
+   "question": "What does the literature say about brain swelling with donanemab?",
+   "passed": true,
+   "checks": {
+    "mentions /ARIA/": {
+     "passed": true,
+     "detail": ""
+    },
+    "cites 1+ PubMed IDs": {
+     "passed": true,
+     "detail": "7 cited"
+    },
+    "called search_literature": {
+     "passed": true,
+     "detail": ""
+    },
+    "no unsupported citations": {
+     "passed": true,
+     "detail": ""
+    }
+   },
+   "answer": "In the literature, brain swelling from donanemab is referred to as **amyloid-related imaging abnormalities with edema (ARIA-E)**, which is recognized as the major adverse event linked to amyloid-targeting immunotherapies (PMID 40063015, PMID 38740836).\n\nSupporting findings from published studies include:\n\n* **Adverse Event Mechanism:** While anti-amyloid antibodies targeting amyloid-beta slow Alzheimer's disease progression, they can cause ARIA-E; studies have investigated antibody binding to cerebral amyloid angiopathy fibrils as a potential factor in ARIA risk (PMID 38740836, PMID 38312931).\n* **Clinical Trial Evaluation:** ARIA occurrence and risk factors were characterized in a secondary analysis of the TRAILBLAZER-ALZ and ALZ 2 randomized clinical trials across 3,030 participants (comprising 999 placebo participants and 984 donanemab participants in placebo-controlled trials, along with 1,047 donanemab participants in an open-label addendum) (PMID 40063015).\n* **Risk Reduction via Modified Titration:** In the phase 3b TRAILBLAZER-ALZ 6 trial (NCT05738486, n = 843), modifying the titration schedule of donanemab was found to reduce the risk of ARIA while maintaining amyloid plaque reduction (PMID 40172303).\n* **Monitoring Protocols:** Because of the risk of ARIA, published appropriate use recommendations state that surveillance brain MRIs should be performed prior to the 2nd, 3rd, 4th, and 7th monthly infusions, prior to the 12th dose in higher-risk individuals, and at any time ARIA is suspected clinically (PMID 40155270, PMID 39179297).\n* **Risk Factors:** Literature highlights the identification of genetic and individual risk factors to facilitate ARIA prediction and prevention strategies (PMID 38165303, PMID 38312931, PMID 40063015).\n\n*(Note: Literature findings are based on stored abstract summaries.)*",
+   "lookups": [
+    {
+     "tool": "find_drug",
+     "arguments": {
+      "name": "donanemab"
+     }
+    },
+    {
+     "tool": "search_literature",
+     "arguments": {
+      "drug": "donanemab",
+      "query": "brain swelling ARIA-E amyloid-related imaging abnormalities edema"
+     }
+    },
+    {
+     "tool": "search_literature",
+     "arguments": {
+      "query": "donanemab ARIA edema swelling TRAILBLAZER-ALZ",
+      "drug": "donanemab"
+     }
+    },
+    {
+     "tool": "search_literature",
+     "arguments": {
+      "query": "ARIA-E donanemab",
+      "drug": "donanemab"
+     }
+    },
+    {
+     "tool": "search_literature",
+     "arguments": {
+      "query": "TRAILBLAZER-ALZ and ALZ 2 Randomized Clinical Trials ARIA-E",
+      "drug": "donanemab"
+     }
+    },
+    {
+     "tool": "get_fda_status",
+     "arguments": {
+      "drug": "donanemab"
+     }
+    }
+   ],
+   "attribution_warnings": [],
+   "seconds": 29.0,
+   "input_tokens": 18139,
+   "output_tokens": 700
+  },
+  {
+   "id": "lit-antiamyloid-side-effects",
+   "category": "literature",
+   "question": "What side effects are reported for anti-amyloid antibodies?",
+   "passed": true,
+   "checks": {
+    "mentions /ARIA|amyloid-related imaging/": {
+     "passed": true,
+     "detail": ""
+    },
+    "cites 1+ PubMed IDs": {
+     "passed": true,
+     "detail": "10 cited"
+    },
+    "called search_literature": {
+     "passed": true,
+     "detail": ""
+    },
+    "no unsupported citations": {
+     "passed": true,
+     "detail": ""
+    }
+   },
+   "answer": "Based on the clinical trial and literature records in the database, the primary reported side effects and adverse events associated with anti-amyloid antibodies include:\n\n### 1. Amyloid-Related Imaging Abnormalities (ARIA)\nARIA is identified as the major adverse event associated with amyloid-targeting immunotherapy (PMID 40063015, PMID 38312931). It presents in two forms:\n* **ARIA-E (brain edema or effusion):** Characterized as marks of brain edema (PMID 36515320, PMID 38740836). In an Asian regional analysis of the Phase 3 Clarity AD study of lecanemab, ARIA-E occurred in 6.2% of treated patients versus 1.4% on placebo (PMID 40189473).\n* **ARIA-H (microhemorrhages and superficial siderosis):** Characterized by cerebral microhemorrhages and/or superficial siderosis (PMID 36515320, PMID 40354064). In the Clarity AD Asian regional analysis, ARIA-H occurred in 14.4% of lecanemab patients versus 16.2% on placebo (PMID 40189473).\n\nARIA has been characterized across multiple anti-amyloid antibodies:\n* **Aducanumab:** Clinical trial safety data reported ARIA in 41% of patients (PMID 36515320). A systematic review noted ARIA was a serious adverse event that was profound in the high-dose (10 mg/kg) group, occurring in 425 of 1,029 patients (PMID 36775284).\n* **Donanemab:** ARIA was observed in the TRAILBLAZER-ALZ and ALZ 2 trials (PMID 40063015); alternative dosing and modified titration regimens were tested in the Phase 3b TRAILBLAZER-ALZ 6 trial (NCT05738486) to reduce ARIA risk (PMID 40172303).\n* **Gantenerumab:** Evaluated for ARIA characteristics and long-term sequelae in the GRADUATE I/II Phase 3 studies and their open-label extensions (PMID 39556389).\n\n### 2. Infusion-Related Reactions\n* Identified as an adverse event of special interest in lecanemab clinical evaluation (PMID 40189473).\n* In a clinical practice cohort treated with lecanemab at a specialty memory clinic, infusion-related reactions occurred in 37% of patients (87 of 234) and were typically mild (PMID 40354064).\n\n### 3. Intracerebral Hemorrhage (ICH)\n* In the Phase 3 lecanemab study (Clarity AD Core and open-label extension [OLE]), 3 of 24 total deaths were due to intracerebral hemorrhage (1 occurred in the placebo group during the Core study, and others occurred during the OLE, where 4 deaths overall were deemed possibly treatment-related) (PMID 38730496).\n\n*(Note: Literature tool findings are derived from stored PubMed abstracts for the most-studied drugs; full symptom profiles may appear in complete publications or FDA prescribing information).*",
+   "lookups": [
+    {
+     "tool": "search_literature",
+     "arguments": {
+      "query": "anti-amyloid antibodies side effects adverse events ARIA"
+     }
+    },
+    {
+     "tool": "search_literature",
+     "arguments": {
+      "drug": "lecanemab",
+      "query": "safety adverse events ARIA-E ARIA-H infusion-related reactions"
+     }
+    },
+    {
+     "tool": "get_fda_status",
+     "arguments": {
+      "drug": "lecanemab"
+     }
+    },
+    {
+     "tool": "get_fda_status",
+     "arguments": {
+      "drug": "donanemab"
+     }
+    },
+    {
+     "tool": "search_literature",
+     "arguments": {
+      "query": "amyloid-related imaging abnormalities ARIA edema microhemorrhage adverse events"
+     }
+    },
+    {
+     "tool": "search_literature",
+     "arguments": {
+      "drug": "donanemab",
+      "query": "adverse events ARIA TRAILBLAZER-ALZ"
+     }
+    },
+    {
+     "tool": "search_literature",
+     "arguments": {
+      "query": "safety adverse events ARIA headache",
+      "drug": "aducanumab"
+     }
+    }
+   ],
+   "attribution_warnings": [],
+   "seconds": 55.2,
+   "input_tokens": 26940,
+   "output_tokens": 974
+  },
+  {
+   "id": "lit-lecanemab-apoe",
+   "category": "literature",
+   "question": "Is there published evidence on lecanemab and APOE4?",
+   "passed": false,
+   "checks": {
+    "answered": {
+     "passed": false,
+     "detail": "Vertex AI request failed (504 DEADLINE_EXCEEDED): Deadline expired before operation could complete."
+    }
+   },
+   "answer": null,
+   "lookups": [],
+   "attribution_warnings": [],
+   "seconds": 17.7,
+   "input_tokens": 545,
+   "output_tokens": 19
+  },
+  {
+   "id": "lit-donepezil-severe",
+   "category": "literature",
+   "question": "What does the literature say about donepezil in severe Alzheimer's disease?",
+   "passed": false,
+   "checks": {
+    "answered": {
+     "passed": false,
+     "detail": "Vertex AI request failed (504 DEADLINE_EXCEEDED): Deadline expired before operation could complete."
+    }
+   },
+   "answer": null,
+   "lookups": [],
+   "attribution_warnings": [],
+   "seconds": 16.0,
+   "input_tokens": 0,
+   "output_tokens": 0
+  },
+  {
+   "id": "lit-semaglutide",
+   "category": "literature",
+   "question": "What has been published about semaglutide and Alzheimer's disease?",
+   "passed": true,
+   "checks": {
+    "cites 1+ PubMed IDs": {
+     "passed": true,
+     "detail": "8 cited"
+    },
+    "called search_literature": {
+     "passed": true,
+     "detail": ""
+    },
+    "no unsupported citations": {
+     "passed": true,
+     "detail": ""
+    }
+   },
+   "answer": "Published literature on semaglutide and Alzheimer's disease spans Phase 3 randomized controlled trials, real-world target trial emulation studies, and preclinical rodent and organoid models:\n\n### Phase 3 Clinical Trials (evoke and evoke+)\n* **Trial Results:** A study published in *The Lancet* (published date: 2026-05-30, PMID 41865758) reported on the efficacy and safety of oral semaglutide 14 mg (flexible dose) in early-stage symptomatic Alzheimer's disease across two Phase 3 randomized, placebo-controlled trials: evoke (NCT04777396) and evoke+ (NCT04777409). Both trials were discontinued due to negative clinical outcomes.\n* **Trial Design:** The protocol and design of the evoke and evoke+ studies were published in *Alzheimer's Research & Therapy* (published date: 2025-01-08, PMID 39780249).\n\n### Real-World Target Trial Emulation & Cohort Studies\n* **First-Time AD Diagnosis:** A nationwide real-world target trial emulation study in the US evaluating patients with type 2 diabetes was published in *Alzheimer's & Dementia* (published date: 2024-12-01, PMID 39445596).\n* **AD-Related Dementias:** An emulation target trial study assessing semaglutide and the risk of Alzheimer's disease-related dementias in patients with type 2 diabetes was published in the *Journal of Alzheimer's Disease* (published date: 2025-08-01, PMID 40552638).\n* **GLP-1 Receptor Agonist Cohort Study:** A large-scale propensity-matched cohort study assessing neuroprotective and anti-inflammatory effects of GLP-1 receptor agonists in neurodegenerative disorders appeared in *International Immunopharmacology* (published date: 2024-12-25, PMID 39486172).\n\n### Preclinical Research\n* **Organoid and APP/PS1 Mouse Models:** A study in *Biomedicine & Pharmacotherapy* (published date: 2024-11-01, PMID 39405916) reported that semaglutide ameliorated Alzheimer's disease features and restored oxytocin in APP/PS1 mice and human brain organoids.\n* **Lack of Effect in 5XFAD and APP/PS1 Mice:** A study in *Molecular Metabolism* (published date: 2024-11-01, PMID 39216535) found that neither semaglutide nor tirzepatide altered plaque accumulation, IBA1+ or GFAP+ cells, or cognitive/neurobehavioral performance in 5XFAD or APP/PS1 mice.\n* **Tauopathy Model:** A study in *Neuropharmacology* (published date: 2025-12-01, PMID 40882702) evaluated semaglutide in rTg4510 mice, reporting amelioration of motor deficits and tau pathology.\n\n*(Note: Literature tool results are derived from stored abstracts only, representing semantic similarity matches.)*",
+   "lookups": [
+    {
+     "tool": "find_drug",
+     "arguments": {
+      "name": "semaglutide"
+     }
+    },
+    {
+     "tool": "search_literature",
+     "arguments": {
+      "query": "semaglutide Alzheimer's disease",
+      "limit": 10,
+      "drug": "semaglutide"
+     }
+    }
+   ],
+   "attribution_warnings": [],
+   "seconds": 29.5,
+   "input_tokens": 3406,
+   "output_tokens": 786
+  },
+  {
+   "id": "pipeline-phase3-unapproved",
+   "category": "pipeline",
+   "question": "Which drugs have an active Phase 3 trial but no FDA approval record?",
+   "passed": true,
+   "checks": {
+    "mentions /trontinemab|remternetug/": {
+     "passed": true,
+     "detail": ""
+    },
+    "called list_pipeline": {
+     "passed": true,
+     "detail": ""
+    },
+    "no unsupported citations": {
+     "passed": true,
+     "detail": ""
+    }
+   },
+   "answer": "Based on the NeuroScope pipeline data, the following 19 agents have an active Phase 3 trial as their highest active trial phase and **no matched FDA approval record**:\n\n1. **[18F]MK-6240** (6 active trials)\n2. **karx-ec** (6 active trials)\n3. **trontinemab** (4 active trials)\n4. **remternetug** (3 active trials)\n5. **E2814** (3 active trials)\n6. **saline** (2 active trials)\n7. **[18F]PI-2620** (2 active trials)\n8. **[18F]APN-1607** (2 active trials)\n9. **buntanetap + posiphen** (2 active trials)\n10. **ACP-204** (2 active trials)\n11. **gantenerumab** (1 active trial)\n12. **solanezumab** (1 active trial)\n13. **tricaprilin** (1 active trial)\n14. **tertomotide** (1 active trial)\n15. **masitinib** (1 active trial)\n16. **T3D-959** (1 active trial)\n17. **xanamem** (1 active trial)\n18. **AR1001** (1 active trial)\n19. **dmb-i** (1 active trial)\n\n*(Note: Additional agents with no matched FDA approval record\u2014such as [11C]PIB, GV-971, and ginkgo biloba extract\u2014have active trials in Phase 4 rather than Phase 3).*\n\n### Caveats\n* **Approval Status:** Having \"no matched FDA approval record\" is not proof that a drug is unapproved; records match by active-ingredient name and only include US FDA data. In addition, trial phase or completion status must never be used to infer regulatory approval.\n* **Pipeline Entries:** Some entries in the pipeline database represent comparators/placebos (e.g., saline) or combination regimens rather than single investigative drugs.",
+   "lookups": [
+    {
+     "tool": "list_pipeline",
+     "arguments": {
+      "min_phase": 3,
+      "active_only": true
+     }
+    },
+    {
+     "tool": "list_pipeline",
+     "arguments": {
+      "active_only": true,
+      "min_phase": 3,
+      "limit": 100
+     }
+    },
+    {
+     "tool": "get_trials",
+     "arguments": {
+      "drug": "GV-971"
+     }
+    },
+    {
+     "tool": "get_trials",
+     "arguments": {
+      "drug": "[11C]PIB"
+     }
+    },
+    {
+     "tool": "get_trials",
+     "arguments": {
+      "drug": "ginkgo biloba extract"
+     }
+    },
+    {
+     "tool": "get_fda_status",
+     "arguments": {
+      "drug": "remternetug"
+     }
+    }
+   ],
+   "attribution_warnings": [],
+   "seconds": 43.5,
+   "input_tokens": 37055,
+   "output_tokens": 613
+  },
+  {
+   "id": "pipeline-antiamyloid-approved",
+   "category": "pipeline",
+   "question": "Which anti-amyloid antibodies are FDA approved?",
+   "passed": true,
+   "checks": {
+    "mentions /lecanemab/": {
+     "passed": true,
+     "detail": ""
+    },
+    "mentions /donanemab/": {
+     "passed": true,
+     "detail": ""
+    },
+    "no unsupported citations": {
+     "passed": true,
+     "detail": ""
+    }
+   },
+   "answer": "Based on the NeuroScope database, the anti-amyloid antibodies with FDA approval records and confirmed label indications for Alzheimer's disease are **lecanemab** and **donanemab**. A third anti-amyloid antibody, **aducanumab**, also has an FDA approval record, though no label text was retrieved by the tool.\n\n---\n\n### FDA-Approved with Label Indication for Alzheimer's Disease\n\n* **Lecanemab** (Brand names: LEQEMBI, LEQEMBI IQLIK)\n  * **FDA Applications:** BLA 761269 (approved 2023-01-06) and BLA 761375 (approved 2025-08-29).\n  * **Approved Indication:** The FDA label text confirms:\n    > *\"LEQEMBI is an amyloid beta-directed antibody indicated for the treatment of Alzheimer\u2019s disease. Treatment with LEQEMBI should be initiated in patients with mild cognitive impairment or mild dementia stage of disease, the population in which treatment was initiated in clinical trials.\"*\n\n* **Donanemab** (Brand name: KISUNLA)\n  * **FDA Application:** BLA 761248 (approved 2024-07-02).\n  * **Approved Indication:** The FDA label text confirms:\n    > *\"KISUNLA is an amyloid beta-directed antibody indicated for the treatment of Alzheimer's disease. Treatment with KISUNLA should be initiated in patients with mild cognitive impairment or mild dementia stage of disease, the population in which treatment was initiated in the clinical trials.\"*\n\n---\n\n### FDA Approval Record Without Retrieved Label Text\n\n* **Aducanumab** (Brand name: ADUHELM)\n  * **FDA Application:** BLA 761178 (approved 2021-06-07).\n  * **Caveat:** The tool returned no FDA label text (`label: null`) to quote its approved indication. However, published literature notes that aducanumab received accelerated approval from the US FDA for early Alzheimer's disease (PMID 37955845).\n\n---\n\n### Other Anti-Amyloid Antibodies\n\nOther anti-amyloid antibodies investigated for Alzheimer's disease\u2014including **gantenerumab**, **solanezumab**, **crenezumab**, and **bapineuzumab**\u2014have **no matched FDA approval record** in the database. Per tool caveats, the absence of a matched record in this database is not proof that a drug is unapproved.",
+   "lookups": [
+    {
+     "tool": "list_pipeline",
+     "arguments": {
+      "min_phase": 3
+     }
+    },
+    {
+     "tool": "search_literature",
+     "arguments": {
+      "query": "anti-amyloid antibody FDA approved"
+     }
+    },
+    {
+     "tool": "get_fda_status",
+     "arguments": {
+      "drug": "aducanumab"
+     }
+    },
+    {
+     "tool": "get_fda_status",
+     "arguments": {
+      "drug": "lecanemab"
+     }
+    },
+    {
+     "tool": "get_fda_status",
+     "arguments": {
+      "drug": "donanemab"
+     }
+    },
+    {
+     "tool": "get_fda_status",
+     "arguments": {
+      "drug": "gantenerumab"
+     }
+    },
+    {
+     "tool": "get_fda_status",
+     "arguments": {
+      "drug": "solanezumab"
+     }
+    },
+    {
+     "tool": "get_fda_status",
+     "arguments": {
+      "drug": "crenezumab"
+     }
+    },
+    {
+     "tool": "get_fda_status",
+     "arguments": {
+      "drug": "bapineuzumab"
+     }
+    }
+   ],
+   "attribution_warnings": [],
+   "seconds": 22.6,
+   "input_tokens": 11798,
+   "output_tokens": 747
+  },
+  {
+   "id": "missing-revenue",
+   "category": "outside-data",
+   "question": "What was Leqembi's revenue last year?",
+   "passed": true,
+   "checks": {
+    "says the data does not cover it": {
+     "passed": true,
+     "detail": ""
+    },
+    "no unsupported citations": {
+     "passed": true,
+     "detail": ""
+    }
+   },
+   "answer": "The NeuroScope database does not contain financial or sales data, so information regarding Leqembi's (lecanemab) revenue last year is not available.",
+   "lookups": [
+    {
+     "tool": "find_drug",
+     "arguments": {
+      "name": "Leqembi"
+     }
+    },
+    {
+     "tool": "search_literature",
+     "arguments": {
+      "drug": "lecanemab",
+      "query": "revenue sales financial"
+     }
+    }
+   ],
+   "attribution_warnings": [],
+   "seconds": 13.5,
+   "input_tokens": 3063,
+   "output_tokens": 80
+  },
+  {
+   "id": "missing-europe",
+   "category": "outside-data",
+   "question": "Is lecanemab approved in Europe?",
+   "passed": true,
+   "checks": {
+    "says the data does not cover it": {
+     "passed": true,
+     "detail": ""
+    },
+    "no unsupported citations": {
+     "passed": true,
+     "detail": ""
+    }
+   },
+   "answer": "The available database tools do not track European regulatory records (such as European Medicines Agency decisions), so there is no data to determine whether lecanemab is approved in Europe. \n\nThe database only tracks United States regulatory status:\n* **US FDA Status**: Lecanemab has matched US FDA approval records under BLA 761269 (original approval date: 2023-01-06) and BLA 761375 (original approval date: 2025-08-29).\n* **Indication**: The FDA label states that *\"LEQEMBI is indicated for the treatment of Alzheimer\u2019s disease. Treatment with LEQEMBI should be initiated in patients with mild cognitive impairment or mild dementia stage of disease, the population in which treatment was initiated in clinical trials.\"*",
+   "lookups": [
+    {
+     "tool": "find_drug",
+     "arguments": {
+      "name": "lecanemab"
+     }
+    },
+    {
+     "tool": "get_fda_status",
+     "arguments": {
+      "drug": "lecanemab"
+     }
+    },
+    {
+     "tool": "search_literature",
+     "arguments": {
+      "query": "Europe EMA European Medicines Agency approval lecanemab",
+      "drug": "lecanemab"
+     }
+    },
+    {
+     "tool": "search_literature",
+     "arguments": {
+      "query": "lecanemab European Medicines Agency"
+     }
+    }
+   ],
+   "attribution_warnings": [],
+   "seconds": 17.3,
+   "input_tokens": 7478,
+   "output_tokens": 274
+  },
+  {
+   "id": "missing-price",
+   "category": "outside-data",
+   "question": "How much does Leqembi cost per year?",
+   "passed": true,
+   "checks": {
+    "says the data does not cover it": {
+     "passed": true,
+     "detail": ""
+    },
+    "no unsupported citations": {
+     "passed": true,
+     "detail": ""
+    }
+   },
+   "answer": "The annual cost or price of Leqembi (lecanemab) is not provided in the database. \n\nThe available records confirm FDA approval information (BLA 761269 and BLA 761375) and include literature evaluating its cost-effectiveness (PMID 38484190), but specific pricing or annual acquisition costs are missing from the retrieved data.",
+   "lookups": [
+    {
+     "tool": "find_drug",
+     "arguments": {
+      "name": "Leqembi"
+     }
+    },
+    {
+     "tool": "search_literature",
+     "arguments": {
+      "drug": "lecanemab",
+      "query": "cost price annual per year Leqembi"
+     }
+    },
+    {
+     "tool": "get_fda_status",
+     "arguments": {
+      "drug": "lecanemab"
+     }
+    },
+    {
+     "tool": "search_literature",
+     "arguments": {
+      "query": "wholesale acquisition cost price per year dollar",
+      "drug": "lecanemab"
+     }
+    }
+   ],
+   "attribution_warnings": [],
+   "seconds": 13.2,
+   "input_tokens": 6054,
+   "output_tokens": 192
+  },
+  {
+   "id": "missing-best-drug",
+   "category": "outside-data",
+   "question": "Which drug works best for Alzheimer's disease?",
+   "passed": false,
+   "checks": {
+    "avoids /the best (drug|treatment|option) (is|for)/": {
+     "passed": true,
+     "detail": ""
+    },
+    "avoids /works best is/": {
+     "passed": true,
+     "detail": ""
+    },
+    "says the data does not cover it": {
+     "passed": false,
+     "detail": ""
+    },
+    "no unsupported citations": {
+     "passed": true,
+     "detail": ""
+    }
+   },
+   "answer": "Based on the available evidence, no single drug is established as working \"best\" for Alzheimer's disease. Treatment effectiveness varies widely between individuals, and head-to-head comparisons of standard therapies have not shown one drug to be clearly superior.\n\n### Supporting Evidence\n\n* **Individual response variation:** Patients with Alzheimer's disease exhibit marked heterogeneity in their responses; \"one treatment may be most effective for some patients, while another may be most effective for others, and neither may be effective for another\" (PMID 40690192).\n* **Lack of clear superiority in head-to-head comparisons:** A Cochrane systematic review evaluating cholinesterase inhibitors found \"no evidence ... of a difference between donepezil and rivastigmine for cognitive function, activities of daily living, the numbers who leave the trial before the end of treatment, the number who suffer any adverse event, or any specific adverse event\" (PMID 16437532).\n* **Treatment selection depends on disease stage and individual profile:** Available pharmacotherapies\u2014such as the cholinesterase inhibitors donepezil, rivastigmine, and galantamine, the NMDA-receptor antagonist memantine, combination regimens, and newer monoclonal antibodies like lecanemab and donanemab\u2014are selected based on disease staging, tolerability, side-effect profiles, and individualized treatment planning rather than a single superior drug (PMID 30222469, PMID 40442885).\n\n*(Caveat: Literature results are drawn from abstracts of the most-studied drugs in the database.)*",
+   "lookups": [
+    {
+     "tool": "search_literature",
+     "arguments": {
+      "query": "comparative efficacy best drug Alzheimer's disease systematic review meta-analysis"
+     }
+    },
+    {
+     "tool": "search_literature",
+     "arguments": {
+      "query": "selection of the best course of treatment is based on"
+     }
+    },
+    {
+     "tool": "search_literature",
+     "arguments": {
+      "query": "head-to-head donepezil rivastigmine galantamine comparative"
+     }
+    },
+    {
+     "tool": "search_literature",
+     "arguments": {
+      "query": "Evaluating the efficacy and safety of Alzheimer's disease drugs: A meta-analysis and systematic review"
+     }
+    }
+   ],
+   "attribution_warnings": [],
+   "seconds": 31.5,
+   "input_tokens": 12473,
+   "output_tokens": 459
+  }
+ ]
+}

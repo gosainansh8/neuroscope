@@ -1,0 +1,52 @@
+{
+ "model": "gemini-3.8-flash",
+ "rows": [
+  {
+   "id": "fda-lecanemab",
+   "category": "approval",
+   "question": "Is lecanemab FDA approved for Alzheimer's disease?",
+   "passed": true,
+   "checks": {
+    "verdict": {
+     "passed": true,
+     "detail": "expected yes, got yes"
+    },
+    "mentions /2023-01-06/": {
+     "passed": true,
+     "detail": ""
+    },
+    "cites an expected record": {
+     "passed": true,
+     "detail": "BLA761269, BLA761375"
+    },
+    "called get_fda_status": {
+     "passed": true,
+     "detail": ""
+    },
+    "no unsupported citations": {
+     "passed": true,
+     "detail": ""
+    }
+   },
+   "answer": "Yes, lecanemab is FDA approved for the treatment of Alzheimer\u2019s disease.\n\n### Supporting Details\n* **FDA Indication:** The FDA label explicitly states: \n  > \"LEQEMBI is indicated for the treatment of Alzheimer\u2019s disease. Treatment with LEQEMBI should be initiated in patients with mild cognitive impairment or mild dementia stage of disease, the population in which treatment was initiated in clinical trials.\" (Label effective date: 2026-07-21).\n* **Approval Records:**\n  * **BLA761269** (EISAI INC) \u2013 Original approval date: 2023-01-06\n  * **BLA761375** (EISAI INC) \u2013 Original approval date: 2025-08-29\n* **Brand Names:** LEQEMBI, LEQEMBI IQLIK\n\n*(Source: FDA status records exported 2026-11-06)*",
+   "lookups": [
+    {
+     "tool": "find_drug",
+     "arguments": {
+      "name": "lecanemab"
+     }
+    },
+    {
+     "tool": "get_fda_status",
+     "arguments": {
+      "drug": "lecanemab"
+     }
+    }
+   ],
+   "attribution_warnings": [],
+   "seconds": 52.6,
+   "input_tokens": 2477,
+   "output_tokens": 257
+  }
+ ]
+}

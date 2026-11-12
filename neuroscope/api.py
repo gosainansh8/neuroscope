@@ -157,6 +157,7 @@ class Answer(BaseModel):
     stopped_early: bool
     model: str | None = None
     cached: bool = False                 # served from a recent identical question; no model call
+    attribution_warnings: list[dict] = []    # a cited record that belongs to a different drug than the sentence names
 
 
 def get_conn() -> Iterator[psycopg.Connection]:
@@ -231,8 +232,9 @@ def ask(body: Question, request: Request, conn: psycopg.Connection = Depends(get
         lookups=[Lookup(tool=c.name, arguments=c.args, error=r.get("error")) for c, r in result.steps],
         cited=result.cited, unsupported_citations=result.unsupported,
         citations_verified=not any(result.unsupported.values()),
-        stopped_early=result.stopped_early, model=getattr(model, "model", None))
-    if answer.citations_verified and not answer.stopped_early:
+        stopped_early=result.stopped_early, model=getattr(model, "model", None),
+        attribution_warnings=result.attribution_warnings)
+    if answer.citations_verified and not answer.stopped_early and not answer.attribution_warnings:
         # Only complete answers whose citations checked out are worth repeating.
         conn.execute(
             "INSERT INTO api_answer_cache (question_key, question, response) VALUES (%s, %s, %s) "
