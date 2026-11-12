@@ -425,36 +425,32 @@
   <section class="card faq" id="faq" aria-labelledby="faq-title">
     <h3 id="faq-title">FAQ</h3>
     <details>
-      <summary>What is NeuroScope?</summary>
-      <p>A question-answering tool for Alzheimer's drug development. You ask about a drug's trials, FDA approval, or published evidence, and the answer comes only from public records, with every source linked.</p>
-    </details>
-    <details>
       <summary>Where does the information come from?</summary>
-      <p>Three public sources: ClinicalTrials.gov for trials, the FDA's Drugs@FDA database and drug labels for approvals and indications, and PubMed for published abstracts. All three are refreshed automatically every Monday.</p>
+      <p>ClinicalTrials.gov for trials, the FDA's Drugs@FDA database and drug labels for approvals, and PubMed for published abstracts. All three refresh automatically every Monday.</p>
     </details>
     <details>
       <summary>How does it avoid making things up?</summary>
-      <p>The language model never sees the database directly. It can only ask for a few read-only lookups and must write its answer from what they return. Afterwards, code (not the model) checks that every trial ID, FDA application number, and PubMed ID in the answer actually came from one of those lookups, and flags any that did not.</p>
+      <p>The language model never sees the database directly: it can only request a few read-only lookups and must answer from what they return. Code, not the model, then checks that every trial ID, FDA application number, and PubMed ID in the answer came from one of those lookups.</p>
     </details>
     <details>
       <summary>Does "FDA-approved" mean approved for Alzheimer's disease?</summary>
-      <p>Not necessarily. FDA records show a drug was approved for at least one use. Semaglutide, for example, is approved for diabetes and weight loss, not Alzheimer's. Whether a use includes Alzheimer's is shown only by the drug's label, which answers quote directly.</p>
+      <p>Not necessarily. It means approved for at least one use; semaglutide, for example, is approved for diabetes, not Alzheimer's. Whether a use includes Alzheimer's comes only from the drug's label, which answers quote.</p>
     </details>
     <details>
       <summary>What does "no matched FDA approval record" mean?</summary>
-      <p>That no FDA approval could be matched to the drug's name in the database. It usually means the drug is not approved, but it is not proof: names are matched exactly, and only US FDA data is included. Approval is never inferred from a drug reaching Phase 3 or Phase 4.</p>
+      <p>No FDA approval matched the drug's name. That usually means it is not approved, but it is not proof, since only exact names and US FDA data are used. Approval is never inferred from a drug reaching Phase 3 or 4.</p>
     </details>
     <details>
       <summary>Can I trust every answer?</summary>
-      <p>Treat answers as a well-sourced starting point. The citation check confirms that each cited record is real and was looked up, not that it supports the exact sentence it is attached to, so follow the links for anything important. In testing on 39 questions with known answers, the agent got 38 to 39 right with no invented citations.</p>
+      <p>Treat answers as a well-sourced starting point. The check confirms each cited record is real, not that it supports the exact sentence, so follow the links for anything important. On 39 test questions with known answers, it got 38 to 39 right with no invented citations.</p>
     </details>
     <details>
       <summary>Why is there a daily question limit?</summary>
-      <p>Each new question costs a call to the language model, so this public demo answers up to 50 new questions a day. Questions asked recently are answered from saved answers and do not count.</p>
+      <p>Each new question costs a language-model call, so the demo answers up to 50 new questions a day. Recently asked questions come from saved answers and don't count.</p>
     </details>
     <details>
       <summary>Is this medical advice?</summary>
-      <p>No. NeuroScope summarizes public research and regulatory records. It does not recommend treatments. Talk to a doctor about any medical decision.</p>
+      <p>No. It summarizes public research and regulatory records and does not recommend treatments. Talk to a doctor about medical decisions.</p>
     </details>
     <details>
       <summary>How was it built?</summary>
