@@ -28,6 +28,8 @@ use a scripted stand-in model, so they need no network.
 from __future__ import annotations
 
 import argparse
+import queue
+import threading
 import json
 import os
 import re
@@ -48,6 +50,9 @@ REPORT_STEPS = 14
 # its size. Responses are always streamed, so this timeout is the longest silence allowed (not the total
 # length of an answer); a stalled request is dropped and retried after 20 s instead of 45.
 REQUEST_TIMEOUT_MS = 20_000
+# Stalls are random (the same request answers in 2 s on a retry). If no reply has started after this
+# many seconds, a duplicate request is sent and whichever starts first is used.
+HEDGE_AFTER_S = 8.0
 # Hidden reasoning was most of the time of the final write-up (1,688 thinking tokens for a 644-token
 # answer). Capped; NEUROSCOPE_THINKING_BUDGET overrides it (-1 = the model's own default).
 THINKING_BUDGET = 1024
@@ -427,8 +432,7 @@ class GeminiModel:
             sent_text = False
             parts, calls, usage = [], [], None
             try:
-                for chunk in self._client.models.generate_content_stream(
-                        model=self.model, contents=self._history, config=self._config):
+                for chunk in self._hedged_stream():
                     usage = chunk.usage_metadata or usage
                     content = chunk.candidates[0].content if chunk.candidates else None
                     for part in (content.parts if content and content.parts else []):
@@ -453,6 +457,40 @@ class GeminiModel:
         text = "".join(p.text for p in parts if p.text and not getattr(p, "thought", False))
         return ModelTurn(calls, None if calls else text)
 
+    def _hedged_stream(self):
+        """Stream one reply. If the first piece has not arrived after HEDGE_AFTER_S, send the same request
+        again and continue with whichever starts first; the other is abandoned."""
+        history = list(self._history)
+        replies: queue.Queue = queue.Queue()
+
+        def open_stream() -> None:
+            try:
+                it = iter(self._client.models.generate_content_stream(
+                    model=self.model, contents=history, config=self._config))
+                replies.put((it, next(it, None), None))
+            except Exception as exc:
+                replies.put((None, None, exc))
+
+        threading.Thread(target=open_stream, daemon=True).start()
+        started, failures, wait = 1, [], HEDGE_AFTER_S
+        while True:
+            try:
+                it, first, exc = replies.get(timeout=wait)
+            except queue.Empty:
+                if started == 1:                        # no reply yet: race a duplicate
+                    threading.Thread(target=open_stream, daemon=True).start()
+                    started, wait = 2, REQUEST_TIMEOUT_MS / 1000
+                    continue
+                raise TimeoutError("the model sent nothing back") from None
+            if exc is None:
+                break
+            failures.append(exc)
+            if started == 1 or len(failures) == started:
+                raise exc                               # let call_with_retry decide
+        if first is not None:
+            yield first
+        yield from it
+
     def _generate(self) -> ModelTurn:
         from google.genai import errors
         try:
@@ -473,7 +511,11 @@ class GeminiModel:
         self._config = t.GenerateContentConfig(
             system_instruction=system, temperature=0, tools=[t.Tool(function_declarations=declarations)],
             automatic_function_calling=t.AutomaticFunctionCallingConfig(disable=True),
-            thinking_config=None if budget < 0 else t.ThinkingConfig(thinking_budget=budget))
+            # include_thoughts streams the model's reasoning as it happens, so a call that is thinking keeps
+            # sending data and is never mistaken for a stalled one (the timeout is the longest silence).
+            # Thought parts are never shown or kept as answer text.
+            thinking_config=t.ThinkingConfig(include_thoughts=True,
+                                             thinking_budget=None if budget < 0 else budget))
         self._history = []
         for turn in history or []:
             self._history.append(t.Content(role="user", parts=[t.Part(text=turn["question"])]))

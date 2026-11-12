@@ -208,3 +208,30 @@ def test_without_history_the_model_is_called_as_before(conn, tmp_path):
     seed(conn, tmp_path)
     model = ScriptedModel([ModelTurn(text="No lookups needed.")])      # its start() takes no history
     assert answer_question("Hello there", model, build_tools(conn)).answer == "No lookups needed."
+
+
+def test_a_stalled_model_request_is_raced_by_a_duplicate(monkeypatch):
+    """Vertex AI sometimes sends nothing for a long time; a duplicate request started after a short
+    wait wins, and its reply is used."""
+    import threading
+    from neuroscope import agent
+
+    release = threading.Event()
+    calls = []
+
+    class Models:
+        def generate_content_stream(self, model, contents, config):
+            calls.append(len(calls))
+            if len(calls) == 1:                       # the first request stalls
+                def stalled():
+                    release.wait(5)
+                    yield "late"
+                return stalled()
+            return iter(["fresh", "reply"])
+
+    m = agent.GeminiModel.__new__(agent.GeminiModel)
+    m._client = type("C", (), {"models": Models()})()
+    m.model, m._config, m._history = "test", None, []
+    monkeypatch.setattr(agent, "HEDGE_AFTER_S", 0.05)
+    assert list(m._hedged_stream()) == ["fresh", "reply"] and len(calls) == 2
+    release.set()
