@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import psycopg
 
-from .search import hybrid_search, resolve_drug, search
+from .search import DISCLOSURES, hybrid_search, resolve_drug, search
 
 TRIAL_URL = "https://clinicaltrials.gov/study/{}"
 
@@ -78,7 +78,10 @@ def find_drug(conn: psycopg.Connection, name: str) -> dict:
         (drug_id,))]
     out = {"found": True, "canonical_name": canonical, "verified_names": names, "mechanism": mechanism,
            "modality": modality, "is_combination": is_combo, "is_class": is_class,
-           "trials_by_disease": _trials_by_disease(conn, drug_id)}
+           "trials_by_disease": _trials_by_disease(conn, drug_id),
+           "mechanisms_chembl": [dict(zip(["mechanism", "action_type", "target"], r)) for r in conn.execute(
+               "SELECT mechanism_of_action, action_type, target_name FROM drug_mechanisms WHERE drug_id = %s "
+               "ORDER BY 1", (drug_id,))]}
     if is_class:
         out["note"] = ("This is a drug class registered as a trial intervention, not a single drug. "
                        "It has no FDA record of its own; ask about the specific drugs in it.")
@@ -322,3 +325,91 @@ def get_program_status(conn: psycopg.Connection, drug: str | None = None, diseas
     return {"drug_filter": drug, "disease_filter": slug, "status_filter": status, "count": len(programs),
             "programs": programs, "caveat": PROGRAM_NOTE
             + ("" if drug or include_approved else " Drugs with an FDA or EU approval are left out of this list.")}
+
+
+COMPARE_NOTE = {
+    "mechanisms": ("Mechanisms come from ChEMBL and cover only drugs matched there (most early codes have none). "
+                   "Counts are drugs (programs) per disease, not trials; a drug can have several mechanisms."),
+    "endpoints": ("Endpoints are standard scales named in registered outcome measures (a fixed vocabulary, matched "
+                  "as text); outcomes naming none are not counted. Counts are interventional trials."),
+    "biomarkers": ("Biomarkers are named in registered outcome measures (a fixed vocabulary, matched as text). "
+                   "Counts are interventional trials."),
+}
+
+
+def compare_diseases(conn: psycopg.Connection, aspect: str, diseases: list[str] | None = None,
+                     min_phase: float = 0, active_only: bool = False, primary_only: bool = True,
+                     limit: int = 8) -> dict:
+    """Side-by-side mechanisms, clinical endpoints, or biomarkers across diseases, with example records."""
+    from .outcomes import LABELS
+    if aspect not in COMPARE_NOTE:
+        raise ValueError("aspect must be mechanisms, endpoints, or biomarkers")
+    slugs = [resolve_disease(conn, d) for d in diseases] if diseases else \
+        [r[0] for r in conn.execute("SELECT slug FROM diseases ORDER BY sort_order")]
+    limit = min(int(limit), 15)
+    out = {}
+    for slug in slugs:
+        if aspect == "mechanisms":
+            base = conn.execute(
+                "SELECT COUNT(*) FROM v_program_status WHERE disease = %s AND COALESCE(highest_phase, 0) >= %s "
+                "AND (NOT %s OR program_status = 'active')", (slug, min_phase, active_only)).fetchone()[0]
+            rows = conn.execute(
+                """
+                SELECT m.mechanism_of_action, COUNT(DISTINCT p.drug_id),
+                       (ARRAY_AGG(DISTINCT p.canonical_name))[1:4]
+                FROM v_program_status p JOIN drug_mechanisms m ON m.drug_id = p.drug_id
+                WHERE p.disease = %s AND COALESCE(p.highest_phase, 0) >= %s AND (NOT %s OR p.program_status = 'active')
+                  AND m.mechanism_of_action <> 'Diagnostic agent'
+                GROUP BY 1 ORDER BY 2 DESC, 1 LIMIT %s
+                """, (slug, min_phase, active_only, limit)).fetchall()
+            with_mech = conn.execute(
+                "SELECT COUNT(DISTINCT p.drug_id) FROM v_program_status p JOIN drug_mechanisms m ON m.drug_id = p.drug_id "
+                "WHERE p.disease = %s AND COALESCE(p.highest_phase, 0) >= %s AND (NOT %s OR p.program_status = 'active')",
+                (slug, min_phase, active_only)).fetchone()[0]
+            out[slug] = {"drugs_considered": base, "drugs_with_known_mechanism": with_mech,
+                         "top": [{"mechanism": m, "n_drugs": n, "share_of_drugs_with_mechanism":
+                                  round(n / with_mech, 3) if with_mech else None, "example_drugs": ex}
+                                 for m, n, ex in rows]}
+        else:
+            category = "clinical" if aspect == "endpoints" else "biomarker"
+            trial_filter = ("t.study_type = 'INTERVENTIONAL' AND COALESCE(t.highest_phase, 0) >= %s "
+                            "AND (NOT %s OR t.status_group = 'active')")
+            base = conn.execute(
+                f"SELECT COUNT(*) FROM trials t JOIN trial_diseases td ON td.nct_id = t.nct_id "
+                f"WHERE td.disease = %s AND {trial_filter}", (slug, min_phase, active_only)).fetchone()[0]
+            rows = conn.execute(
+                f"""
+                SELECT o.term, COUNT(DISTINCT t.nct_id),
+                       (ARRAY_AGG(DISTINCT t.nct_id ORDER BY t.nct_id DESC))[1:2]
+                FROM trial_outcome_terms o JOIN trials t ON t.nct_id = o.nct_id
+                JOIN trial_diseases td ON td.nct_id = t.nct_id
+                WHERE td.disease = %s AND o.category = %s AND (NOT %s OR o.kind = 'primary') AND {trial_filter}
+                GROUP BY 1 ORDER BY 2 DESC, 1 LIMIT %s
+                """, (slug, category, primary_only, min_phase, active_only, limit)).fetchall()
+            out[slug] = {"trials_considered": base,
+                         "top": [{"term": LABELS.get(term, term), "n_trials": n,
+                                  "share_of_trials": round(n / base, 3) if base else None,
+                                  "example_trials": ex} for term, n, ex in rows]}
+    names = [{x.get("mechanism") or x.get("term") for x in v["top"]} for v in out.values()]
+    shared = sorted(set.intersection(*names)) if len(names) > 1 else []
+    return {"aspect": aspect, "min_phase": min_phase, "active_only": active_only,
+            "primary_outcomes_only": primary_only if aspect != "mechanisms" else None,
+            "by_disease": out, "in_every_top_list": shared, "caveat": COMPARE_NOTE[aspect]}
+
+
+def search_disclosures(conn: psycopg.Connection, query: str, drug: str | None = None, limit: int = 5,
+                       embedder=None) -> dict:
+    """Company press releases and annual reports filed with the SEC, by keyword and meaning."""
+    if drug and not _drug(conn, drug):
+        return _unknown(conn, drug)
+    hits = (hybrid_search(conn, embedder, query, drug, limit, sources=DISCLOSURES) if embedder
+            else search(conn, query, drug, limit, sources=DISCLOSURES))
+    return {
+        "query": query, "drug_filter": drug,
+        "results": [{"accession": h.external_id, "company_and_form": h.journal, "title": h.title,
+                     "filed": h.published_date, "url": h.url, "linked_drugs": h.drugs[:8],
+                     "excerpt": h.snippet.replace("**", "")} for h in hits],
+        "caveat": "Company disclosures are the company's own statements, not independent evidence: attribute "
+                  "them (\"Biogen said ...\") and cite the accession number. Only listed companies with programs "
+                  "in these diseases are loaded, and only passages naming a tracked drug are kept.",
+    }

@@ -24,7 +24,7 @@ gcloud run jobs deploy "$JOB" --project "$PROJECT_ID" --region "$REGION" --image
     --service-account "$SERVICE_ACCOUNT_EMAIL" \
     --set-cloudsql-instances "$CONNECTION_NAME" \
     --set-secrets "DATABASE_URL=${SECRET}:latest" \
-    --set-env-vars "GOOGLE_CLOUD_PROJECT=${PROJECT_ID},GOOGLE_CLOUD_LOCATION=${REGION}" \
+    --set-env-vars "GOOGLE_CLOUD_PROJECT=${PROJECT_ID},GOOGLE_CLOUD_LOCATION=${REGION},SEC_USER_AGENT=${SEC_USER_AGENT:-}" \
     --command python --args=-m,neuroscope.refresh \
     --memory 1Gi --cpu 1 --task-timeout 3600 --max-retries 0 --quiet
 

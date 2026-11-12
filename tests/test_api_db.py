@@ -325,3 +325,18 @@ def test_stream_limits_are_ordinary_errors_before_streaming(stream_client, monke
     api.app.dependency_overrides[api.get_model] = lambda: StreamingModel(["x"])
     r = stream_client.post("/ask/stream", json={"question": "A brand new question"})
     assert r.status_code == 429 and "limit for today" in r.json()["detail"]
+
+
+def test_report_mode_uses_the_report_prompt_costs_three_and_is_cached_separately(client, conn):
+    model = use_model([ModelTurn([ToolCall("get_fda_status", {"drug": "lecanemab"})]),
+                       ModelTurn(text="## Summary\nLecanemab is FDA-approved (BLA999001).")])
+    body = client.post("/ask", json={"question": "lecanemab", "mode": "report"}).json()
+    assert body["answer"].startswith("## Summary") and body["citations_verified"] is True
+    assert "REPORT" in model.system and model.question == "Write a report on: lecanemab"
+    assert conn.execute("SELECT questions FROM api_usage WHERE day = current_date").fetchone()[0] == 3
+    # The same text as an ordinary question is not served the report from the cache.
+    use_model([ModelTurn(text="Lecanemab is an antibody.")])
+    plain = client.post("/ask", json={"question": "lecanemab"}).json()
+    assert plain["answer"] == "Lecanemab is an antibody." and plain["cached"] is False
+    assert client.post("/ask", json={"question": "lecanemab", "mode": "report"}).json()["cached"] is True
+    assert client.post("/ask", json={"question": "x y z", "mode": "essay"}).status_code == 422

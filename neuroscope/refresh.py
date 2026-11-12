@@ -11,6 +11,9 @@ Steps, in order:
     ema          download the EMA medicines list and rebuild the EU authorisation rows
     labels       re-fetch FDA label indications for the approved applications
     literature   fetch PubMed abstracts per disease for drugs with 2+ trials in it (new ones added, changed ones re-chunked)
+    disclosures  fetch new SEC press releases and annual reports (needs SEC_USER_AGENT)
+    outcomes     re-read standard endpoints and biomarkers from trial outcomes
+    mechanisms   refresh mechanisms of action from ChEMBL
     embeddings   embed passages that have no embedding yet (Vertex AI)
     cache        clear saved answers, so no answer predates the new data
 
@@ -40,7 +43,8 @@ log = logging.getLogger("neuroscope.refresh")
 
 REFRESH_TABLE_SQL = ROOT / "db" / "migrations" / "005_refresh_runs.sql"
 LITERATURE_MIN_TRIALS, LITERATURE_PER_DRUG = 2, 40     # drugs with 2+ trials, 40 abstracts each
-STEPS = ["schema", "trials", "fda", "ema", "labels", "literature", "embeddings", "cache"]
+STEPS = ["schema", "trials", "fda", "ema", "labels", "literature", "disclosures", "outcomes", "mechanisms",
+         "embeddings", "cache"]
 
 
 def step_schema(conn: psycopg.Connection) -> dict:
@@ -102,6 +106,21 @@ def step_literature(conn: psycopg.Connection) -> dict:
     return {**store(conn, iter(abstracts)), "drugs_skipped": skipped}
 
 
+def step_disclosures(conn: psycopg.Connection) -> dict:
+    from .sec import load
+    return load(conn, years=1)
+
+
+def step_outcomes(conn: psycopg.Connection) -> dict:
+    from .outcomes import classify
+    return classify(conn)
+
+
+def step_mechanisms(conn: psycopg.Connection) -> dict:
+    from .mechanisms import load
+    return load(conn)
+
+
 def step_embeddings(conn: psycopg.Connection) -> dict:
     from .embed import VertexEmbedder, embed_chunks
     return embed_chunks(conn, VertexEmbedder())
@@ -115,7 +134,8 @@ def step_cache(conn: psycopg.Connection) -> dict:
 
 STEP_FUNCTIONS: dict[str, Callable[[psycopg.Connection], dict]] = {
     "schema": step_schema, "trials": step_trials, "fda": step_fda, "ema": step_ema, "labels": step_labels,
-    "literature": step_literature, "embeddings": step_embeddings, "cache": step_cache,
+    "literature": step_literature, "disclosures": step_disclosures, "outcomes": step_outcomes,
+    "mechanisms": step_mechanisms, "embeddings": step_embeddings, "cache": step_cache,
 }
 
 

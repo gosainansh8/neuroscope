@@ -91,7 +91,7 @@ def test_search_literature_and_list_pipeline(conn, tmp_path):
 def test_identifiers_are_extracted_in_their_written_forms():
     ids = identifiers("See NCT95000001, EMEA/H/C/005966 and BLA999001 (PMID 900000021; https://pubmed.ncbi.nlm.nih.gov/900000022/).")
     assert ids == {"nct": {"NCT95000001"}, "fda_application": {"BLA999001"}, "pmid": {"900000021", "900000022"},
-                   "ema_product": {"EMEA/H/C/005966"}}
+                   "ema_product": {"EMEA/H/C/005966"}, "sec_filing": set()}
 
 
 def test_fda_application_numbers_are_checked_however_they_are_spaced():
@@ -107,8 +107,8 @@ def test_check_citations_flags_identifiers_no_tool_returned():
     steps = [(ToolCall("get_trials", {}), {"trials": [{"nct_id": "NCT95000001"}]}),
              (ToolCall("search_literature", {}), {"results": [{"pmid": "900000021"}]})]
     cited, bad = check_citations("NCT95000001 and NCT95009999 are relevant (PMID 900000021, PMID 12345678).", steps)
-    assert cited == {"nct": ["NCT95000001"], "fda_application": [], "pmid": ["900000021"], "ema_product": []}
-    assert bad == {"nct": ["NCT95009999"], "fda_application": [], "pmid": ["12345678"], "ema_product": []}
+    assert cited == {"nct": ["NCT95000001"], "fda_application": [], "pmid": ["900000021"], "ema_product": [], "sec_filing": []}
+    assert bad == {"nct": ["NCT95009999"], "fda_application": [], "pmid": ["12345678"], "ema_product": [], "sec_filing": []}
 
 
 # --- The loop ------------------------------------------------------------------
@@ -123,11 +123,11 @@ def test_agent_runs_tools_and_returns_a_checked_answer(conn, tmp_path):
     ])
     result = answer_question("What is the status of Leqembi?", model, build_tools(conn))
     assert [c.name for c, _ in result.steps] == ["find_drug", "get_fda_status", "get_trials"]
-    assert result.cited == {"nct": ["NCT95000001"], "fda_application": ["BLA999001"], "pmid": [], "ema_product": []}
+    assert result.cited == {"nct": ["NCT95000001"], "fda_application": ["BLA999001"], "pmid": [], "ema_product": [], "sec_filing": []}
     assert not any(result.unsupported.values()) and result.stopped_early is False
     # The model was sent the real tool output, the rules, and all five tools.
     assert model.received[1][0][1]["first_approval_date"] == "2023-01-06"
-    assert "Never infer approval" in model.system and len(model.specs) == 7
+    assert "Never infer approval" in model.system and len(model.specs) == 9
     assert "all 2 identifiers cited above came from database lookups" in format_result(result)
 
 
@@ -200,7 +200,7 @@ def test_follow_up_passes_history_and_still_checks_citations_this_turn(conn, tmp
     # Only the last 3 turns are sent, with only question and answer.
     assert received["history"] == [{"question": "Is lecanemab approved?", "answer": "Yes, under BLA999001."}] * 3
     # Repeating identifiers from earlier turns without looking them up again is flagged.
-    assert result.unsupported == {"nct": ["NCT95000001"], "fda_application": ["BLA999001"], "pmid": [], "ema_product": []}
+    assert result.unsupported == {"nct": ["NCT95000001"], "fda_application": ["BLA999001"], "pmid": [], "ema_product": [], "sec_filing": []}
     assert "Earlier questions and answers" in model.system
 
 

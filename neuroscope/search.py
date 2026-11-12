@@ -36,6 +36,7 @@ class Hit:
     snippet: str
     rank: float                    # keyword: term-frequency rank; semantic: cosine similarity (0 to 1)
     drugs: list[str]
+    external_id: str | None = None # PMID or SEC accession number
 
 
 def resolve_drug(conn: psycopg.Connection, name: str) -> int | None:
@@ -47,7 +48,12 @@ def resolve_drug(conn: psycopg.Connection, name: str) -> int | None:
     return row[0] if row else None
 
 
-def search(conn: psycopg.Connection, query: str, drug: str | None = None, limit: int = 5) -> list[Hit]:
+LITERATURE = ("pubmed",)
+DISCLOSURES = ("press_release", "sec_filing")
+
+
+def search(conn: psycopg.Connection, query: str, drug: str | None = None, limit: int = 5,
+           sources: tuple[str, ...] = LITERATURE) -> list[Hit]:
     drug_id = None
     if drug:
         drug_id = resolve_drug(conn, drug)
@@ -60,21 +66,22 @@ def search(conn: psycopg.Connection, query: str, drug: str | None = None, limit:
                    ts_headline('english', c.text, q, 'MaxWords=40, MinWords=20, StartSel=**, StopSel=**'),
                    ts_rank(c.tsv, q) AS rank,
                    ARRAY(SELECT dr.canonical_name FROM document_drugs dd JOIN drugs dr ON dr.id = dd.drug_id
-                         WHERE dd.document_id = d.id ORDER BY 1)
+                         WHERE dd.document_id = d.id ORDER BY 1),
+                   d.external_id
             FROM chunks c
             JOIN documents d ON d.id = c.document_id,
                  websearch_to_tsquery('english', %(q)s) q
-            WHERE c.tsv @@ q
+            WHERE c.tsv @@ q AND d.source_type = ANY(%(sources)s)
               AND (%(drug)s::int IS NULL OR EXISTS (SELECT 1 FROM document_drugs dd
                                                     WHERE dd.document_id = d.id AND dd.drug_id = %(drug)s))
             ORDER BY d.id, ts_rank(c.tsv, q) DESC
         ) best ORDER BY rank DESC, published_date DESC NULLS LAST LIMIT %(limit)s
-        """, {"q": query, "drug": drug_id, "limit": limit}).fetchall()
+        """, {"q": query, "drug": drug_id, "limit": limit, "sources": list(sources)}).fetchall()
     return [Hit(*r) for r in rows]
 
 
 def semantic_search(conn: psycopg.Connection, embedder, query: str, drug: str | None = None,
-                    limit: int = 5) -> list[Hit]:
+                    limit: int = 5, sources: tuple[str, ...] = LITERATURE) -> list[Hit]:
     """Nearest chunks to the question by cosine distance, best chunk per document.
     Only chunks embedded by the embedder's own model are compared."""
     from .embed import to_pgvector
@@ -91,15 +98,17 @@ def semantic_search(conn: psycopg.Connection, embedder, query: str, drug: str | 
                    left(c.text, 300),
                    1 - (c.embedding <=> %(v)s::vector) AS similarity,
                    ARRAY(SELECT dr.canonical_name FROM document_drugs dd JOIN drugs dr ON dr.id = dd.drug_id
-                         WHERE dd.document_id = d.id ORDER BY 1)
+                         WHERE dd.document_id = d.id ORDER BY 1),
+                   d.external_id
             FROM chunks c
             JOIN documents d ON d.id = c.document_id
-            WHERE c.embedding IS NOT NULL AND c.embedding_model = %(model)s
+            WHERE c.embedding IS NOT NULL AND c.embedding_model = %(model)s AND d.source_type = ANY(%(sources)s)
               AND (%(drug)s::int IS NULL OR EXISTS (SELECT 1 FROM document_drugs dd
                                                     WHERE dd.document_id = d.id AND dd.drug_id = %(drug)s))
             ORDER BY d.id, c.embedding <=> %(v)s::vector
         ) best ORDER BY similarity DESC LIMIT %(limit)s
-        """, {"v": vector, "model": embedder.model, "drug": drug_id, "limit": limit}).fetchall()
+        """, {"v": vector, "model": embedder.model, "drug": drug_id, "limit": limit,
+              "sources": list(sources)}).fetchall()
     return [Hit(*r) for r in rows]
 
 
@@ -110,7 +119,7 @@ def _any_word_query(query: str) -> str:
 
 
 def hybrid_search(conn: psycopg.Connection, embedder, query: str, drug: str | None = None,
-                  limit: int = 5, pool: int = 30) -> list[Hit]:
+                  limit: int = 5, pool: int = 30, sources: tuple[str, ...] = LITERATURE) -> list[Hit]:
     """Keyword and meaning-based search combined by reciprocal rank fusion.
 
     Each method ranks its best `pool` chunks; a chunk scores 1/(60 + rank) for each method that
@@ -131,6 +140,7 @@ def hybrid_search(conn: psycopg.Connection, embedder, query: str, drug: str | No
         WITH q AS (SELECT websearch_to_tsquery('english', %(words)s) AS q),
         allowed AS (
             SELECT c.id, c.document_id, c.text, c.tsv, c.embedding, c.embedding_model FROM chunks c
+            JOIN documents d0 ON d0.id = c.document_id AND d0.source_type = ANY(%(sources)s)
             WHERE %(drug)s::int IS NULL OR EXISTS (SELECT 1 FROM document_drugs dd
                                                    WHERE dd.document_id = c.document_id AND dd.drug_id = %(drug)s)),
         kw AS (
@@ -151,11 +161,12 @@ def hybrid_search(conn: psycopg.Connection, embedder, query: str, drug: str | No
                ts_headline('english', b.text, q.q, 'MaxWords=45, MinWords=20, StartSel=**, StopSel=**'),
                b.score::float,
                ARRAY(SELECT dr.canonical_name FROM document_drugs dd JOIN drugs dr ON dr.id = dd.drug_id
-                     WHERE dd.document_id = d.id ORDER BY 1)
+                     WHERE dd.document_id = d.id ORDER BY 1),
+               d.external_id
         FROM best b JOIN documents d ON d.id = b.document_id, q
         ORDER BY b.score DESC, d.published_date DESC NULLS LAST LIMIT %(limit)s
         """, {"words": _any_word_query(query), "v": vector, "model": embedder.model, "drug": drug_id,
-              "pool": pool, "limit": limit}).fetchall()
+              "pool": pool, "limit": limit, "sources": list(sources)}).fetchall()
     return [Hit(*r) for r in rows]
 
 

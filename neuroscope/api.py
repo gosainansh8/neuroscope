@@ -42,7 +42,7 @@ import time
 from collections import defaultdict, deque
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Iterator
+from typing import Literal, Iterator
 
 import psycopg
 from fastapi import Depends, FastAPI, HTTPException, Request
@@ -50,7 +50,7 @@ from fastapi.responses import HTMLResponse, StreamingResponse
 from psycopg.types.json import Jsonb
 from pydantic import BaseModel, Field
 
-from .agent import GeminiModel, answer_question, build_tools
+from .agent import GeminiModel, answer_question, build_tools, source_links
 from .db import connect
 
 # No generated API documentation pages: visitors only need the website.
@@ -116,21 +116,25 @@ def check_visitor(ip: str, now: float | None = None) -> None:
         hits.append(now)
 
 
-def reserve_question(conn: psycopg.Connection) -> None:
-    """Count one question against the caps, or refuse it. One atomic statement per check,
+REPORT_COST = 3      # a report makes several times the model calls of an answer
+
+
+def reserve_question(conn: psycopg.Connection, weight: int = 1) -> None:
+    """Count `weight` questions against the caps, or refuse. One atomic statement per check,
     so two requests at once cannot both take the last slot."""
     month = conn.execute("SELECT COALESCE(SUM(questions), 0) FROM api_usage "
                          "WHERE day >= date_trunc('month', current_date)").fetchone()[0]
-    if month >= limits.monthly:
+    if month + weight > limits.monthly:
         conn.commit()
         raise HTTPException(status_code=429, detail=(
             "This demo has reached its question limit for the month. Example questions that were "
             "asked recently still work. Please come back next month."))
     # The first question of a day creates the row; the limit must apply to that one too.
     row = None if limits.daily <= 0 else conn.execute(
-        "INSERT INTO api_usage (day, questions) VALUES (current_date, 1) "
-        "ON CONFLICT (day) DO UPDATE SET questions = api_usage.questions + 1 "
-        "WHERE api_usage.questions < %s RETURNING questions", (limits.daily,)).fetchone()
+        "INSERT INTO api_usage (day, questions) SELECT current_date, %s WHERE %s <= %s "
+        "ON CONFLICT (day) DO UPDATE SET questions = api_usage.questions + EXCLUDED.questions "
+        "WHERE api_usage.questions + EXCLUDED.questions <= %s RETURNING questions",
+        (weight, weight, limits.daily, limits.daily)).fetchone()
     conn.commit()
     if row is None:
         raise HTTPException(status_code=429, detail=(
@@ -138,8 +142,8 @@ def reserve_question(conn: psycopg.Connection) -> None:
             "asked recently still work. Please come back tomorrow."))
 
 
-def question_key(question: str) -> str:
-    normalized = re.sub(r"\s+", " ", question.strip().lower())
+def question_key(question: str, mode: str = "answer") -> str:
+    normalized = re.sub(r"\s+", " ", question.strip().lower()) + ("" if mode == "answer" else f"\nmode:{mode}")
     return hashlib.sha256(normalized.encode("utf-8")).hexdigest()
 
 DATABASE_DOWN = ("The database is not reachable. If it was stopped to save cost, start it with "
@@ -155,6 +159,7 @@ class Turn(BaseModel):
 class Question(BaseModel):
     question: str = Field(min_length=3, max_length=500)
     history: list[Turn] = Field(default_factory=list, max_length=3)
+    mode: Literal["answer", "report"] = "answer"     # a report is sectioned, longer, and costs REPORT_COST
 
 
 class Lookup(BaseModel):
@@ -173,6 +178,7 @@ class Answer(BaseModel):
     model: str | None = None
     cached: bool = False                 # served from a recent identical question; no model call
     attribution_warnings: list[dict] = []    # a cited record that belongs to a different drug than the sentence names
+    source_links: dict[str, str] = {}        # identifier -> public URL, where the page cannot build it (SEC filings)
 
 
 def get_conn() -> Iterator[psycopg.Connection]:
@@ -277,6 +283,16 @@ def changes(days: int = 7, conn: psycopg.Connection = Depends(get_conn)) -> dict
         ORDER BY a.application_number, p.product_number
         """).fetchall()
     approvals = sorted((r for r in approvals if r[5]), key=lambda r: r[2], reverse=True)[:6]
+    # Programs whose latest trial stopped recently and which have no active trial left.
+    stops = conn.execute(
+        """
+        SELECT canonical_name, disease, latest_closed_nct, latest_closed_status, latest_why_stopped,
+               last_update::text, highest_phase
+        FROM v_program_status
+        WHERE program_status = 'discontinued' AND last_update >= current_date - 180
+          AND NOT fda_approved AND NOT ema_authorised
+        ORDER BY last_update DESC, canonical_name LIMIT 8
+        """).fetchall()
     last = conn.execute("SELECT finished_at::timestamp(0)::text, status FROM refresh_runs "
                         "WHERE finished_at IS NOT NULL ORDER BY id DESC LIMIT 1").fetchone() \
         if conn.execute("SELECT to_regclass('refresh_runs')").fetchone()[0] else None
@@ -286,6 +302,9 @@ def changes(days: int = 7, conn: psycopg.Connection = Depends(get_conn)) -> dict
                        for r in new_trials],
         "trial_changes": [dict(zip(["nct_id", "title", "field", "old", "new", "detected", "diseases", "ended_programs"], r))
                           for r in field_changes],
+        "recent_discontinuations": [dict(zip(["drug", "disease", "nct_id", "status", "why_stopped", "updated",
+                                              "highest_phase"], [float(v) if hasattr(v, "is_finite") else v for v in r]))
+                                    for r in stops],
         "latest_fda_approvals": [dict(zip(["application_number", "drug", "approved", "brand", "sponsor", "diseases"], r))
                                  for r in approvals],
         "last_refresh": {"finished_at": last[0], "status": last[1]} if last else None,
@@ -299,7 +318,7 @@ def cached_answer(conn: psycopg.Connection, body: Question) -> Answer | None:
         return None
     row = conn.execute(
         "SELECT response FROM api_answer_cache WHERE question_key = %s "
-        "AND created_at > now() - make_interval(hours => %s)", (question_key(body.question), CACHE_HOURS)).fetchone()
+        "AND created_at > now() - make_interval(hours => %s)", (question_key(body.question, body.mode), CACHE_HOURS)).fetchone()
     conn.commit()
     return Answer(**{**row[0], "cached": True}) if row else None
 
@@ -311,7 +330,9 @@ def to_answer(result, model) -> Answer:
         cited=result.cited, unsupported_citations=result.unsupported,
         citations_verified=not any(result.unsupported.values()),
         stopped_early=result.stopped_early, model=getattr(model, "model", None),
-        attribution_warnings=result.attribution_warnings)
+        attribution_warnings=result.attribution_warnings,
+        source_links={k: v for k, v in source_links(result.steps).items()
+                      if k in result.cited.get("sec_filing", [])})
 
 
 def save_answer(conn: psycopg.Connection, body: Question, answer: Answer) -> None:
@@ -322,7 +343,7 @@ def save_answer(conn: psycopg.Connection, body: Question, answer: Answer) -> Non
             "INSERT INTO api_answer_cache (question_key, question, response) VALUES (%s, %s, %s) "
             "ON CONFLICT (question_key) DO UPDATE SET question = EXCLUDED.question, "
             "response = EXCLUDED.response, created_at = now()",
-            (question_key(body.question), body.question, Jsonb(answer.model_dump())))
+            (question_key(body.question, body.mode), body.question, Jsonb(answer.model_dump())))
         conn.commit()
 
 
@@ -333,10 +354,10 @@ def ask(body: Question, request: Request, conn: psycopg.Connection = Depends(get
     if cached:
         return cached
     check_visitor(client_ip(request))
-    reserve_question(conn)
+    reserve_question(conn, REPORT_COST if body.mode == "report" else 1)
     try:
         result = answer_question(body.question, model, build_tools(conn, embedder),
-                                 history=[t.model_dump() for t in body.history])
+                                 history=[t.model_dump() for t in body.history], mode=body.mode)
     except RuntimeError as exc:                      # the model service failed or timed out
         log.error("model request failed: %s", exc)
         raise HTTPException(status_code=502, detail=MODEL_UNAVAILABLE) from exc
@@ -371,7 +392,7 @@ def ask_stream(body: Question, request: Request, conn: psycopg.Connection = Depe
     if cached:
         return _ndjson([{"type": "done", **cached.model_dump()}])
     check_visitor(client_ip(request))
-    reserve_question(conn)
+    reserve_question(conn, REPORT_COST if body.mode == "report" else 1)
 
     events: queue.Queue = queue.Queue()
 
@@ -380,7 +401,8 @@ def ask_stream(body: Question, request: Request, conn: psycopg.Connection = Depe
             with stream_connection() as c:
                 model.on_text = lambda delta: events.put({"type": "text", "delta": delta})
                 result = answer_question(body.question, model, build_tools(c, embedder),
-                                         history=[t.model_dump() for t in body.history], on_event=events.put)
+                                         history=[t.model_dump() for t in body.history], on_event=events.put,
+                                         mode=body.mode)
                 answer = to_answer(result, model)
                 save_answer(c, body, answer)
                 events.put({"type": "done", **answer.model_dump()})

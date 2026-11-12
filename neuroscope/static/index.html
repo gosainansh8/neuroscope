@@ -108,12 +108,32 @@
   button.primary:hover { transform: translateY(-1px); }
   button.primary:disabled { opacity: .55; cursor: default; transform: none; }
   .hint { color: var(--faint); font-size: .8rem; margin: 8px 4px 0; }
-  .followup { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 10px 2px 0; font-size: .85rem;
-              color: var(--muted); }
-  .followup b { color: var(--text); font-weight: 600; }
-  .followup .icon-btn { margin-left: auto; }
+  .followup { display: flex; align-items: center; gap: 10px; margin: 10px 0 0; padding: 6px 6px 6px 14px;
+              font-size: .9rem; color: var(--muted); border-radius: 999px;
+              background: linear-gradient(90deg, var(--accent-soft), transparent 85%);
+              border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent); }
+  .followup[hidden] { display: none; }
+  .followup .fu-icon { flex: none; color: var(--accent-2); }
+  .followup .fu-label { flex: none; font: 600 .74rem/1 var(--mono); letter-spacing: .1em; text-transform: uppercase;
+                        color: var(--accent-2); }
+  .followup b { flex: 1; min-width: 0; color: var(--text); font-weight: 600; white-space: nowrap; overflow: hidden;
+                text-overflow: ellipsis; }
+  .followup #new-topic { flex: none; display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px;
+                         border-radius: 999px; font: 600 .86rem/1 inherit; cursor: pointer; color: var(--text);
+                         background: var(--panel-solid); border: 1px solid color-mix(in srgb, var(--accent) 55%, transparent);
+                         transition: background .15s, color .15s, border-color .15s; }
+  .followup #new-topic svg { color: var(--accent-2); }
+  .followup #new-topic:hover { color: #fff; border-color: transparent;
+                               background: linear-gradient(135deg, var(--accent), var(--accent-2)); }
+  .followup #new-topic:hover svg { color: #fff; }
+  @media (max-width: 620px) { .followup .fu-label { display: none; } }
 
   /* Examples: two quiet suggestions */
+  .mode { margin-left: auto; display: inline-flex; padding: 3px; gap: 2px; border-radius: 999px;
+          border: 1px solid var(--panel-border); background: var(--panel); }
+  .mode-btn { border: 0; background: none; padding: 4px 12px; border-radius: 999px; font: 600 .82rem/1.2 inherit;
+              color: var(--muted); cursor: pointer; }
+  .mode-btn.on { color: #fff; background: linear-gradient(135deg, var(--accent), var(--accent-2)); }
   .examples { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; margin: 10px 4px 0;
               font-size: .96rem; color: var(--faint); }
   .example { white-space: nowrap; border: 0; background: none; padding: 0; color: var(--muted); font-size: .96rem; cursor: pointer;
@@ -202,6 +222,7 @@
   .source small { font-size: .76rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
   .source code { font: 600 .9rem ui-monospace, SFMono-Regular, Menlo, monospace; }
   .source.trial small { color: var(--trial); } .source.trial:hover { border-color: var(--trial); }
+  .source.sec small, .answer a.sec { color: var(--accent-2); } .source.sec:hover { border-color: var(--accent-2); }
   .source.fda small { color: var(--fda); } .source.fda:hover { border-color: var(--fda); }
   .source.paper small { color: var(--paper); } .source.paper:hover { border-color: var(--paper); }
 
@@ -276,10 +297,18 @@
   .changes-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; margin-bottom: 14px; }
   .changes-head h3 { margin: 0; font-size: 1.1rem; letter-spacing: -.01em; }
   .changes-head span { color: var(--faint); font-size: .88rem; }
-  .change-cols { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .change-cols { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
   @media (max-width: 760px) { .change-cols { grid-template-columns: 1fr; } }
   .change-col { --c: var(--accent); --c-soft: var(--accent-soft); background: var(--panel-solid);
-                border: 1px solid var(--panel-border); border-top: 3px solid var(--c); border-radius: 12px; padding: 14px; }
+                border: 1px solid var(--panel-border); border-top: 3px solid var(--c); border-radius: 12px; padding: 14px;
+                display: flex; flex-direction: column; }
+  .change-cols { align-items: stretch; } .change-col { min-width: 0; }
+  .change-list { flex: 1; align-content: start; grid-template-columns: minmax(0, 1fr); }
+  .change-list li { min-width: 0; }
+  .change-list li { min-height: 104px; }
+  .change-list .meta { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .change-list .why { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+                      margin-top: 3px; color: var(--muted); font-size: .86rem; font-style: italic; }
   .change-col.trial { --c: var(--trial); --c-soft: var(--trial-soft); }
   .change-col.fda { --c: var(--fda); --c-soft: var(--fda-soft); }
   .change-col h4 { display: flex; align-items: center; gap: 8px; margin: 0 0 12px; font-size: .95rem; }
@@ -393,7 +422,7 @@
       <span><b data-stat="document_chunks"></b>Passages</span>
       <span class="quota" title="New questions answered today; repeats of recent questions are free"><b id="quota"></b>Asked today</span>
     </div>
-    <p class="sources-caption">Sources: <span>ClinicalTrials.gov</span> · <span>Drugs@FDA &amp; FDA labels</span> · <span>EMA</span> · <span>PubMed</span></p>
+    <p class="sources-caption">Sources: <span>ClinicalTrials.gov</span> · <span>Drugs@FDA &amp; FDA labels</span> · <span>EMA</span> · <span>PubMed</span> · <span>SEC filings</span> · <span>ChEMBL</span></p>
   </section>
 
   <form id="ask-form" class="card">
@@ -405,14 +434,22 @@
     </button>
   </form>
   <div id="followup" class="followup" hidden aria-live="polite">
-    <span>Follow-ups continue from: <b id="followup-q"></b></span>
-    <button type="button" class="icon-btn" id="new-topic">New topic</button>
+    <svg class="fu-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4v7a4 4 0 0 0 4 4h12"/><path d="M15 10l5 5-5 5"/></svg>
+    <span class="fu-label">Following up on</span>
+    <b id="followup-q"></b>
+    <button type="button" id="new-topic" title="Forget the earlier question and start fresh">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+      New topic</button>
   </div>
 
   <div class="examples" id="examples">
     <span>Try:</span>
     <button type="button" class="example">Is tofersen approved for ALS?</button>
     <button type="button" class="example">Which Parkinson's drugs are in Phase 3 trials?</button>
+    <div class="mode" role="group" aria-label="What to write">
+      <button type="button" class="mode-btn on" data-mode="answer" aria-pressed="true" title="A short answer to a question">Answer</button>
+      <button type="button" class="mode-btn" data-mode="report" aria-pressed="false" title="A sectioned report with citations (counts as 3 questions)">Report</button>
+    </div>
   </div>
 
   <section id="progress" class="card progress" hidden aria-live="polite">
@@ -466,9 +503,7 @@
       </li>
       <li class="t">
         <span class="ic" aria-hidden="true"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5.5" rx="7.5" ry="2.8"/><path d="M4.5 5.5v13c0 1.5 3.4 2.8 7.5 2.8s7.5-1.3 7.5-2.8v-13M4.5 12c0 1.5 3.4 2.8 7.5 2.8s7.5-1.3 7.5-2.8"/></svg></span>
-        <span class="nerve">Memory recall</span><b>3. Database lookups</b>Read-only, at most 8 rounds.
-        <span class="tools"><span>drug names</span><span>trials</span><span>FDA status</span><span>EU status</span><span>literature</span><span>pipeline</span></span>
-        <span class="src">ClinicalTrials.gov · FDA · EMA · PubMed, refreshed weekly</span>
+        <span class="nerve">Memory recall</span><b>3. Database lookups</b>Read-only searches of trials, US and EU approvals, papers, and company filings.
       </li>
       <li>
         <span class="ic" aria-hidden="true"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4l10.5-10.5a2.8 2.8 0 0 0-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg></span>
@@ -493,7 +528,7 @@
       </div>
       <div class="change-col">
         <h4><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12a8 8 0 0 1-14 5.3M4 12a8 8 0 0 1 14-5.3"/><path d="M18 3v4h-4M6 21v-4h4"/></svg>
-          Status changes<span class="count" id="chg-status-n">0</span></h4>
+          Status changes &amp; stops<span class="count" id="chg-status-n">0</span></h4>
         <svg class="trace" viewBox="0 0 120 26" preserveAspectRatio="none" aria-hidden="true"><path id="chg-status-trace" pathLength="1"/></svg>
         <ul class="change-list" id="chg-status"></ul>
       </div>
@@ -564,8 +599,11 @@ const EMA_URL = (id) => `https://www.ema.europa.eu/en/search?search_api_fulltext
 const FDA_URL = (num) => `https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=${num}`;
 
 // Identifiers become links to their public source. Applied to already-escaped text only.
+let SOURCE_LINKS = {};     // identifier -> URL from the server, for SEC filings
 function linkIdentifiers(html) {
   return html
+    .replace(/\b\d{10}-\d{2}-\d{6}\b/g, (m) => SOURCE_LINKS[m]
+      ? `<a class="sec" href="${SOURCE_LINKS[m].replace(/&/g, "&amp;")}" target="_blank" rel="noopener">${m}</a>` : m)
     .replace(/\bNCT\d{8}\b/g, (m) => `<a class="trial" href="${TRIAL_URL(m)}" target="_blank" rel="noopener">${m}</a>`)
     .replace(/\bPMID:?\s*(\d{6,9})\b/g, (m, id) => `<a class="paper" href="${PUBMED_URL(id)}" target="_blank" rel="noopener">${m}</a>`)
     .replace(/\b(NDA|BLA|ANDA)[\s-]?(\d{6})\b/g, (m, kind, num) =>
@@ -601,6 +639,7 @@ function renderSources(cited) {
     ["trial", "Clinical trial", cited.nct || [], (id) => TRIAL_URL(id), (id) => id],
     ["fda", "FDA application", cited.fda_application || [], (id) => FDA_URL(id.replace(/^\D+/, "")), (id) => id],
     ["fda", "EMA medicine", cited.ema_product || [], (id) => EMA_URL(id), (id) => id],
+    ["sec", "SEC filing", (cited.sec_filing || []).filter((id) => SOURCE_LINKS[id]), (id) => SOURCE_LINKS[id], (id) => id],
     ["paper", "PubMed", cited.pmid || [], (id) => PUBMED_URL(id), (id) => `PMID ${id}`],
   ];
   const box = $("sources");
@@ -622,7 +661,7 @@ function renderSources(cited) {
 }
 
 const TOOL_LABELS = {
-  find_drug: "Identified the drug", get_trials: "Checked clinical trials", get_fda_status: "Read FDA records", get_ema_status: "Read EMA records", get_program_status: "Checked program status",
+  find_drug: "Identified the drug", get_trials: "Checked clinical trials", get_fda_status: "Read FDA records", get_ema_status: "Read EMA records", get_program_status: "Checked program status", search_disclosures: "Read company filings", compare_diseases: "Compared the diseases",
   search_literature: "Searched the literature", list_pipeline: "Listed the drug pipeline",
 };
 
@@ -751,6 +790,7 @@ function showDraft(question, text) {
 
 // The finished answer: rendered in full, with sources and the citation check.
 function renderFinal(question, data) {
+  SOURCE_LINKS = data.source_links || {};
   const wasHidden = $("result").hidden;
   $("result-question").textContent = question;
   $("answer").innerHTML = renderAnswer(data.answer);
@@ -771,7 +811,7 @@ function renderFinal(question, data) {
     chip.className = "chip neutral"; chip.textContent = "No citations in this answer";
   }
   $("cache-chip").hidden = !data.cached;
-  setHistory([...history, { question, answer: data.answer.slice(0, 6000) }]);
+  if (mode === "answer") setHistory([...history, { question, answer: data.answer.slice(0, 6000) }]);
   textarea.value = ""; autosize();          // ready for a follow-up, which starts empty
   $("result").hidden = false;
   if (wasHidden) $("result").scrollIntoView({ behavior: "smooth", block: "start" });
@@ -793,7 +833,7 @@ async function ask(question) {
   };
   try {
     const resp = await fetch("ask/stream", { method: "POST", headers: { "content-type": "application/json" },
-                                             body: JSON.stringify({ question, history }) });
+                                             body: JSON.stringify(mode === "report" ? { question, mode } : { question, history }) });
     if (!resp.ok) {
       const data = await resp.json().catch(() => ({}));
       showError(typeof data.detail === "string" ? data.detail
@@ -833,9 +873,24 @@ textarea.addEventListener("input", () => { autosize(); if (Math.random() < .5) n
 $("ask-form").addEventListener("submit", (e) => { e.preventDefault(); const q = textarea.value.trim(); if (q) ask(q); });
 textarea.addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); $("ask-form").requestSubmit(); } });
 $("new-topic").addEventListener("click", () => { setHistory([]); textarea.value = ""; autosize(); textarea.focus(); });
+// Answer or report. A report is a sectioned briefing on a topic, with the same citation check.
+let mode = "answer";
+const PLACEHOLDERS = { answer: "e.g. Is lecanemab approved, and what trials is it in?",
+                       report: "A topic, e.g. opicapone in Parkinson's disease, or the ALS pipeline" };
+function setMode(next) {
+  mode = next;
+  document.querySelectorAll(".mode-btn").forEach((b) => {
+    const on = b.dataset.mode === next; b.classList.toggle("on", on); b.setAttribute("aria-pressed", String(on));
+  });
+  $("submit").querySelector("span").textContent = next === "report" ? "Write report" : "Ask";
+  if (next === "report") { setHistory([]); textarea.placeholder = PLACEHOLDERS.report; }
+  else textarea.placeholder = PLACEHOLDERS.answer;
+}
 $("examples").addEventListener("click", (e) => {
+  const m = e.target.closest(".mode-btn");
+  if (m) { setMode(m.dataset.mode); textarea.focus(); return; }
   const btn = e.target.closest(".example");
-  if (btn) { setHistory([]); textarea.value = btn.textContent.trim(); autosize(); $("ask-form").requestSubmit(); }
+  if (btn) { setMode("answer"); setHistory([]); textarea.value = btn.textContent.trim(); autosize(); $("ask-form").requestSubmit(); }
 });
 $("copy").addEventListener("click", async () => {
   try { await navigator.clipboard.writeText($("answer").innerText); $("copy").textContent = "Copied"; }
@@ -889,6 +944,7 @@ const pretty = (v) => {
   const words = t.replace(/_/g, " ");
   return words === words.toUpperCase() ? words.charAt(0) + words.slice(1).toLowerCase() : words;
 };
+const NEWS_ITEMS = 4;           // the same number in every column, so the columns line up
 const DISEASE_NAMES = { alzheimers: "Alzheimer's", parkinsons: "Parkinson's", als: "ALS" };
 function diseaseTags(list) {
   const box = el("span", "dtags");
@@ -903,8 +959,8 @@ fetch("changes?days=7").then((r) => r.ok ? r.json() : null).then((d) => {
               el("span", "meta", `Posted ${pretty(t.first_posted)} · ${t.phase}` + (t.drugs.length ? ` · ${t.drugs.slice(0, 2).join(", ")}` : "")),
               diseaseTags(t.diseases));
     return li;
-  }), "No trials first posted this week.");
-  fillList("chg-status", d.trial_changes.slice(0, 5).map((c) => {
+  }).slice(0, NEWS_ITEMS), "No trials first posted this week.");
+  const statusItems = d.trial_changes.slice(0, NEWS_ITEMS).map((c) => {
     const li = el("li");
     const delta = el("div", "delta");
     delta.append(el("span", "old", pretty(c.old)), el("span", "new", pretty(c.new)));
@@ -913,8 +969,18 @@ fetch("changes?days=7").then((r) => r.ok ? r.json() : null).then((d) => {
     if ((c.ended_programs || []).length)
       li.append(el("span", "ended", `Program discontinued: ${c.ended_programs.join(", ")} has no active trials left`));
     return li;
-  }), "No status changes this week.");
-  fillList("chg-fda", d.latest_fda_approvals.slice(0, 5).map((a) => {
+  });
+  // Fill the column with programs that stopped recently, so it shows a full set like the others.
+  (d.recent_discontinuations || []).slice(0, Math.max(0, NEWS_ITEMS - statusItems.length)).forEach((p) => {
+    const li = el("li");
+    li.append(idLink(TRIAL_URL(p.nct_id), p.nct_id), el("span", "ended", `Program discontinued: ${p.drug}`),
+              el("span", "meta", `${pretty(p.status)} · updated ${pretty(p.updated)}` + (p.highest_phase ? ` · Phase ${p.highest_phase}` : "")));
+    if (p.why_stopped) li.append(el("span", "why", `"${p.why_stopped}"`));
+    li.append(diseaseTags([p.disease]));
+    statusItems.push(li);
+  });
+  fillList("chg-status", statusItems, "No status changes this week.");
+  fillList("chg-fda", d.latest_fda_approvals.slice(0, NEWS_ITEMS).map((a) => {
     const li = el("li");
     const name = el("div");
     name.append(el("span", "brand", a.brand || a.drug), document.createTextNode(a.brand ? ` (${a.drug})` : ""));

@@ -3,6 +3,7 @@
 Usage:
     python -m neuroscope.agent "What is the regulatory status of lecanemab?"
     python -m neuroscope.agent "Which drugs have active Phase 3 trials but no FDA record?" --show-steps
+    python -m neuroscope.agent "opicapone in Parkinson's disease" --report
 
 HOW IT WORKS
 The model cannot see the database. It can only call the read-only tools in
@@ -42,13 +43,14 @@ from .embed import call_with_retry
 
 DEFAULT_MODEL = "gemini-3.8-flash"
 MAX_STEPS = 8
+REPORT_STEPS = 14
 REQUEST_TIMEOUT_MS = 45_000               # a stalled request fails (and is retried) instead of hanging
 
 SYSTEM_PROMPT = """You answer questions about drug development for Alzheimer's disease, Parkinson's disease, and ALS (amyotrophic lateral sclerosis) using the NeuroScope database.
 
 Rules:
 1. Use only facts returned by the tools in this conversation. Do not use your own memory for any fact about a drug, trial, approval, or paper. If the tools do not answer the question, say what is missing.
-2. Cite the source of every factual claim with its identifier exactly as the tool returned it: trial IDs (NCT...), FDA application numbers (NDA..., BLA..., ANDA...), EMA product numbers (EMEA/H/C/...), and PubMed IDs written as "PMID 12345678". Never write an identifier that a tool did not return.
+2. Cite the source of every factual claim with its identifier exactly as the tool returned it: trial IDs (NCT...), FDA application numbers (NDA..., BLA..., ANDA...), EMA product numbers (EMEA/H/C/...), SEC accession numbers (0001234567-26-000123) for company disclosures, and PubMed IDs written as "PMID 12345678". Never write an identifier that a tool did not return.
 3. Approval status comes only from get_fda_status (United States) and get_ema_status (European Union). Never infer approval, or lack of it, from trial phase, trial status, or completion. If there is no FDA record, say "no matched FDA approval record" and that this is not proof the drug is unapproved. If there is no EMA record, say "no centrally authorised EU medicine", not that it is unavailable in Europe. Name the regulator for every approval you mention; when a question asks whether a drug is approved without naming a country, check both.
 4. "FDA-approved" and "EU-authorised" mean approved for at least one use. Say a drug is approved for a disease only if the label or indication text returned by the tool says so, and quote the relevant words. Pass the disease to get_fda_status and get_ema_status so the right label is shown.
 5. Give dates as the tools give them, and say which source date applies when it matters.
@@ -56,6 +58,28 @@ Rules:
 7. Be concise and plain. Start with the direct answer (for a yes-or-no question, the first word is "Yes" or "No"), then the supporting facts with their citations. list_pipeline already reports US and EU approval for every drug it lists; do not look each drug up again unless the question needs more.
 8. Trials belong to the diseases whose registry searches returned them. When a question is about one disease, pass it as `disease` to get_trials and list_pipeline; without it, counts cover every disease loaded.
 9. Earlier questions and answers in this conversation are context for understanding a follow-up (for example, what "it" refers to). They are not evidence: look up again, in this turn, any fact you cite."""
+
+REPORT_PROMPT = SYSTEM_PROMPT + """
+
+You are writing a REPORT, not a short answer. The user names a topic: a drug, a disease's pipeline, a
+mechanism, or a comparison. Gather evidence with several lookups first (identity, trials, program status,
+US and EU approval, literature, and comparison or pipeline context when relevant), then write:
+
+## Summary
+Three to five sentences with the main conclusions.
+## Regulatory status
+US (FDA) and EU (EMA) status, with application or product numbers and quoted indication text.
+## Clinical development
+Trials by phase and status, which programs are active or discontinued (quote why_stopped), key endpoints.
+## Published evidence
+What the abstracts report, each point cited by PMID.
+## Landscape
+How this compares with other drugs or diseases in the data (mechanisms, endpoints, biomarkers, pipeline).
+## Gaps and caveats
+What the data does not show, and the caveats returned with the lookups.
+
+Every factual sentence carries its identifier. Leave out a section only if no lookup supports it, and say so.
+Do not start with Yes or No."""
 
 DISEASE_PARAM = {"type": "string", "enum": ["alzheimers", "parkinsons", "als"],
                  "description": "limit to one disease; omit for all"}
@@ -102,6 +126,25 @@ TOOL_SPECS: list[dict[str, Any]] = [
          "status": {"type": "string", "enum": ["active", "discontinued", "dormant", "completed"]},
          "min_phase": {"type": "number", "description": "when listing: lowest highest-phase, default 0"},
          "limit": {"type": "integer"}}}},
+    {"name": "compare_diseases",
+     "description": "Compare Alzheimer's, Parkinson's, and ALS side by side: the most common mechanisms of action "
+                    "(from ChEMBL), the standard clinical endpoints, or the biomarkers named in trial outcomes, with "
+                    "counts and example drugs or trial IDs.",
+     "parameters": {"type": "object", "properties": {
+         "aspect": {"type": "string", "enum": ["mechanisms", "endpoints", "biomarkers"]},
+         "diseases": {"type": "array", "items": {"type": "string", "enum": ["alzheimers", "parkinsons", "als"]},
+                      "description": "default: all three"},
+         "min_phase": {"type": "number", "description": "only trials or programs at this phase or higher, default 0"},
+         "active_only": {"type": "boolean", "description": "only active trials or programs, default false"},
+         "primary_only": {"type": "boolean", "description": "endpoints/biomarkers: primary outcomes only, default true"},
+         "limit": {"type": "integer"}}, "required": ["aspect"]}},
+    {"name": "search_disclosures",
+     "description": "Search company press releases and annual reports filed with the SEC (EDGAR) for listed "
+                    "companies with programs in these diseases. Use for company statements: trial readouts as "
+                    "announced, launch and pipeline updates, discontinuation announcements. Cite the accession number.",
+     "parameters": {"type": "object", "properties": {
+         "query": {"type": "string"}, "drug": {"type": "string"},
+         "limit": {"type": "integer", "description": "results, default 5"}}, "required": ["query"]}},
     {"name": "list_pipeline",
      "description": "List drugs by highest trial phase, in one disease or all, with whether each has US and "
                     "EU approval records.",
@@ -118,6 +161,7 @@ _ID_PATTERNS = {
     "fda_application": re.compile(r"\b(NDA|BLA|ANDA)[\s-]?(\d{6})\b"),
     "pmid": re.compile(r"(?:PMID:?\s*|pubmed\.ncbi\.nlm\.nih\.gov/)(\d{6,9})"),
     "ema_product": re.compile(r"\bEMEA/H/C/\d{6}\b"),
+    "sec_filing": re.compile(r"\b\d{10}-\d{2}-\d{6}\b"),         # SEC accession number
 }
 
 
@@ -163,6 +207,17 @@ def _evidence(steps: list[tuple[ToolCall, dict]]) -> dict[str, set[str]]:
     found = identifiers(blob)
     found["pmid"] |= set(re.findall(r'"pmid": "(\d{6,9})"', blob))
     return found
+
+
+def source_links(steps: list[tuple[ToolCall, dict]]) -> dict[str, str]:
+    """Links for identifiers whose public page cannot be built from the identifier alone (SEC filings)."""
+    links = {}
+    for call, result in steps:
+        if call.name == "search_disclosures":
+            for r in result.get("results") or []:
+                if r.get("accession") and r.get("url"):
+                    links[r["accession"]] = r["url"]
+    return links
 
 
 def check_citations(answer: str, steps: list[tuple[ToolCall, dict]]) -> tuple[dict, dict]:
@@ -214,6 +269,12 @@ def _owners(steps: list[tuple[ToolCall, dict]]) -> tuple[dict[str, set[str]], di
             for m in result.get("medicines") or []:
                 owners.setdefault(m["ema_product_number"], set()).add(drug)
                 add_name(m["name"], drug)
+        elif call.name == "search_disclosures":
+            for r in result.get("results") or []:
+                if r.get("accession"):
+                    owners.setdefault(r["accession"], set()).update(r.get("linked_drugs") or [])
+                for linked in r.get("linked_drugs") or []:
+                    add_name(linked, linked)
         elif call.name == "search_literature":
             for r in result.get("results") or []:
                 owners.setdefault(r["pmid"], set()).update(r.get("linked_drugs") or [])
@@ -261,6 +322,11 @@ def build_tools(conn: psycopg.Connection, embedder=None) -> dict[str, Callable[.
         "get_program_status": lambda drug=None, disease=None, status=None, min_phase=0, limit=15:
             tools.get_program_status(conn, drug or None, disease or None, status or None, float(min_phase),
                                      False, limit),
+        "compare_diseases": lambda aspect, diseases=None, min_phase=0, active_only=False, primary_only=True, limit=8:
+            tools.compare_diseases(conn, aspect, list(diseases) if diseases else None, float(min_phase),
+                                   bool(active_only), bool(primary_only), limit),
+        "search_disclosures": lambda query, drug=None, limit=5: tools.search_disclosures(
+            conn, query, drug or None, min(int(limit), 8), embedder),
         "list_pipeline": lambda min_phase=3, active_only=True, limit=25, disease=None: tools.list_pipeline(
             conn, float(min_phase), bool(active_only), min(int(limit), 40), disease or None),
     }
@@ -283,8 +349,8 @@ STEP_LIMIT_NOTE = ("Lookup limit reached; this lookup was not run. Answer now us
 
 
 def answer_question(question: str, model: ChatModel, registry: dict[str, Callable[..., dict]],
-                    max_steps: int = MAX_STEPS, history: list[dict] | None = None,
-                    on_event: Callable[[dict], None] | None = None) -> AgentResult:
+                    max_steps: int | None = None, history: list[dict] | None = None,
+                    on_event: Callable[[dict], None] | None = None, mode: str = "answer") -> AgentResult:
     """Answer one question. `history` holds earlier {"question", "answer"} turns of the same
     conversation (oldest first, at most MAX_HISTORY_TURNS kept) so follow-ups can be understood.
     Citations are still checked only against lookups made in this turn.
@@ -293,8 +359,14 @@ def answer_question(question: str, model: ChatModel, registry: dict[str, Callabl
     lookup runs, so a caller can show progress as it happens."""
     steps: list[tuple[ToolCall, dict]] = []
     history = [{"question": h["question"], "answer": h["answer"]} for h in (history or [])][-MAX_HISTORY_TURNS:]
-    turn = (model.start(SYSTEM_PROMPT, TOOL_SPECS, question, history) if history
-            else model.start(SYSTEM_PROMPT, TOOL_SPECS, question))
+    if mode not in ("answer", "report"):
+        raise ValueError("mode must be answer or report")
+    system = REPORT_PROMPT if mode == "report" else SYSTEM_PROMPT
+    max_steps = max_steps or (REPORT_STEPS if mode == "report" else MAX_STEPS)
+    if mode == "report":
+        question = f"Write a report on: {question}"
+    turn = (model.start(system, TOOL_SPECS, question, history) if history
+            else model.start(system, TOOL_SPECS, question))
     for _ in range(max_steps):
         if not turn.tool_calls:
             break
@@ -447,6 +519,7 @@ def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("question")
     p.add_argument("--show-steps", action="store_true", help="print each database lookup the model made")
+    p.add_argument("--report", action="store_true", help="write a sectioned report on the topic instead of an answer")
     p.add_argument("--keyword-search", action="store_true",
                    help="use keyword search for literature instead of embeddings")
     args = p.parse_args(argv)
@@ -457,7 +530,8 @@ def main(argv: list[str] | None = None) -> int:
             from .embed import VertexEmbedder
             embedder = VertexEmbedder()
         with connect() as conn:
-            result = answer_question(args.question, model, build_tools(conn, embedder))
+            result = answer_question(args.question, model, build_tools(conn, embedder),
+                                     mode="report" if args.report else "answer")
     except RuntimeError as exc:
         print(exc)
         return 2
