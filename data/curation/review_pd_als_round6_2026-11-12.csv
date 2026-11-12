@@ -1,0 +1,59 @@
+action,alias,drug,confidence,reason
+map,Levodopa,levodopa,high,Confirms the drug's own name
+map,Rotigotine,rotigotine,high,Confirms the drug's own name
+map,Pramipexole,pramipexole,high,Confirms the drug's own name
+map,carbidopa + levodopa,carbidopa + levodopa,high,Confirms the drug's own name
+map,Ropinirole,ropinirole,high,Confirms the drug's own name
+map,incobotulinumtoxinA,incobotulinumtoxina,high,Confirms the drug's own name
+map,Lidocaine,lidocaine,high,Confirms the drug's own name
+map,ABBV-CLS-7262,ABBV-CLS-7262,high,Confirms the drug's own name
+map,AL001,AL001,high,Confirms the drug's own name
+map,BIIB014,BIIB014,high,Confirms the drug's own name (vipadenant)
+map,Equfina,equfina,high,Confirms the drug's own name (safinamide brand in Japan)
+map,Prednisone,prednisone,high,Confirms the drug's own name
+map,PYM50028,PYM50028,high,Confirms the drug's own name
+map,[123I]B-CIT,[123I]B-CIT,high,Confirms the tracer's own name
+map,[18F]DPA-714,[18F]DPA-714,high,Confirms the tracer's own name
+map,TRO19622,TRO19622,high,Confirms the drug's own name (olesoxime)
+map,Vitamin D3,Vitamin D3,high,Confirms the drug's own name
+map,ALZT-OP1a,cromolyn,high,ALZT-OP1a is AZTherapies' inhaled cromolyn
+map,MN-166,ibudilast,high,MN-166 is MediciNova's code for ibudilast
+map,E0302,mecobalamin,high,E0302 is Eisai's code for high-dose mecobalamin
+map,DA-9701,motilitone,high,DA-9701 is Dong-A's code for Motilitone
+map,AP CD/LD,accordion carbidopa + levodopa,high,AP CD/LD is the accordion pill of carbidopa-levodopa
+map,TD-9855,ampreloxetine,high,TD-9855 is Theravance's code for ampreloxetine
+map,MSK-DA01,bemdaneprocel,high,MSK-DA01 is bemdaneprocel (BlueRock)
+map,Trans-resveratrol,BIA 6-512,high,BIA 6-512 is Bial's trans-resveratrol
+map,DNL151,BIIB122,high,DNL151 and BIIB122 are the same LRRK2 inhibitor
+map,Myobloc,botulinum toxin type b,high,Myobloc is rimabotulinumtoxinB (botulinum toxin type B)
+map,Perflutren Lipid Microsphere,definity,high,Definity is perflutren lipid microspheres
+map,Docosahexaenoic Acid,dha,high,DHA is docosahexaenoic acid
+map,ADX48621,dipraglurant,high,ADX48621 is Addex's code for dipraglurant
+map,L-DOPS,droxidopa,high,L-DOPS is droxidopa
+map,Northera,droxidopa,high,Northera is the brand of droxidopa
+map,Lingzhi,ganoderma,high,Lingzhi is Ganoderma lucidum
+map,HNC364 injectable suspension,HNC364,high,Dosage form after the drug code
+map,BIOTIN,MD1003,medium,MD1003 is high-dose pharmaceutical-grade biotin
+map,Oxaloacetic acid,oxaloacetate,high,Same compound
+map,Fycompa,perampanel,high,Fycompa is the brand of perampanel
+map,Nuplazid,pimavanserin,high,Nuplazid is the brand of pimavanserin
+map,SCH 420814,preladenant,high,SCH 420814 is Merck's code for preladenant
+map,Troloxamide quinone,PTC-589,high,PTC-589 (EPI-589) is (R)-troloxamide quinone
+map,Acthar,repository corticotropin,high,Acthar Gel is repository corticotropin injection
+map,rivastigmine system,rivastigmine,high,Transdermal system of rivastigmine
+map,CX-8998,suvecaltamide,high,CX-8998 is suvecaltamide
+map,CVL-751,tavapadon,high,CVL-751 is Cerevel's code for tavapadon
+map,SLS-005 Trehalose,trehalose,high,SLS-005 is Seelos' trehalose
+map,Tigan,trimethobenzamide,high,Tigan is the brand of trimethobenzamide
+map,Strattera,atomoxetine,high,Strattera is the brand of atomoxetine
+map,AAV2-hAADC,VY-AADC01,high,VY-AADC01 is an AAV2-hAADC gene therapy
+map,WD-1603 Carbidopa-Levodopa,WD-1603,high,WD-1603 is the product; the rest names its ingredients
+map,WD-1603,WD-1603,high,Confirms the product's own name
+map,Benzhexol,trihexyphenidyl,high,Benzhexol is trihexyphenidyl; it had been attached to a disease name
+reject,chloride,,high,Ion name learned from a saline record; not a drug name
+reject,BMT,,high,Abbreviation for best medical treatment; not a drug name
+class,best medical treatment : Adjustment of the dopaminergic medication + non-dopaminergic therapy customized for each patient according to the latest published consensus recommendations,,high,Usual care description not one drug
+class,SSRI,,high,Drug class not one drug
+reject,Primary Cervical Dystonia,,high,Disease name registered as the intervention; the drug is trihexyphenidyl
+resolve,NCT02668497,,high,Reviewed: incobotulinumtoxinA listed as another name of a botulinum toxin type A arm; link left as is
+resolve,NCT02046447,,medium,Reviewed: names point at trihexyphenidyl under two keys; left unlinked rather than guessed

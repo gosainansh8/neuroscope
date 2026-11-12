@@ -255,7 +255,11 @@ def changes(days: int = 7, conn: psycopg.Connection = Depends(get_conn)) -> dict
     field_changes = conn.execute(
         """
         SELECT c.nct_id, t.brief_title, c.field, c.old_value, c.new_value, c.detected_at::date::text,
-               ARRAY(SELECT td.disease FROM trial_diseases td WHERE td.nct_id = c.nct_id ORDER BY 1)
+               ARRAY(SELECT td.disease FROM trial_diseases td WHERE td.nct_id = c.nct_id ORDER BY 1),
+               -- A stop that left the drug with no active trial in that disease ended its program.
+               ARRAY(SELECT DISTINCT ps.canonical_name FROM v_program_status ps
+                     WHERE c.field = 'overall_status' AND c.new_value IN ('TERMINATED', 'WITHDRAWN', 'SUSPENDED')
+                       AND ps.latest_closed_nct = c.nct_id AND ps.program_status = 'discontinued' ORDER BY 1)
         FROM trial_changes c JOIN trials t ON t.nct_id = c.nct_id
         WHERE c.field = ANY(%s) AND c.detected_at >= now() - make_interval(days => %s)
         ORDER BY c.detected_at DESC, c.nct_id LIMIT 40
@@ -280,7 +284,7 @@ def changes(days: int = 7, conn: psycopg.Connection = Depends(get_conn)) -> dict
         "days": days,
         "new_trials": [dict(zip(["nct_id", "title", "phase", "status", "first_posted", "drugs", "diseases"], r))
                        for r in new_trials],
-        "trial_changes": [dict(zip(["nct_id", "title", "field", "old", "new", "detected", "diseases"], r))
+        "trial_changes": [dict(zip(["nct_id", "title", "field", "old", "new", "detected", "diseases", "ended_programs"], r))
                           for r in field_changes],
         "latest_fda_approvals": [dict(zip(["application_number", "drug", "approved", "brand", "sponsor", "diseases"], r))
                                  for r in approvals],

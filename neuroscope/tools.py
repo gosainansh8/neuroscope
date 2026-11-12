@@ -273,3 +273,52 @@ def list_pipeline(conn: psycopg.Connection, min_phase: float = 3, active_only: b
                       + ". fda_first_approval_date is approval for any use; null means no matched FDA record. "
                         "ema_authorised_medicine is a centrally authorised EU medicine for any use. "
                         "Drug classes are excluded; some rows may still be comparators."}
+
+
+PROGRAM_NOTE = ("Program status is read from the trial registry, not from company statements: 'discontinued' "
+                "means no active trial and the most recently updated trial was terminated, withdrawn, or "
+                "suspended; 'dormant' means no active trial and no update in 3 years. A sponsor can stop a "
+                "program without stopping a trial, or continue it in trials not yet registered. Quote "
+                "why_stopped when it is given.")
+
+
+def get_program_status(conn: psycopg.Connection, drug: str | None = None, disease: str | None = None,
+                       status: str | None = None, min_phase: float = 0, include_approved: bool = False,
+                       limit: int = 15) -> dict:
+    """Whether a drug's program in each disease is active, discontinued, dormant, or completed; or,
+    without a drug, the programs in a disease with a given status (newest first)."""
+    slug = resolve_disease(conn, disease)
+    if status and status not in ("active", "discontinued", "dormant", "completed"):
+        raise ValueError("status must be active, discontinued, dormant, or completed")
+    cols = ("canonical_name, disease, program_status, n_trials, n_active, n_stopped, highest_phase, "
+            "last_update::text, latest_closed_nct, latest_closed_status, latest_why_stopped, fda_approved, "
+            "ema_authorised")
+    keys = ["drug", "disease", "program_status", "n_trials", "n_active_trials", "n_stopped_trials",
+            "highest_phase", "last_registry_update", "latest_closed_trial", "latest_closed_status",
+            "why_stopped", "fda_approved", "ema_authorised"]
+    where, params = ["TRUE"], []
+    if drug:
+        hit = _drug(conn, drug)
+        if not hit:
+            return _unknown(conn, drug)
+        where.append("drug_id = %s"); params.append(hit[0])
+    else:
+        if not include_approved:
+            where.append("NOT fda_approved AND NOT ema_authorised")
+        where.append("COALESCE(highest_phase, 0) >= %s"); params.append(min_phase)
+    if slug:
+        where.append("disease = %s"); params.append(slug)
+    if status:
+        where.append("program_status = %s"); params.append(status)
+    rows = conn.execute(f"SELECT {cols} FROM v_program_status WHERE {' AND '.join(where)} "
+                        "ORDER BY last_update DESC NULLS LAST, canonical_name LIMIT %s",
+                        (*params, min(int(limit), 40))).fetchall()
+    programs = []
+    for r in rows:
+        p = dict(zip(keys, [float(v) if hasattr(v, "is_finite") else v for v in r]))
+        if p["latest_closed_trial"]:
+            p["latest_closed_url"] = TRIAL_URL.format(p["latest_closed_trial"])
+        programs.append(p)
+    return {"drug_filter": drug, "disease_filter": slug, "status_filter": status, "count": len(programs),
+            "programs": programs, "caveat": PROGRAM_NOTE
+            + ("" if drug or include_approved else " Drugs with an FDA or EU approval are left out of this list.")}

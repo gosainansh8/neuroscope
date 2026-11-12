@@ -127,7 +127,7 @@ def test_agent_runs_tools_and_returns_a_checked_answer(conn, tmp_path):
     assert not any(result.unsupported.values()) and result.stopped_early is False
     # The model was sent the real tool output, the rules, and all five tools.
     assert model.received[1][0][1]["first_approval_date"] == "2023-01-06"
-    assert "Never infer approval" in model.system and len(model.specs) == 6
+    assert "Never infer approval" in model.system and len(model.specs) == 7
     assert "all 2 identifiers cited above came from database lookups" in format_result(result)
 
 

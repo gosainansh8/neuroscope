@@ -303,6 +303,7 @@
   .change-list .title { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
                         margin-top: 2px; color: var(--text); }
   .change-list .brand { font-weight: 650; color: var(--text); }
+  .change-list .ended { display: block; margin-top: 6px; font: 600 .78rem/1.4 var(--mono); color: #e5484d; }
   .dtags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
   .dtags:empty { display: none; }
   .dtag { padding: 1px 7px; border-radius: 999px; font: 600 .7rem/1.5 var(--mono); letter-spacing: .04em;
@@ -621,7 +622,7 @@ function renderSources(cited) {
 }
 
 const TOOL_LABELS = {
-  find_drug: "Identified the drug", get_trials: "Checked clinical trials", get_fda_status: "Read FDA records", get_ema_status: "Read EMA records",
+  find_drug: "Identified the drug", get_trials: "Checked clinical trials", get_fda_status: "Read FDA records", get_ema_status: "Read EMA records", get_program_status: "Checked program status",
   search_literature: "Searched the literature", list_pipeline: "Listed the drug pipeline",
 };
 
@@ -909,6 +910,8 @@ fetch("changes?days=7").then((r) => r.ok ? r.json() : null).then((d) => {
     delta.append(el("span", "old", pretty(c.old)), el("span", "new", pretty(c.new)));
     li.append(idLink(TRIAL_URL(c.nct_id), c.nct_id), el("span", "meta", FIELD_LABELS[c.field] || c.field), delta,
               diseaseTags(c.diseases));
+    if ((c.ended_programs || []).length)
+      li.append(el("span", "ended", `Program discontinued: ${c.ended_programs.join(", ")} has no active trials left`));
     return li;
   }), "No status changes this week.");
   fillList("chg-fda", d.latest_fda_approvals.slice(0, 5).map((a) => {

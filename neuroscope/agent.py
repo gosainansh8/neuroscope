@@ -92,6 +92,16 @@ TOOL_SPECS: list[dict[str, Any]] = [
      "parameters": {"type": "object", "properties": {
          "query": {"type": "string"}, "drug": {"type": "string"},
          "limit": {"type": "integer", "description": "results, default 5"}}, "required": ["query"]}},
+    {"name": "get_program_status",
+     "description": "Whether a drug's development program in each disease is active, discontinued, dormant, or "
+                    "completed, judged from its trials, with the latest stopped trial and its stated reason. "
+                    "Without a drug, lists programs in a disease with a given status (for example recently "
+                    "discontinued Phase 3 programs).",
+     "parameters": {"type": "object", "properties": {
+         "drug": {"type": "string"}, "disease": DISEASE_PARAM,
+         "status": {"type": "string", "enum": ["active", "discontinued", "dormant", "completed"]},
+         "min_phase": {"type": "number", "description": "when listing: lowest highest-phase, default 0"},
+         "limit": {"type": "integer"}}}},
     {"name": "list_pipeline",
      "description": "List drugs by highest trial phase, in one disease or all, with whether each has US and "
                     "EU approval records.",
@@ -195,6 +205,11 @@ def _owners(steps: list[tuple[ToolCall, dict]]) -> tuple[dict[str, set[str]], di
                 owners.setdefault(a["application_number"], set()).add(drug)
             for n in ((result.get("label") or {}).get("application_numbers") or []):
                 owners.setdefault(n, set()).add(drug)
+        elif call.name == "get_program_status":
+            for p in result.get("programs") or []:
+                if p.get("latest_closed_trial"):
+                    owners.setdefault(p["latest_closed_trial"], set()).add(p["drug"])
+                    add_name(p["drug"], p["drug"])
         elif call.name == "get_ema_status" and drug:
             for m in result.get("medicines") or []:
                 owners.setdefault(m["ema_product_number"], set()).add(drug)
@@ -243,6 +258,9 @@ def build_tools(conn: psycopg.Connection, embedder=None) -> dict[str, Callable[.
         "get_ema_status": lambda drug, disease=None: tools.get_ema_status(conn, drug, disease or None),
         "search_literature": lambda query, drug=None, limit=5: tools.search_literature(
             conn, query, drug or None, min(int(limit), 8), embedder),
+        "get_program_status": lambda drug=None, disease=None, status=None, min_phase=0, limit=15:
+            tools.get_program_status(conn, drug or None, disease or None, status or None, float(min_phase),
+                                     False, limit),
         "list_pipeline": lambda min_phase=3, active_only=True, limit=25, disease=None: tools.list_pipeline(
             conn, float(min_phase), bool(active_only), min(int(limit), 40), disease or None),
     }
