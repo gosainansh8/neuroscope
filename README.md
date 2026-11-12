@@ -2,6 +2,8 @@
 
 Sourced neuroscience drug-development intelligence. Launching with Alzheimer's disease.
 
+**Live demo: https://neuroscope-api-561220657386.us-central1.run.app** Ask a question about an Alzheimer's drug and get an answer with linked, verified sources. The demo is limited to 50 new questions a day; recently asked questions are answered from a cache.
+
 Milestone 1: the structured data layer. Pulls Alzheimer's trials from ClinicalTrials.gov, normalizes them, resolves drug names to canonical drugs with full provenance, and tracks every change between runs.
 
 Milestone 2: FDA approval. Loads approval records from Drugs@FDA and indications from FDA labels, matched to the same canonical drugs. Approval status comes only from these records.
@@ -217,6 +219,8 @@ curl -s -X POST localhost:8080/ask -H 'content-type: application/json' -d '{"que
 `POST /ask` returns the answer, each lookup the model made, the identifiers it cited, any citations no lookup supports, and `citations_verified`. `GET /health` reports what the database holds. If the database is unreachable, both answer 503 with a message saying so; if the model service fails, `/ask` answers 502 with the reason.
 
 `/ask` enforces limits so a public deployment cannot run up model costs: a daily and a monthly cap on questions sent to the model (50 and 500 by default, counted in the database), five questions per visitor per ten minutes, and a 24-hour cache that answers a repeated question without calling the model. A reached limit is HTTP 429 with a plain explanation.
+
+Deployed on 2026-11-11 and checked live: the page loads, `/health` reports the full dataset, a question was answered with eight verified identifiers, the same question again came from the cache in 0.2 seconds, and a literature question used semantic search with five verified PubMed IDs.
 
 `deploy/README.md` covers putting this on Google Cloud: Cloud SQL for the database, Cloud Run for the website and API (private by default, public with `--public`; at most one instance, none when idle), and `deploy/start.sh` / `deploy/stop.sh` to run the database only when needed.
 
