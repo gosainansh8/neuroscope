@@ -7,25 +7,25 @@ NeuroScope answers questions about Alzheimer's, Parkinson's, and ALS drugs from 
 ```mermaid
 flowchart LR
     subgraph M1["1 · Structured data"]
-        CT[ClinicalTrials.gov<br/>9,815 trials] --> RES[Name resolution<br/>aliases + review queue]
-        RES --> DB[(Postgres<br/>drugs · trials · changes)]
+        CT["ClinicalTrials.gov<br/>9,815 trials"] --> RES["Name resolution<br/>aliases + review queue"]
+        RES --> DB[("Postgres<br/>drugs · trials · changes")]
     end
     subgraph M2["2 · Approval"]
-        FDA[Drugs@FDA + labels] --> MATCH[Trusted-name matching]
-        EMA[EMA medicines] --> MATCH
+        FDA["FDA approvals + labels"] --> MATCH["Trusted-name matching"]
+        EMA["EMA medicines"] --> MATCH
     end
     subgraph M3["3 · Documents"]
-        PUB[PubMed abstracts] --> CH[Passages + embeddings<br/>pgvector]
-        SEC[SEC filings] --> CH
-        CHEMBL[ChEMBL mechanisms]
+        PUB["PubMed abstracts"] --> CH["Passages + embeddings<br/>pgvector"]
+        SEC["SEC filings"] --> CH
+        CHEMBL["ChEMBL mechanisms"]
     end
     subgraph M4["4 · Agent"]
-        TOOLS[9 read-only lookups] --> LLM[Gemini]
-        LLM --> CHECK[Citation check<br/>in code]
+        TOOLS["9 read-only lookups"] --> LLM["Gemini"]
+        LLM --> CHECK["Citation check<br/>in code"]
     end
     subgraph M5["5 · Deployment"]
-        RUN[Cloud Run<br/>web page + API] --- SQL[(Cloud SQL)]
-        JOB[Weekly refresh job] --> SQL
+        RUN["Cloud Run<br/>web page + API"] --- SQL[("Cloud SQL")]
+        JOB["Weekly refresh job"] --> SQL
     end
     DB --> MATCH
     MATCH --> DB
