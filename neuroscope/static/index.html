@@ -3,83 +3,285 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Sourced answers about Alzheimer's drug development, from ClinicalTrials.gov, FDA records, and PubMed.">
+<meta name="color-scheme" content="light dark">
 <title>NeuroScope</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%235b5bd6'/%3E%3Ccircle cx='16' cy='16' r='7' fill='none' stroke='white' stroke-width='2.5'/%3E%3Ccircle cx='16' cy='16' r='2.5' fill='white'/%3E%3C/svg%3E">
 <style>
   :root {
-    --bg: #f6f7f9; --panel: #ffffff; --text: #1b1f24; --muted: #5d6673; --line: #dfe3e8;
-    --accent: #1f5fbf; --accent-text: #ffffff; --ok-bg: #e6f4ea; --ok-text: #17603a;
-    --warn-bg: #fdecea; --warn-text: #9a1c12; --chip: #eef1f5; --quote: #f1f4f8;
+    --bg: #f5f6fb; --bg-glow-1: rgba(91, 91, 214, .14); --bg-glow-2: rgba(20, 160, 150, .10);
+    --panel: rgba(255, 255, 255, .86); --panel-solid: #ffffff; --panel-border: rgba(30, 35, 60, .09);
+    --text: #161a2b; --muted: #5d6478; --faint: #8b91a4;
+    --accent: #5b5bd6; --accent-2: #149e93; --accent-soft: rgba(91, 91, 214, .10); --accent-text: #ffffff;
+    --trial: #2f6fdd; --trial-soft: rgba(47, 111, 221, .10);
+    --fda: #b4690e; --fda-soft: rgba(180, 105, 14, .11);
+    --paper: #13866f; --paper-soft: rgba(19, 134, 111, .11);
+    --ok: #14804a; --ok-soft: rgba(20, 128, 74, .10);
+    --warn: #b3261e; --warn-soft: rgba(179, 38, 30, .09);
+    --quote: rgba(91, 91, 214, .06); --shadow: 0 1px 2px rgba(20, 25, 50, .05), 0 8px 28px rgba(20, 25, 50, .07);
+    --radius: 14px;
   }
   @media (prefers-color-scheme: dark) {
     :root {
-      --bg: #14171b; --panel: #1c2026; --text: #e6e9ed; --muted: #9aa4b1; --line: #2e343c;
-      --accent: #6ea3f2; --accent-text: #0e1116; --ok-bg: #173524; --ok-text: #8fd9aa;
-      --warn-bg: #42201c; --warn-text: #f3a299; --chip: #262b33; --quote: #232830;
+      --bg: #0d1017; --bg-glow-1: rgba(120, 120, 255, .16); --bg-glow-2: rgba(30, 200, 185, .09);
+      --panel: rgba(23, 27, 38, .82); --panel-solid: #171b26; --panel-border: rgba(255, 255, 255, .08);
+      --text: #e8eaf2; --muted: #a3a9bb; --faint: #6f768a;
+      --accent: #8b8bff; --accent-2: #3fd1c3; --accent-soft: rgba(139, 139, 255, .13); --accent-text: #0d1017;
+      --trial: #7aa8ff; --trial-soft: rgba(122, 168, 255, .13);
+      --fda: #f0ad55; --fda-soft: rgba(240, 173, 85, .13);
+      --paper: #4fd1ad; --paper-soft: rgba(79, 209, 173, .13);
+      --ok: #5ed592; --ok-soft: rgba(94, 213, 146, .12);
+      --warn: #ff8a80; --warn-soft: rgba(255, 138, 128, .12);
+      --quote: rgba(139, 139, 255, .08); --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 10px 32px rgba(0, 0, 0, .35);
     }
   }
   * { box-sizing: border-box; }
-  body { margin: 0; background: var(--bg); color: var(--text);
-         font: 16px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
-  main { max-width: 820px; margin: 0 auto; padding: 32px 16px 48px; }
-  h1 { font-size: 1.6rem; margin: 0 0 4px; }
-  .tagline { color: var(--muted); margin: 0 0 24px; }
-  form { display: flex; gap: 8px; flex-wrap: wrap; }
-  textarea { flex: 1 1 320px; min-height: 64px; padding: 12px; border: 1px solid var(--line); border-radius: 8px;
-             background: var(--panel); color: var(--text); font: inherit; resize: vertical; }
-  button { font: inherit; cursor: pointer; border-radius: 8px; border: 1px solid var(--line); }
-  button.primary { background: var(--accent); color: var(--accent-text); border-color: var(--accent);
-                   padding: 12px 20px; font-weight: 600; }
-  button.primary:disabled { opacity: .6; cursor: default; }
-  .examples { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 24px; }
-  .examples button { background: var(--chip); color: var(--text); padding: 6px 12px; font-size: .9rem; }
-  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 20px; margin-top: 16px; }
-  .answer h3 { font-size: 1.05rem; margin: 18px 0 6px; }
-  .answer p { margin: 8px 0; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0; min-height: 100vh; color: var(--text); background: var(--bg);
+    background-image:
+      radial-gradient(900px 500px at 10% -10%, var(--bg-glow-1), transparent 60%),
+      radial-gradient(800px 500px at 100% 0%, var(--bg-glow-2), transparent 55%);
+    background-attachment: fixed;
+    font: 16px/1.6 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: var(--accent); }
+  main { max-width: 880px; margin: 0 auto; padding: 28px 16px 56px; }
+
+  /* Header */
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .brand svg { flex: none; filter: drop-shadow(0 4px 12px rgba(91, 91, 214, .35)); }
+  .brand h1 { font-size: 1.35rem; letter-spacing: -.01em; margin: 0; }
+  .brand .pill { margin-left: auto; font-size: .75rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase;
+                 color: var(--accent); background: var(--accent-soft); padding: 4px 10px; border-radius: 999px; }
+  .hero { margin: 36px 0 22px; }
+  .hero h2 { font-size: clamp(1.7rem, 4.6vw, 2.45rem); line-height: 1.15; letter-spacing: -.025em; margin: 0 0 12px; }
+  .hero h2 .grad { background: linear-gradient(90deg, var(--accent), var(--accent-2)); -webkit-background-clip: text;
+                   background-clip: text; color: transparent; }
+  .hero p { color: var(--muted); margin: 0; max-width: 640px; font-size: 1.05rem; }
+  .sources-line { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+  .src-tag { display: inline-flex; align-items: center; gap: 6px; font-size: .82rem; font-weight: 600; padding: 4px 10px;
+             border-radius: 999px; }
+  .src-tag::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+  .src-tag.trial { color: var(--trial); background: var(--trial-soft); }
+  .src-tag.fda { color: var(--fda); background: var(--fda-soft); }
+  .src-tag.paper { color: var(--paper); background: var(--paper-soft); }
+
+  /* Stats */
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 0 0 22px; }
+  .stat { background: var(--panel); border: 1px solid var(--panel-border); border-radius: 12px; padding: 12px 14px;
+          backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+  .stat b { display: block; font-size: 1.35rem; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+  .stat span { color: var(--muted); font-size: .8rem; }
+  @media (max-width: 620px) { .stats { grid-template-columns: repeat(2, 1fr); } }
+
+  /* Ask box */
+  .card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--radius);
+          box-shadow: var(--shadow); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+  form.card { display: flex; align-items: flex-end; gap: 10px; padding: 10px; }
+  form.card:focus-within { border-color: var(--accent); box-shadow: var(--shadow), 0 0 0 4px var(--accent-soft); }
+  textarea { flex: 1; min-height: 52px; max-height: 220px; padding: 12px; border: 0; outline: none; resize: none;
+             background: transparent; color: var(--text); font: inherit; }
+  textarea::placeholder { color: var(--faint); }
+  button { font: inherit; cursor: pointer; }
+  button.primary { display: inline-flex; align-items: center; gap: 8px; border: 0; border-radius: 10px; padding: 12px 18px;
+                   font-weight: 650; color: var(--accent-text); background: linear-gradient(135deg, var(--accent), var(--accent-2));
+                   box-shadow: 0 6px 16px rgba(91, 91, 214, .3); transition: transform .12s ease, opacity .12s ease; }
+  button.primary:hover { transform: translateY(-1px); }
+  button.primary:disabled { opacity: .55; cursor: default; transform: none; }
+  .hint { color: var(--faint); font-size: .8rem; margin: 8px 4px 0; }
+
+  /* Examples */
+  .examples { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin: 18px 0 8px; }
+  @media (max-width: 620px) { .examples { grid-template-columns: 1fr; } }
+  .example { text-align: left; border: 1px solid var(--panel-border); background: var(--panel); color: var(--text);
+             border-radius: 12px; padding: 12px 14px; transition: border-color .15s ease, transform .15s ease; }
+  .example:hover { border-color: var(--accent); transform: translateY(-1px); }
+  .example small { display: block; font-size: .72rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+                   margin-bottom: 4px; }
+  .example small.trial { color: var(--trial); } .example small.fda { color: var(--fda); } .example small.paper { color: var(--paper); }
+  .example span { font-size: .93rem; }
+
+  /* Progress */
+  .progress { padding: 20px 22px; margin-top: 18px; }
+  .progress-head { display: flex; align-items: center; gap: 10px; font-weight: 600; }
+  .spinner { width: 18px; height: 18px; border-radius: 50%; border: 2.5px solid var(--accent-soft);
+             border-top-color: var(--accent); animation: spin .8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .steps { list-style: none; margin: 14px 0 0; padding: 0; display: grid; gap: 8px; }
+  .steps li { display: flex; align-items: center; gap: 10px; color: var(--faint); font-size: .93rem; transition: color .3s ease; }
+  .steps li::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--panel-border); flex: none;
+                      transition: background .3s ease, box-shadow .3s ease; }
+  .steps li.on { color: var(--text); }
+  .steps li.on::before { background: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
+  .shimmer { height: 10px; border-radius: 6px; margin-top: 14px;
+             background: linear-gradient(90deg, var(--accent-soft), rgba(127, 127, 255, .22), var(--accent-soft));
+             background-size: 200% 100%; animation: shimmer 1.4s ease-in-out infinite; }
+  .shimmer + .shimmer { width: 72%; margin-top: 8px; }
+  @keyframes shimmer { to { background-position: -200% 0; } }
+
+  /* Error */
+  .notice { padding: 16px 18px; margin-top: 18px; border-radius: 12px; display: flex; gap: 10px; align-items: flex-start; }
+  .notice.error { background: var(--warn-soft); color: var(--warn); }
+  .notice svg { flex: none; margin-top: 3px; }
+
+  /* Result */
+  .result { margin-top: 18px; overflow: hidden; animation: rise .35s ease; }
+  @keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  .result-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 14px 22px;
+                 border-bottom: 1px solid var(--panel-border); }
+  .result-head .q { font-weight: 650; flex: 1 1 260px; }
+  .chip { display: inline-flex; align-items: center; gap: 6px; font-size: .78rem; font-weight: 650; padding: 4px 10px;
+          border-radius: 999px; }
+  .chip.ok { color: var(--ok); background: var(--ok-soft); }
+  .chip.warn { color: var(--warn); background: var(--warn-soft); }
+  .chip.neutral { color: var(--muted); background: var(--accent-soft); }
+  .chip.cache { color: var(--accent); background: var(--accent-soft); }
+  .icon-btn { border: 1px solid var(--panel-border); background: transparent; color: var(--muted); border-radius: 8px;
+              padding: 4px 10px; font-size: .8rem; }
+  .icon-btn:hover { color: var(--text); border-color: var(--accent); }
+  .answer { padding: 8px 22px 18px; }
+  .answer h3 { font-size: 1.02rem; margin: 20px 0 6px; letter-spacing: -.01em; }
+  .answer p { margin: 10px 0; }
   .answer ul { margin: 8px 0; padding-left: 22px; }
-  .answer blockquote { margin: 10px 0; padding: 8px 14px; background: var(--quote); border-left: 3px solid var(--accent); }
-  .answer a { color: var(--accent); }
-  .badge { display: inline-block; padding: 6px 12px; border-radius: 6px; font-size: .92rem; margin-top: 14px; }
-  .badge.ok { background: var(--ok-bg); color: var(--ok-text); }
-  .badge.warn { background: var(--warn-bg); color: var(--warn-text); }
-  details { margin-top: 14px; color: var(--muted); font-size: .92rem; }
-  details ol { margin: 8px 0 0; padding-left: 22px; }
-  code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .88em; overflow-wrap: anywhere; }
-  .error { background: var(--warn-bg); color: var(--warn-text); border-color: transparent; }
-  .muted { color: var(--muted); }
-  footer { margin-top: 28px; color: var(--muted); font-size: .88rem; }
-  [hidden] { display: none; }
+  .answer li { margin: 4px 0; }
+  .answer blockquote { margin: 12px 0; padding: 10px 14px; background: var(--quote); border-left: 3px solid var(--accent);
+                       border-radius: 0 8px 8px 0; }
+  .answer a { text-decoration: none; border-bottom: 1px dashed currentColor; font-weight: 550; }
+  .answer a.trial { color: var(--trial); } .answer a.fda { color: var(--fda); } .answer a.paper { color: var(--paper); }
+  .warn-box { margin: 0 22px 16px; padding: 12px 14px; border-radius: 10px; background: var(--warn-soft); color: var(--warn);
+              font-size: .92rem; }
+
+  .panel-section { border-top: 1px solid var(--panel-border); padding: 16px 22px; }
+  .panel-section h4 { margin: 0 0 10px; font-size: .78rem; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); }
+  .source-grid { display: grid; gap: 8px; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); }
+  .source { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border-radius: 10px; text-decoration: none;
+            border: 1px solid var(--panel-border); background: var(--panel-solid); color: var(--text);
+            transition: border-color .15s ease, transform .15s ease; }
+  .source:hover { transform: translateY(-1px); }
+  .source small { font-size: .7rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+  .source code { font: 600 .9rem ui-monospace, SFMono-Regular, Menlo, monospace; }
+  .source.trial small { color: var(--trial); } .source.trial:hover { border-color: var(--trial); }
+  .source.fda small { color: var(--fda); } .source.fda:hover { border-color: var(--fda); }
+  .source.paper small { color: var(--paper); } .source.paper:hover { border-color: var(--paper); }
+
+  .timeline { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+  .timeline li { display: grid; grid-template-columns: 26px 1fr; gap: 10px; align-items: start; }
+  .timeline .num { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font-size: .78rem;
+                   font-weight: 700; color: var(--accent); background: var(--accent-soft); }
+  .timeline .what { font-size: .93rem; }
+  .timeline .args { display: block; color: var(--faint); font: .8rem ui-monospace, SFMono-Regular, Menlo, monospace;
+                    overflow-wrap: anywhere; }
+  .timeline .err { color: var(--warn); }
+  details summary { cursor: pointer; color: var(--muted); font-size: .88rem; list-style: none; }
+  details summary::-webkit-details-marker { display: none; }
+  details summary::before { content: "▸ "; } details[open] summary::before { content: "▾ "; }
+  details[open] summary { margin-bottom: 12px; }
+
+  footer { margin-top: 34px; color: var(--faint); font-size: .84rem; display: grid; gap: 8px; }
+  footer .how { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 8px; }
+  footer .how div { background: var(--panel); border: 1px solid var(--panel-border); border-radius: 12px; padding: 12px 14px; }
+  footer .how b { display: block; color: var(--text); font-size: .88rem; margin-bottom: 2px; }
+  @media (max-width: 620px) { footer .how { grid-template-columns: 1fr; } }
+  [hidden] { display: none !important; }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
 </style>
 </head>
 <body>
 <main>
-  <h1>NeuroScope</h1>
-  <p class="tagline">Sourced answers about Alzheimer's drug development, from ClinicalTrials.gov, FDA records, and PubMed.</p>
+  <header class="brand">
+    <svg width="36" height="36" viewBox="0 0 36 36" aria-hidden="true">
+      <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5b5bd6"/><stop offset="1" stop-color="#149e93"/></linearGradient></defs>
+      <rect width="36" height="36" rx="10" fill="url(#g)"/>
+      <circle cx="18" cy="18" r="8.5" fill="none" stroke="#fff" stroke-width="2.4"/>
+      <circle cx="18" cy="18" r="3" fill="#fff"/>
+      <path d="M18 5.5v3.5M18 27v3.5M5.5 18h3.5M27 18h3.5" stroke="#fff" stroke-width="2.2" stroke-linecap="round" opacity=".8"/>
+    </svg>
+    <h1>NeuroScope</h1>
+    <span class="pill">Alzheimer's</span>
+  </header>
 
-  <form id="ask-form">
-    <textarea id="question" name="question" maxlength="500" required
-              placeholder="Ask about a drug's trials, FDA status, or published evidence"></textarea>
-    <button class="primary" id="submit" type="submit">Ask</button>
+  <section class="hero">
+    <h2>Drug development answers, <span class="grad">with every source checked.</span></h2>
+    <p>Ask about any Alzheimer's drug's trials, FDA approval, or published evidence. Answers come only from public records, and every citation is verified against the database.</p>
+    <div class="sources-line">
+      <span class="src-tag trial">ClinicalTrials.gov</span>
+      <span class="src-tag fda">FDA records &amp; labels</span>
+      <span class="src-tag paper">PubMed abstracts</span>
+    </div>
+  </section>
+
+  <section class="stats" id="stats" aria-label="What the database holds">
+    <div class="stat"><b data-stat="trials">–</b><span>clinical trials</span></div>
+    <div class="stat"><b data-stat="drugs">–</b><span>drugs tracked</span></div>
+    <div class="stat"><b data-stat="drugs_with_fda_approval">–</b><span>with FDA approval</span></div>
+    <div class="stat"><b data-stat="document_chunks">–</b><span>abstract passages</span></div>
+  </section>
+
+  <form id="ask-form" class="card">
+    <textarea id="question" name="question" maxlength="500" rows="1" required aria-label="Your question"
+              placeholder="e.g. Is lecanemab approved, and what trials is it in?"></textarea>
+    <button class="primary" id="submit" type="submit">
+      <span>Ask</span>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+    </button>
   </form>
+  <p class="hint">Press Enter to ask, Shift+Enter for a new line.</p>
+
   <div class="examples" id="examples">
-    <button type="button">Is semaglutide approved for Alzheimer's disease?</button>
-    <button type="button">What is the regulatory status of lecanemab, and what trials is it in?</button>
-    <button type="button">What does the literature say about brain swelling with donanemab?</button>
-    <button type="button">Is masitinib FDA approved? It finished a Phase 3 trial.</button>
+    <button type="button" class="example"><small class="fda">Approval</small><span>Is semaglutide approved for Alzheimer's disease?</span></button>
+    <button type="button" class="example"><small class="trial">Trials</small><span>What is the regulatory status of lecanemab, and what trials is it in?</span></button>
+    <button type="button" class="example"><small class="paper">Literature</small><span>What does the literature say about brain swelling with donanemab?</span></button>
+    <button type="button" class="example"><small class="fda">Approval</small><span>Is masitinib FDA approved? It finished a Phase 3 trial.</span></button>
   </div>
 
-  <div id="status" class="panel muted" hidden></div>
-  <div id="result" class="panel" hidden>
-    <div id="answer" class="answer"></div>
-    <div id="badge" class="badge"></div>
-    <details id="lookups-box"><summary id="lookups-summary"></summary><ol id="lookups"></ol></details>
-    <p class="muted" id="model-line"></p>
+  <section id="progress" class="card progress" hidden aria-live="polite">
+    <div class="progress-head"><div class="spinner" aria-hidden="true"></div><span>Researching your question… usually 10 to 30 seconds</span></div>
+    <p class="hint" style="margin: 6px 0 0">Typical steps. The lookups actually made are listed with the answer.</p>
+    <ul class="steps" id="steps">
+      <li>Identifying the drug and its known names</li>
+      <li>Checking clinical trial records</li>
+      <li>Reading FDA approvals and label text</li>
+      <li>Searching the published literature</li>
+      <li>Writing the answer and verifying every citation</li>
+    </ul>
+    <div class="shimmer"></div><div class="shimmer"></div>
+  </section>
+
+  <div id="error" class="notice error" hidden role="alert">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 7v6M12 17h.01"/></svg>
+    <span id="error-text"></span>
   </div>
+
+  <article id="result" class="card result" hidden>
+    <div class="result-head">
+      <span class="q" id="result-question"></span>
+      <span id="verify-chip" class="chip"></span>
+      <span id="cache-chip" class="chip cache" hidden>Saved answer</span>
+      <button type="button" class="icon-btn" id="copy">Copy</button>
+    </div>
+    <div id="answer" class="answer"></div>
+    <div id="warn-box" class="warn-box" hidden></div>
+    <div class="panel-section" id="sources-section" hidden>
+      <h4>Sources cited</h4>
+      <div class="source-grid" id="sources"></div>
+    </div>
+    <div class="panel-section">
+      <details>
+        <summary id="lookups-summary"></summary>
+        <ol class="timeline" id="lookups"></ol>
+      </details>
+    </div>
+  </article>
 
   <footer>
-    <div id="health">Checking the database…</div>
-    <p>Answers are written by a language model using only lookups in this database, and every trial ID, FDA
-       application number, and PubMed ID is checked against those lookups. The check confirms a source is real,
-       not that it supports the sentence it is attached to. This is not medical advice.</p>
+    <div class="how">
+      <div><b>Only public records</b>The model can't see anything but database lookups over trials, FDA data, and abstracts.</div>
+      <div><b>Citations verified</b>Every trial ID, FDA application, and PubMed ID is checked against what the lookups returned.</div>
+      <div><b>Know the limits</b>The check confirms a source is real, not that it supports the sentence. Not medical advice.</div>
+    </div>
+    <div id="health">Connecting to the database…</div>
   </footer>
 </main>
 <script>
@@ -87,13 +289,17 @@
 const $ = (id) => document.getElementById(id);
 const escapeHtml = (s) => s.replace(/[&<>"']/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 
+const TRIAL_URL = (id) => `https://clinicaltrials.gov/study/${id}`;
+const PUBMED_URL = (id) => `https://pubmed.ncbi.nlm.nih.gov/${id}/`;
+const FDA_URL = (num) => `https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=${num}`;
+
 // Identifiers become links to their public source. Applied to already-escaped text only.
 function linkIdentifiers(html) {
   return html
-    .replace(/\bNCT\d{8}\b/g, (m) => `<a href="https://clinicaltrials.gov/study/${m}" target="_blank" rel="noopener">${m}</a>`)
-    .replace(/\bPMID:?\s*(\d{6,9})\b/g, (m, id) => `<a href="https://pubmed.ncbi.nlm.nih.gov/${id}/" target="_blank" rel="noopener">${m}</a>`)
+    .replace(/\bNCT\d{8}\b/g, (m) => `<a class="trial" href="${TRIAL_URL(m)}" target="_blank" rel="noopener">${m}</a>`)
+    .replace(/\bPMID:?\s*(\d{6,9})\b/g, (m, id) => `<a class="paper" href="${PUBMED_URL(id)}" target="_blank" rel="noopener">${m}</a>`)
     .replace(/\b(NDA|BLA|ANDA)[\s-]?(\d{6})\b/g, (m, kind, num) =>
-      `<a href="https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&amp;ApplNo=${num}" target="_blank" rel="noopener">${m}</a>`);
+      `<a class="fda" href="${FDA_URL(num).replace(/&/g, "&amp;")}" target="_blank" rel="noopener">${m}</a>`);
 }
 
 // A small, safe renderer for the Markdown the model writes: the text is escaped first,
@@ -118,74 +324,138 @@ function renderAnswer(text) {
   return out.join("");
 }
 
-function showStatus(message, isError) {
-  const box = $("status");
-  box.textContent = message;
-  box.className = "panel " + (isError ? "error" : "muted");
-  box.hidden = false;
+// Source cards, built with DOM methods (no HTML strings) from identifiers the server verified.
+function renderSources(cited) {
+  const groups = [
+    ["trial", "Clinical trial", cited.nct || [], (id) => TRIAL_URL(id), (id) => id],
+    ["fda", "FDA application", cited.fda_application || [], (id) => FDA_URL(id.replace(/^\D+/, "")), (id) => id],
+    ["paper", "PubMed", cited.pmid || [], (id) => PUBMED_URL(id), (id) => `PMID ${id}`],
+  ];
+  const box = $("sources");
+  box.textContent = "";
+  let n = 0;
+  for (const [kind, label, ids, url, text] of groups) {
+    for (const id of ids) {
+      const a = document.createElement("a");
+      a.className = `source ${kind}`;
+      a.href = url(id); a.target = "_blank"; a.rel = "noopener";
+      const small = document.createElement("small"); small.textContent = label;
+      const code = document.createElement("code"); code.textContent = text(id);
+      a.append(small, code);
+      box.appendChild(a);
+      n++;
+    }
+  }
+  $("sources-section").hidden = n === 0;
 }
 
+const TOOL_LABELS = {
+  find_drug: "Identified the drug", get_trials: "Checked clinical trials", get_fda_status: "Read FDA records",
+  search_literature: "Searched the literature", list_pipeline: "Listed the drug pipeline",
+};
+
+function renderLookups(lookups) {
+  $("lookups-summary").textContent = `How this was answered: ${lookups.length} database lookup${lookups.length === 1 ? "" : "s"}`;
+  const list = $("lookups");
+  list.textContent = "";
+  lookups.forEach((l, i) => {
+    const li = document.createElement("li");
+    const num = document.createElement("span"); num.className = "num"; num.textContent = String(i + 1);
+    const what = document.createElement("div"); what.className = "what";
+    what.textContent = TOOL_LABELS[l.tool] || l.tool;
+    const args = document.createElement("span"); args.className = "args";
+    args.textContent = Object.entries(l.arguments || {}).map(([k, v]) => `${k}: ${JSON.stringify(v)}`).join("  ·  ");
+    what.appendChild(args);
+    if (l.error) { const e = document.createElement("span"); e.className = "args err"; e.textContent = l.error; what.appendChild(e); }
+    li.append(num, what);
+    list.appendChild(li);
+  });
+}
+
+let stepTimer = null;
+function startProgress() {
+  const steps = [...$("steps").children];
+  steps.forEach((s) => s.classList.remove("on"));
+  let i = 0;
+  steps[0].classList.add("on");
+  stepTimer = setInterval(() => { i = Math.min(i + 1, steps.length - 1); steps[i].classList.add("on"); }, 3200);
+  $("progress").hidden = false;
+}
+function stopProgress() { clearInterval(stepTimer); $("progress").hidden = true; }
+
+function showError(message) { $("error-text").textContent = message; $("error").hidden = false; }
+
 async function ask(question) {
-  $("result").hidden = true;
+  $("result").hidden = true; $("error").hidden = true;
   $("submit").disabled = true;
-  showStatus("Looking this up in the database… this usually takes 10 to 30 seconds.", false);
+  startProgress();
   try {
     const resp = await fetch("ask", { method: "POST", headers: { "content-type": "application/json" },
                                       body: JSON.stringify({ question }) });
     const data = await resp.json().catch(() => ({}));
     if (!resp.ok) {
-      const detail = typeof data.detail === "string" ? data.detail
+      showError(typeof data.detail === "string" ? data.detail
         : resp.status === 422 ? "Please enter a question between 3 and 500 characters."
-        : `The request failed (HTTP ${resp.status}).`;
-      showStatus(detail, true);
+        : `The request failed (HTTP ${resp.status}).`);
       return;
     }
-    $("status").hidden = true;
+    $("result-question").textContent = question;
     $("answer").innerHTML = renderAnswer(data.answer);
-    const cited = Object.values(data.cited).flat().length;
-    const bad = Object.values(data.unsupported_citations).flat();
-    const badge = $("badge");
+    renderSources(data.cited || {});
+    renderLookups(data.lookups || []);
+
+    const cited = Object.values(data.cited || {}).flat().length;
+    const bad = Object.values(data.unsupported_citations || {}).flat();
+    const chip = $("verify-chip");
+    const warn = $("warn-box");
+    warn.hidden = true;
     if (bad.length) {
-      badge.className = "badge warn";
-      badge.textContent = `Warning: ${bad.length} identifier(s) did not come from any lookup and should not be trusted: ${bad.join(", ")}`;
+      chip.className = "chip warn"; chip.textContent = `${bad.length} unverified citation${bad.length === 1 ? "" : "s"}`;
+      warn.textContent = `These identifiers did not come from any database lookup and should not be trusted: ${bad.join(", ")}`;
+      warn.hidden = false;
     } else if (cited) {
-      badge.className = "badge ok";
-      badge.textContent = `Citation check passed: all ${cited} cited identifiers came from database lookups.`;
+      chip.className = "chip ok"; chip.textContent = `✓ All ${cited} citations verified`;
     } else {
-      badge.className = "badge";
-      badge.textContent = "This answer cites no trial, FDA, or PubMed identifiers.";
+      chip.className = "chip neutral"; chip.textContent = "No citations in this answer";
     }
-    $("lookups-summary").textContent = `${data.lookups.length} database lookup(s) made`;
-    const list = $("lookups");
-    list.textContent = "";
-    for (const l of data.lookups) {
-      const li = document.createElement("li");
-      const code = document.createElement("code");
-      code.textContent = `${l.tool}(${JSON.stringify(l.arguments)})` + (l.error ? `  error: ${l.error}` : "");
-      li.appendChild(code);
-      list.appendChild(li);
-    }
-    $("model-line").textContent = (data.model ? `Model: ${data.model}. ` : "") +
-      (data.cached ? "Saved answer from the last 24 hours. " : "") +
-      (data.stopped_early ? "The step limit was reached before the model finished." : "");
+    $("cache-chip").hidden = !data.cached;
     $("result").hidden = false;
+    $("result").scrollIntoView({ behavior: "smooth", block: "start" });
   } catch (err) {
-    showStatus("Could not reach the server. " + err, true);
+    showError("Could not reach the server. Please check your connection and try again.");
   } finally {
+    stopProgress();
     $("submit").disabled = false;
   }
 }
 
-$("ask-form").addEventListener("submit", (e) => { e.preventDefault(); const q = $("question").value.trim(); if (q) ask(q); });
-$("question").addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); $("ask-form").requestSubmit(); } });
+const textarea = $("question");
+const autosize = () => { textarea.style.height = "auto"; textarea.style.height = Math.min(textarea.scrollHeight, 220) + "px"; };
+textarea.addEventListener("input", autosize);
+$("ask-form").addEventListener("submit", (e) => { e.preventDefault(); const q = textarea.value.trim(); if (q) ask(q); });
+textarea.addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); $("ask-form").requestSubmit(); } });
 $("examples").addEventListener("click", (e) => {
-  if (e.target.tagName === "BUTTON") { $("question").value = e.target.textContent; $("ask-form").requestSubmit(); }
+  const btn = e.target.closest(".example");
+  if (btn) { textarea.value = btn.querySelector("span").textContent; autosize(); $("ask-form").requestSubmit(); }
+});
+$("copy").addEventListener("click", async () => {
+  try { await navigator.clipboard.writeText($("answer").innerText); $("copy").textContent = "Copied"; }
+  catch { $("copy").textContent = "Copy failed"; }
+  setTimeout(() => { $("copy").textContent = "Copy"; }, 1600);
 });
 
+function countUp(el, target) {
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) { el.textContent = target.toLocaleString(); return; }
+  const start = performance.now(), ms = 900;
+  const tick = (t) => { const p = Math.min((t - start) / ms, 1); el.textContent = Math.round(target * (1 - Math.pow(1 - p, 3))).toLocaleString();
+                        if (p < 1) requestAnimationFrame(tick); };
+  requestAnimationFrame(tick);
+}
+
 fetch("health").then((r) => r.json().then((d) => ({ ok: r.ok, d }))).then(({ ok, d }) => {
-  $("health").textContent = ok
-    ? `Database: ${d.trials.toLocaleString()} trials, ${d.drugs.toLocaleString()} drugs, ${d.drugs_with_fda_approval} with an FDA approval record, ${d.document_chunks.toLocaleString()} abstract passages. Trials last retrieved ${d.trials_last_retrieved}. Questions answered today: ${d.questions_today} of ${d.daily_question_limit}.`
-    : (d.detail || "The database is not reachable.");
+  if (!ok) { $("health").textContent = d.detail || "The database is not reachable."; return; }
+  document.querySelectorAll("[data-stat]").forEach((el) => countUp(el, Number(d[el.dataset.stat]) || 0));
+  $("health").textContent = `Trials last retrieved ${d.trials_last_retrieved} · ${d.questions_today} of ${d.daily_question_limit} new questions used today`;
 }).catch(() => { $("health").textContent = "Could not reach the server."; });
 </script>
 </body>

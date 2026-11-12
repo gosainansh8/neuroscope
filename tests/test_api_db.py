@@ -93,9 +93,12 @@ def test_web_page_is_served_and_self_contained(client):
     r = client.get("/")
     assert r.status_code == 200 and r.headers["content-type"].startswith("text/html")
     page = r.text
-    assert '<form id="ask-form">' in page and "NeuroScope" in page
+    assert 'id="ask-form"' in page and "NeuroScope" in page
     # Nothing is loaded from other sites: no external scripts, styles, fonts, or images.
-    assert "<script src" not in page and "<link" not in page and "<img" not in page and "@import" not in page
+    # (The favicon is an inline data: URI.)
+    import re
+    assert "<script src" not in page and "<img" not in page and "@import" not in page and "url(http" not in page
+    assert all(href.startswith("data:") for href in re.findall(r'<link[^>]*href="([^"]+)"', page))
     # Model output is escaped before any markup is added, and identifiers link to their sources.
     assert "escapeHtml(s)" in page and "clinicaltrials.gov/study/" in page and "pubmed.ncbi.nlm.nih.gov/" in page
 
