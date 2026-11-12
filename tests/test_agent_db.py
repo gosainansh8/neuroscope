@@ -147,7 +147,14 @@ def test_agent_survives_bad_tool_calls_and_stops_at_the_step_limit(conn, tmp_pat
     result = answer_question("?", model, build_tools(conn))
     assert [r["error"].split(":")[0] for _, r in result.steps] == ["unknown tool 'delete_everything'",
                                                                     "get_trials could not run"]
-    looping = ScriptedModel([ModelTurn([ToolCall("list_pipeline", {})])] * 4)
+    # Out of lookups, the model gets one more turn to answer from what it has (the lookup is not run).
+    wrapping_up = ScriptedModel([ModelTurn([ToolCall("list_pipeline", {})])] * 4
+                                + [ModelTurn(text="From the pipeline lookups so far: lecanemab.")])
+    late = answer_question("?", wrapping_up, build_tools(conn), max_steps=3)
+    assert late.stopped_early is True and len(late.steps) == 3 and late.answer.startswith("From the pipeline")
+    assert "Lookup limit reached" in wrapping_up.received[-1][0][1]["error"]
+    # A model that still asks for lookups after that gets the plain step-limit message.
+    looping = ScriptedModel([ModelTurn([ToolCall("list_pipeline", {})])] * 5)
     stuck = answer_question("?", looping, build_tools(conn), max_steps=3)
     assert stuck.stopped_early is True and len(stuck.steps) == 3 and "step limit" in stuck.answer
     assert isinstance(stuck, AgentResult)

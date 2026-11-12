@@ -1,0 +1,121 @@
+{
+ "model": "gemini-3.8-flash",
+ "rows": [
+  {
+   "id": "pipeline-antiamyloid-approved",
+   "category": "pipeline",
+   "question": "Which anti-amyloid antibodies are FDA approved?",
+   "passed": true,
+   "checks": {
+    "mentions /lecanemab/": {
+     "passed": true,
+     "detail": ""
+    },
+    "mentions /donanemab/": {
+     "passed": true,
+     "detail": ""
+    },
+    "no unsupported citations": {
+     "passed": true,
+     "detail": ""
+    }
+   },
+   "answer": "In the NeuroScope database, three anti-amyloid monoclonal antibodies have US FDA approval records: **aducanumab**, **lecanemab**, and **donanemab**.\n\n### 1. Lecanemab (Leqembi)\n* **FDA Application:** Approved under BLA761269 on 2023-01-06 and BLA761375 on 2025-08-29 (Sponsor: Eisai Inc.).\n* **Indication Quote:** The FDA label states: *\"LEQEMBI is indicated for the treatment of Alzheimer\u2019s disease. Treatment with LEQEMBI should be initiated in patients with mild cognitive impairment or mild dementia stage of disease, the population in which treatment was initiated in clinical trials. LEQEMBI is an amyloid beta-directed antibody indicated for the treatment of Alzheimer\u2019s disease.\"*\n\n### 2. Donanemab (Kisunla)\n* **FDA Application:** Approved under BLA761248 on 2024-07-02 (Sponsor: Eli Lilly Co).\n* **Indication Quote:** The FDA label states: *\"KISUNLA TM is indicated for the treatment of Alzheimer's disease. Treatment with KISUNLA should be initiated in patients with mild cognitive impairment or mild dementia stage of disease, the population in which treatment was initiated in the clinical trials. KISUNLA is an amyloid beta-directed antibody indicated for the treatment of Alzheimer's disease.\"*\n\n### 3. Aducanumab (Aduhelm)\n* **FDA Application:** Approved under BLA761178 on 2021-06-07 (Sponsor: Biogen Inc.). \n* **Note on Label:** No label text was retrieved in the database to quote the specific indication text.\n\n---\n*Note: Other anti-amyloid antibodies evaluated in Alzheimer's disease\u2014including gantenerumab, solanezumab, bapineuzumab, crenezumab, remternetug, and trontinemab\u2014have no matched FDA approval record in the database (which is not proof that a drug is unapproved).*",
+   "lookups": [
+    {
+     "tool": "list_pipeline",
+     "arguments": {
+      "min_phase": 3,
+      "disease": "alzheimers",
+      "limit": 50
+     }
+    },
+    {
+     "tool": "find_drug",
+     "arguments": {
+      "name": "aducanumab"
+     }
+    },
+    {
+     "tool": "get_fda_status",
+     "arguments": {
+      "disease": "alzheimers",
+      "drug": "aducanumab"
+     }
+    },
+    {
+     "tool": "get_fda_status",
+     "arguments": {
+      "drug": "lecanemab",
+      "disease": "alzheimers"
+     }
+    },
+    {
+     "tool": "get_fda_status",
+     "arguments": {
+      "drug": "donanemab",
+      "disease": "alzheimers"
+     }
+    },
+    {
+     "tool": "find_drug",
+     "arguments": {
+      "name": "lecanemab"
+     }
+    },
+    {
+     "tool": "find_drug",
+     "arguments": {
+      "name": "donanemab"
+     }
+    },
+    {
+     "tool": "get_fda_status",
+     "arguments": {
+      "disease": "alzheimers",
+      "drug": "gantenerumab"
+     }
+    },
+    {
+     "tool": "get_fda_status",
+     "arguments": {
+      "drug": "solanezumab",
+      "disease": "alzheimers"
+     }
+    },
+    {
+     "tool": "get_fda_status",
+     "arguments": {
+      "disease": "alzheimers",
+      "drug": "crenezumab"
+     }
+    },
+    {
+     "tool": "get_fda_status",
+     "arguments": {
+      "drug": "bapineuzumab",
+      "disease": "alzheimers"
+     }
+    },
+    {
+     "tool": "get_fda_status",
+     "arguments": {
+      "drug": "remternetug",
+      "disease": "alzheimers"
+     }
+    },
+    {
+     "tool": "get_fda_status",
+     "arguments": {
+      "drug": "trontinemab",
+      "disease": "alzheimers"
+     }
+    }
+   ],
+   "attribution_warnings": [],
+   "seconds": 78.7,
+   "input_tokens": 29302,
+   "output_tokens": 814
+  }
+ ]
+}

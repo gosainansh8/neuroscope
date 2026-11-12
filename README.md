@@ -32,10 +32,14 @@ Each trial is tagged with every disease whose registry search returned it, provi
 
 Scored by code (no model judges) on questions whose answers come from the database. The case file is `evals/cases.json` and full reports are in `evals/results/`:
 
+53 cases cover US and EU approval, drugs approved only for other uses, trials, literature, the pipeline, Parkinson's, ALS, and questions the data cannot answer.
+
 | Run (2026-11-12, `gemini-3.8-flash`) | Passed | Invented citations |
 |---|---|---|
-| Alzheimer's cases | 38–39 of 39 | 0 |
-| EU approval cases | 5 of 5 | 0 |
+| Full run | 45 of 53 | 0 |
+| The 8 failures, re-run after fixes | 8 of 8 | 0 |
+
+Of the 8 failures, 3 were correct answers that didn't open with a clear "yes" or "no", 2 hit the lookup limit, 2 were Vertex AI timeouts, and 1 case was out of date. Fixes: yes/no questions now start with "Yes" or "No", and an agent that runs out of lookups answers from what it already has.
 
 ## Run it locally
 

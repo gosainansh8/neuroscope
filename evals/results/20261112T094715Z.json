@@ -1,0 +1,466 @@
+{
+ "model": "gemini-3.8-flash",
+ "rows": [
+  {
+   "id": "norecord-gantenerumab",
+   "category": "no-fda-record",
+   "question": "Is gantenerumab approved?",
+   "passed": true,
+   "checks": {
+    "verdict": {
+     "passed": true,
+     "detail": "expected no, got no"
+    },
+    "called get_fda_status": {
+     "passed": true,
+     "detail": ""
+    },
+    "no unsupported citations": {
+     "passed": true,
+     "detail": ""
+    }
+   },
+   "answer": "No. Gantenerumab does not have approval records in the United States or the European Union:\n\n* **United States (FDA):** There is no matched FDA approval record (this is not proof the drug is unapproved).\n* **European Union (EMA):** There is no centrally authorised EU medicine record (this is not proof the drug is unavailable in Europe).",
+   "lookups": [
+    {
+     "tool": "find_drug",
+     "arguments": {
+      "name": "gantenerumab"
+     }
+    },
+    {
+     "tool": "get_fda_status",
+     "arguments": {
+      "drug": "gantenerumab",
+      "disease": "alzheimers"
+     }
+    },
+    {
+     "tool": "get_ema_status",
+     "arguments": {
+      "drug": "gantenerumab",
+      "disease": "alzheimers"
+     }
+    }
+   ],
+   "attribution_warnings": [],
+   "seconds": 13.6,
+   "input_tokens": 3470,
+   "output_tokens": 152
+  },
+  {
+   "id": "norecord-trontinemab",
+   "category": "no-fda-record",
+   "question": "Is trontinemab approved?",
+   "passed": true,
+   "checks": {
+    "verdict": {
+     "passed": true,
+     "detail": "expected no, got no"
+    },
+    "called get_fda_status": {
+     "passed": true,
+     "detail": ""
+    },
+    "no unsupported citations": {
+     "passed": true,
+     "detail": ""
+    }
+   },
+   "answer": "No. Trontinemab has no recorded regulatory approvals in the United States or the European Union:\n\n* **United States (FDA):** There is no matched FDA approval record (this is not proof the drug is unapproved).\n* **European Union (EMA):** There is no centrally authorised EU medicine record (this is not proof the drug is unavailable in Europe).",
+   "lookups": [
+    {
+     "tool": "find_drug",
+     "arguments": {
+      "name": "trontinemab"
+     }
+    },
+    {
+     "tool": "get_fda_status",
+     "arguments": {
+      "drug": "trontinemab"
+     }
+    },
+    {
+     "tool": "get_ema_status",
+     "arguments": {
+      "drug": "trontinemab"
+     }
+    }
+   ],
+   "attribution_warnings": [],
+   "seconds": 12.9,
+   "input_tokens": 3769,
+   "output_tokens": 134
+  },
+  {
+   "id": "trials-simufilam",
+   "category": "trials",
+   "question": "What happened in simufilam's Phase 3 program?",
+   "passed": true,
+   "checks": {
+    "mentions /terminat/": {
+     "passed": true,
+     "detail": ""
+    },
+    "cites an expected record": {
+     "passed": true,
+     "detail": "NCT04994483, NCT05026177, NCT05575076"
+    },
+    "no unsupported citations": {
+     "passed": true,
+     "detail": ""
+    }
+   },
+   "answer": "Simufilam's Phase 3 clinical program for mild-to-moderate Alzheimer's disease failed to demonstrate efficacy, leading to the termination of the program's remaining trials:\n\n* **Efficacy Outcome:** Published literature reports that Phase III clinical trials of simufilam failed to show any significant cognitive or functional improvements in Alzheimer's disease patients (PMID 41754821, PMID 41500915).\n* **Completed Study (NCT04994483):** A Phase 3 trial evaluating simufilam 100 mg in 804 participants reached completion with a primary completion date of 2024-10-02.\n* **Terminated Studies:** \n  * **NCT05026177:** A Phase 3 trial testing simufilam 50 mg or 100 mg in 1,125 participants was terminated (primary completion date: 2024-12-30).\n  * **NCT05575076:** An open-label extension study for participants from the Phase 3 trials (enrolling 1,081 participants) was also terminated (primary completion date: 2025-01-31).\n\nAcross the database, simufilam currently has 0 active clinical trials. \n\nRegarding regulatory status, simufilam has no matched FDA approval record (this is not proof the drug is unapproved) and no centrally authorised EU medicine record with the EMA (this is not proof it is unavailable in Europe). Clinical trial phase and completion status do not constitute regulatory approval.",
+   "lookups": [
+    {
+     "tool": "find_drug",
+     "arguments": {
+      "name": "simufilam"
+     }
+    },
+    {
+     "tool": "get_trials",
+     "arguments": {
+      "limit": 10,
+      "disease": "alzheimers",
+      "drug": "simufilam"
+     }
+    },
+    {
+     "tool": "search_literature",
+     "arguments": {
+      "query": "simufilam phase 3 Alzheimer's trial results Cassava",
+      "drug": "simufilam"
+     }
+    },
+    {
+     "tool": "search_literature",
+     "arguments": {
+      "query": "\"Phase 3 randomized clinical trials of simufilam in mild-to-moderate Alzheimer's disease\"",
+      "drug": "simufilam"
+     }
+    },
+    {
+     "tool": "get_fda_status",
+     "arguments": {
+      "disease": "alzheimers",
+      "drug": "simufilam"
+     }
+    },
+    {
+     "tool": "get_ema_status",
+     "arguments": {
+      "drug": "simufilam",
+      "disease": "alzheimers"
+     }
+    }
+   ],
+   "attribution_warnings": [],
+   "seconds": 84.6,
+   "input_tokens": 18426,
+   "output_tokens": 557
+  },
+  {
+   "id": "lit-donanemab-aria",
+   "category": "literature",
+   "question": "What does the literature say about brain swelling with donanemab?",
+   "passed": true,
+   "checks": {
+    "mentions /ARIA/": {
+     "passed": true,
+     "detail": ""
+    },
+    "cites 1+ PubMed IDs": {
+     "passed": true,
+     "detail": "5 cited"
+    },
+    "called search_literature": {
+     "passed": true,
+     "detail": ""
+    },
+    "no unsupported citations": {
+     "passed": true,
+     "detail": ""
+    }
+   },
+   "answer": "In the published literature, brain swelling associated with donanemab manifests as amyloid-related imaging abnormalities with edema or sulcal effusions (ARIA-E), a form of vasogenic edema detected on MRI (PMID 38165303, PMID 38312931). \n\nKey findings from clinical trial analyses include:\n\n* **Incidence and Severity:** In a pooled secondary analysis of the TRAILBLAZER-ALZ and ALZ 2 trials, ARIA-E occurred in 24.4% of patients treated with donanemab (PMID 40063015). ARIA-E was mostly mild or moderate in radiographic severity, with serious ARIA-E reported in 1.5% of participants (PMID 40063015). While most ARIA cases are asymptomatic, some patients develop clinical symptoms (PMID 38312931, PMID 40063015).\n* **Mitigation by Modified Titration:** In the TRAILBLAZER-ALZ 6 trial, adopting a modified titration regimen significantly reduced the incidence and radiographic severity of ARIA-E while preserving amyloid clearance (PMID 40172303, PMID 40619285):\n  * At 24 weeks, ARIA-E occurred in 13.7% of patients receiving modified titration compared to 23.7% with standard dosing (PMID 40172303).\n  * At 18 months, ARIA-E incidence was 15.6% in the modified titration arm versus 24.2% in the standard arm, with significantly lower radiographic severity (p = 0.015) (PMID 40619285).\n\n*(Note: Literature search results in NeuroScope are based on stored PubMed abstracts only.)*",
+   "lookups": [
+    {
+     "tool": "find_drug",
+     "arguments": {
+      "name": "donanemab"
+     }
+    },
+    {
+     "tool": "search_literature",
+     "arguments": {
+      "drug": "donanemab",
+      "query": "brain swelling edema ARIA ARIA-E"
+     }
+    },
+    {
+     "tool": "search_literature",
+     "arguments": {
+      "drug": "donanemab",
+      "query": "TRAILBLAZER-ALZ ARIA-E edema swelling symptoms"
+     }
+    },
+    {
+     "tool": "search_literature",
+     "arguments": {
+      "query": "donanemab ARIA-E vasogenic edema brain swelling frequency",
+      "drug": "donanemab"
+     }
+    },
+    {
+     "tool": "search_literature",
+     "arguments": {
+      "drug": "donanemab",
+      "query": "40063015 donanemab ARIA-E symptomatic resolution"
+     }
+    },
+    {
+     "tool": "search_literature",
+     "arguments": {
+      "query": "\"Serious ARIA-E was reported in\"",
+      "drug": "donanemab"
+     }
+    },
+    {
+     "tool": "get_fda_status",
+     "arguments": {
+      "disease": "alzheimers",
+      "drug": "donanemab"
+     }
+    }
+   ],
+   "attribution_warnings": [],
+   "seconds": 73.6,
+   "input_tokens": 24233,
+   "output_tokens": 654
+  },
+  {
+   "id": "pipeline-phase3-unapproved",
+   "category": "pipeline",
+   "question": "Which Alzheimer's drugs have an active Phase 3 trial but no FDA approval record?",
+   "passed": true,
+   "checks": {
+    "mentions /trontinemab|remternetug/": {
+     "passed": true,
+     "detail": ""
+    },
+    "called list_pipeline": {
+     "passed": true,
+     "detail": ""
+    },
+    "no unsupported citations": {
+     "passed": true,
+     "detail": ""
+    }
+   },
+   "answer": "According to NeuroScope's Alzheimer's disease pipeline data, 19 drugs have an active Phase 3 trial as their highest active phase and no matched FDA approval record:\n\n1. **[18F]MK-6240** (6 active trials)\n2. **karx-ec** (6 active trials)\n3. **trontinemab** (4 active trials)\n4. **remternetug** (3 active trials)\n5. **E2814** (3 active trials)\n6. **saline** (2 active trials; listed as a trial comparator)\n7. **[18F]PI-2620** (2 active trials)\n8. **[18F]APN-1607** (2 active trials)\n9. **buntanetap + posiphen** (2 active trials)\n10. **ACP-204** (2 active trials)\n11. **gantenerumab** (1 active trial)\n12. **solanezumab** (1 active trial)\n13. **tricaprilin** (1 active trial)\n14. **tertomotide** (1 active trial)\n15. **masitinib** (1 active trial)\n16. **T3D-959** (1 active trial)\n17. **xanamem** (1 active trial)\n18. **AR1001** (1 active trial)\n19. **dmb-i** (1 active trial)\n\n*(Note: Having no matched FDA approval record is not proof that a drug is unapproved. Several entries, such as [18F]MK-6240, [18F]PI-2620, and [18F]APN-1607, are diagnostic imaging radiotracers, and saline is a comparator.)*",
+   "lookups": [
+    {
+     "tool": "list_pipeline",
+     "arguments": {
+      "min_phase": 3,
+      "active_only": true,
+      "disease": "alzheimers",
+      "limit": 50
+     }
+    },
+    {
+     "tool": "get_trials",
+     "arguments": {
+      "disease": "alzheimers",
+      "drug": "GV-971"
+     }
+    },
+    {
+     "tool": "get_trials",
+     "arguments": {
+      "drug": "[11C]PIB",
+      "disease": "alzheimers"
+     }
+    },
+    {
+     "tool": "get_trials",
+     "arguments": {
+      "disease": "alzheimers",
+      "drug": "ginkgo biloba extract"
+     }
+    }
+   ],
+   "attribution_warnings": [],
+   "seconds": 35.8,
+   "input_tokens": 16822,
+   "output_tokens": 543
+  },
+  {
+   "id": "pipeline-antiamyloid-approved",
+   "category": "pipeline",
+   "question": "Which anti-amyloid antibodies are FDA approved?",
+   "passed": false,
+   "checks": {
+    "answered": {
+     "passed": false,
+     "detail": "Vertex AI request failed (504 DEADLINE_EXCEEDED): Deadline expired before operation could complete."
+    }
+   },
+   "answer": null,
+   "lookups": [],
+   "attribution_warnings": [],
+   "seconds": 185.0,
+   "input_tokens": 17139,
+   "output_tokens": 122
+  },
+  {
+   "id": "missing-japan",
+   "category": "outside-data",
+   "question": "Is lecanemab approved in Japan?",
+   "passed": true,
+   "checks": {
+    "says the data does not cover it": {
+     "passed": true,
+     "detail": ""
+    },
+    "no unsupported citations": {
+     "passed": true,
+     "detail": ""
+    }
+   },
+   "answer": "**Yes**, according to published literature indexed in the database, lecanemab is approved in Japan:\n\n* **PMID 38945936** reports that lecanemab is \"approved in the U.S. and Japan.\"\n* **PMID 38692883** similarly notes that following US approvals, \"In Japan, it was approved\".\n\n*(Note: NeuroScope's dedicated regulatory records cover only the US FDA and the EU EMA, so primary regulatory approval filings and official label text from Japan's regulatory authority are not tracked in the database).*",
+   "lookups": [
+    {
+     "tool": "find_drug",
+     "arguments": {
+      "name": "lecanemab"
+     }
+    },
+    {
+     "tool": "search_literature",
+     "arguments": {
+      "query": "lecanemab Japan approval PMDA",
+      "drug": "lecanemab"
+     }
+    },
+    {
+     "tool": "search_literature",
+     "arguments": {
+      "drug": "lecanemab",
+      "query": "\"In Japan\" lecanemab approval"
+     }
+    },
+    {
+     "tool": "search_literature",
+     "arguments": {
+      "query": "lecanemab Japan approved OR approval",
+      "drug": "lecanemab"
+     }
+    },
+    {
+     "tool": "search_literature",
+     "arguments": {
+      "drug": "lecanemab",
+      "query": "\"it was approved in Japan\" OR \"approved in Japan in\""
+     }
+    },
+    {
+     "tool": "get_fda_status",
+     "arguments": {
+      "drug": "lecanemab",
+      "disease": "alzheimers"
+     }
+    },
+    {
+     "tool": "get_ema_status",
+     "arguments": {
+      "disease": "alzheimers",
+      "drug": "lecanemab"
+     }
+    }
+   ],
+   "attribution_warnings": [],
+   "seconds": 29.6,
+   "input_tokens": 24273,
+   "output_tokens": 339
+  },
+  {
+   "id": "als-relyvrio",
+   "category": "als",
+   "question": "Is AMX0035 FDA approved, and what happened in Europe?",
+   "passed": true,
+   "checks": {
+    "verdict": {
+     "passed": true,
+     "detail": "expected yes, got yes"
+    },
+    "mentions /2022-09-29|September 29,? 2022/": {
+     "passed": true,
+     "detail": ""
+    },
+    "mentions /refus/": {
+     "passed": true,
+     "detail": ""
+    },
+    "cites an expected record": {
+     "passed": true,
+     "detail": "NDA216660"
+    },
+    "no unsupported citations": {
+     "passed": true,
+     "detail": ""
+    }
+   },
+   "answer": "**Yes.** AMX0035 received US FDA approval, but it was refused authorization by the European Medicines Agency (EMA).\n\n### United States (FDA)\n* **Status:** FDA-approved (original approval date: September 29, 2022; application **NDA216660**, sponsor AMYLYX, brand name **RELYVRIO**). \n* **Current status:** The record notes that it is `currently_marketed: false` (FDA data export date: November 11, 2026). No specific label indication text was retrieved in the record.\n\n### European Union (EMA)\n* **Status:** Not authorised in the EU (`currently_authorised_in_eu: false`).\n* **Outcome:** An application for central marketing authorization under the brand name **Albrioza** (**EMEA/H/C/005901**, Amylyx Pharmaceuticals EMEA B.V.) for the indication *\"Treatment of amyotrophic lateral sclerosis (ALS)\"* was evaluated, and its regulatory status is **Refused** (refusal date: January 5, 2024; EMA file date: November 12, 2026).\n* *Caveat:* The EMA records cover only medicines evaluated centrally for the entire EU; older drugs may have been authorized country by country.",
+   "lookups": [
+    {
+     "tool": "find_drug",
+     "arguments": {
+      "name": "AMX0035"
+     }
+    },
+    {
+     "tool": "get_fda_status",
+     "arguments": {
+      "drug": "phenylbutyrate + taurursodiol",
+      "disease": "als"
+     }
+    },
+    {
+     "tool": "get_ema_status",
+     "arguments": {
+      "disease": "als",
+      "drug": "phenylbutyrate + taurursodiol"
+     }
+    },
+    {
+     "tool": "get_fda_status",
+     "arguments": {
+      "drug": "AMX0035",
+      "disease": "als"
+     }
+    },
+    {
+     "tool": "get_ema_status",
+     "arguments": {
+      "drug": "AMX0035",
+      "disease": "als"
+     }
+    },
+    {
+     "tool": "get_fda_status",
+     "arguments": {
+      "drug": "AMX0035"
+     }
+    }
+   ],
+   "attribution_warnings": [],
+   "seconds": 23.5,
+   "input_tokens": 7413,
+   "output_tokens": 453
+  }
+ ]
+}

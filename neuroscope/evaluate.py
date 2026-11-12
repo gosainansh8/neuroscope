@@ -2,7 +2,7 @@
 
 Usage:
     python -m neuroscope.evaluate                       # every case in evals/cases.json
-    python -m neuroscope.evaluate --only fda-lecanemab   # one case
+    python -m neuroscope.evaluate --only fda-lecanemab,ema-kisunla   # some cases
     python -m neuroscope.evaluate --category trials
 
 Each case states what a correct answer must contain, using patterns and
@@ -171,13 +171,14 @@ def summarize(rows: list[dict], model_name: str) -> str:
 
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    p.add_argument("--only", help="run one case by id")
+    p.add_argument("--only", help="run cases by id, comma-separated")
     p.add_argument("--category")
     p.add_argument("--keyword-search", action="store_true", help="literature by keyword instead of embeddings")
     args = p.parse_args(argv)
     cases = json.loads(CASES.read_text(encoding="utf-8"))["cases"]
     if args.only:
-        cases = [c for c in cases if c["id"] == args.only]
+        wanted = {i.strip() for i in args.only.split(",")}
+        cases = [c for c in cases if c["id"] in wanted]
     if args.category:
         cases = [c for c in cases if c["category"] == args.category]
     if not cases:

@@ -375,7 +375,7 @@
     {
       "id": "pipeline-phase3-unapproved",
       "category": "pipeline",
-      "question": "Which drugs have an active Phase 3 trial but no FDA approval record?",
+      "question": "Which Alzheimer's drugs have an active Phase 3 trial but no FDA approval record?",
       "must_call": [
         "list_pipeline"
       ],
@@ -399,9 +399,9 @@
       "expect_missing": true
     },
     {
-      "id": "missing-europe",
+      "id": "missing-japan",
       "category": "outside-data",
-      "question": "Is lecanemab approved in Europe?",
+      "question": "Is lecanemab approved in Japan?",
       "expect_missing": true
     },
     {

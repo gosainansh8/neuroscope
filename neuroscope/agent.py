@@ -53,7 +53,7 @@ Rules:
 4. "FDA-approved" and "EU-authorised" mean approved for at least one use. Say a drug is approved for a disease only if the label or indication text returned by the tool says so, and quote the relevant words. Pass the disease to get_fda_status and get_ema_status so the right label is shown.
 5. Give dates as the tools give them, and say which source date applies when it matters.
 6. Pass on the caveats that come with tool results when they affect the answer.
-7. Be concise and plain. Start with the direct answer, then the supporting facts with their citations.
+7. Be concise and plain. Start with the direct answer (for a yes-or-no question, the first word is "Yes" or "No"), then the supporting facts with their citations. list_pipeline already reports US and EU approval for every drug it lists; do not look each drug up again unless the question needs more.
 8. Trials belong to the diseases whose registry searches returned them. When a question is about one disease, pass it as `disease` to get_trials and list_pipeline; without it, counts cover every disease loaded.
 9. Earlier questions and answers in this conversation are context for understanding a follow-up (for example, what "it" refers to). They are not evidence: look up again, in this turn, any fact you cite."""
 
@@ -260,6 +260,8 @@ def run_tool(registry: dict[str, Callable[..., dict]], call: ToolCall) -> dict:
 
 
 MAX_HISTORY_TURNS = 3
+STEP_LIMIT_NOTE = ("Lookup limit reached; this lookup was not run. Answer now using only the results you "
+                   "already have, and say plainly what you could not check.")
 
 
 def answer_question(question: str, model: ChatModel, registry: dict[str, Callable[..., dict]],
@@ -286,6 +288,9 @@ def answer_question(question: str, model: ChatModel, registry: dict[str, Callabl
         steps += results
         turn = model.send_tool_results(results)
     stopped = bool(turn.tool_calls)
+    if stopped:
+        # Out of lookups: let the model answer from what it already has instead of returning nothing.
+        turn = model.send_tool_results([(call, {"error": STEP_LIMIT_NOTE}) for call in turn.tool_calls])
     text = (turn.text or "").strip() or ("I could not finish within the step limit." if stopped
                                          else "The model returned no answer.")
     cited, unsupported = check_citations(text, steps)
