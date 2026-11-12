@@ -169,6 +169,10 @@ python -m neuroscope.sec load              # needs SEC_USER_AGENT="NeuroScope re
 
 `data/sec_companies.csv` lists listed companies with programs in these diseases, by ticker; the SEC's own ticker file supplies each company number. For each, the press-release exhibit of 8-K filings with item 2.02, 7.01, or 8.01 and of 6-K filings from the last three years, plus the latest 10-K or 20-F, are read. A filing is stored only if a tracked drug is named in it, and only the passages naming one (plus the opening) are kept. Matching is stricter than for abstracts: only drugs with a Phase 2+ program or an approval, never a generic substance (insulin, glucose), names matched as written (so "SAM-e" does not match "same"), and combination products by their brand or code (AMX0035, Relyvrio). `search_disclosures` returns accession numbers, which the citation check verifies, and answers attribute statements to the company.
 
+## Atlas
+
+`GET /atlas` powers the Atlas tab: for each disease, trial counts, active programs by phase (excluding approved drugs), drugs whose FDA label names the disease, programs stopped in the last 12 months, the top three mechanisms, primary endpoints, and biomarkers, and up to five companies whose SEC filings name the disease's Phase 2+ or approved drugs, with their latest press release. It is recomputed at most hourly.
+
 ## Reports
 
 `POST /ask` and `/ask/stream` take `"mode": "report"` (or `python -m neuroscope.agent "topic" --report`). The agent uses a report prompt with fixed sections (summary, regulatory status, clinical development, published evidence, landscape, gaps and caveats), up to 14 lookup rounds, and the same citation and attribution checks. A report counts as three questions against the daily limit and is cached separately from an answer to the same text.

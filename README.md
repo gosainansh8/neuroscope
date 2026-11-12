@@ -16,6 +16,7 @@ Sourced drug-development intelligence for Alzheimer's disease, Parkinson's disea
 - **Compares the three diseases:** the most common mechanisms, clinical endpoints (ADAS-Cog, MDS-UPDRS, ALSFRS-R), and biomarkers (amyloid PET, alpha-synuclein, NfL), with counts and example records.
 - **Spots discontinued programs:** a drug's program in a disease is active, discontinued, dormant, or completed, judged from its trials, with the sponsor's stated reason. The weekly news flags a stop that left a drug with no active trial.
 - **Answers or writes reports with checked citations:** a Gemini agent can only call nine read-only lookups. Every trial, FDA, EMA, SEC, and PubMed ID it writes must come from a lookup made for that answer, or it is flagged. Report mode writes a sectioned briefing (status, development, evidence, landscape, gaps) under the same check.
+- **Maps the three pipelines:** the Atlas tab pins each disease to the brain region it strikes (hippocampus, substantia nigra, motor cortex and spinal cord) and opens its pipeline at a glance, with the companies filing about it and their latest SEC press release.
 - **Stays current:** a weekly job on Google Cloud refreshes every source and records new trials and changes in status, phase, and completion date.
 
 ## How it works
