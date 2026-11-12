@@ -70,3 +70,4 @@ class,Standard of Care medication for early Alzheimer's Disease,,high,Category o
 resolve,NCT00257712,,high,TH9507 arm correctly linked to tesamorelin; the GHRH description is the same drug
 resolve,NCT02580305,,high,Donepezil arm; the otherName Namzaric is the combination product used elsewhere in the study
 resolve,NCT04052737,,high,Saline comparator arm; Vehicle is a description, not another drug
+resolve,NCT05330871,,high,COVID-19 vaccine arms keep their arm-label links; their otherNames name the vaccine used in other arms
