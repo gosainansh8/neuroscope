@@ -59,15 +59,23 @@ def test_ask_validates_the_question(client):
     assert client.post("/ask", json={}).status_code == 422
 
 
-def test_model_failure_is_a_502_with_the_reason(client):
+def test_model_failure_is_a_generic_502_and_the_reason_is_logged(client, caplog):
     class Failing:
         model = "failing"
 
         def start(self, *args):
-            raise RuntimeError("Vertex AI request failed (504 DEADLINE_EXCEEDED): Deadline expired")
+            raise RuntimeError("Vertex AI request failed (404 NOT_FOUND): projects/demo-123/locations/x")
     api.app.dependency_overrides[api.get_model] = lambda: Failing()
-    r = client.post("/ask", json={"question": "Is lecanemab approved?"})
-    assert r.status_code == 502 and "DEADLINE_EXCEEDED" in r.json()["detail"]
+    with caplog.at_level("ERROR", logger="neuroscope.api"):
+        r = client.post("/ask", json={"question": "Is lecanemab approved?"})
+    assert r.status_code == 502 and r.json()["detail"] == api.MODEL_UNAVAILABLE
+    assert "demo-123" not in r.text                       # the project path is not shown to visitors
+    assert "projects/demo-123" in caplog.text             # but is kept for whoever runs the service
+
+
+def test_no_api_documentation_pages_are_published(client):
+    for path in ("/docs", "/redoc", "/openapi.json"):
+        assert client.get(path).status_code == 404
 
 
 def test_stopped_database_is_a_503_with_instructions(monkeypatch):

@@ -28,6 +28,7 @@ so, rather than failing obscurely.
 from __future__ import annotations
 
 import hashlib
+import logging
 import os
 import re
 import threading
@@ -45,7 +46,14 @@ from pydantic import BaseModel, Field
 from .agent import GeminiModel, answer_question, build_tools
 from .db import connect
 
-app = FastAPI(title="NeuroScope", description="Sourced answers about Alzheimer's drug development.")
+# No generated API documentation pages: visitors only need the website.
+app = FastAPI(title="NeuroScope", description="Sourced answers about Alzheimer's drug development.",
+              docs_url=None, redoc_url=None, openapi_url=None)
+log = logging.getLogger("neuroscope.api")
+
+# Shown to visitors instead of the model service's raw error, which can name the project.
+# The full error goes to the server log (Cloud Run: Logging in the console).
+MODEL_UNAVAILABLE = ("The answer service is temporarily unavailable. Please try again in a minute.")
 
 INDEX_HTML = Path(__file__).resolve().parent / "static" / "index.html"
 
@@ -167,7 +175,8 @@ def get_model():
     try:
         return GeminiModel()
     except RuntimeError as exc:
-        raise HTTPException(status_code=503, detail=str(exc)) from exc
+        log.error("model setup failed: %s", exc)
+        raise HTTPException(status_code=503, detail=MODEL_UNAVAILABLE) from exc
 
 
 def get_embedder():
@@ -215,7 +224,8 @@ def ask(body: Question, request: Request, conn: psycopg.Connection = Depends(get
     try:
         result = answer_question(body.question, model, build_tools(conn, embedder))
     except RuntimeError as exc:                      # the model service failed or timed out
-        raise HTTPException(status_code=502, detail=str(exc)) from exc
+        log.error("model request failed: %s", exc)
+        raise HTTPException(status_code=502, detail=MODEL_UNAVAILABLE) from exc
     answer = Answer(
         answer=result.answer,
         lookups=[Lookup(tool=c.name, arguments=c.args, error=r.get("error")) for c, r in result.steps],
