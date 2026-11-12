@@ -618,6 +618,69 @@
         "riluzole",
         "edaravone"
       ]
+    },
+    {
+      "id": "program-simufilam",
+      "category": "programs",
+      "question": "Has the simufilam program been discontinued?",
+      "verdict": "yes",
+      "must_cite_any": [
+        "NCT05026177"
+      ],
+      "must_mention": [
+        "terminat|discontinu|stopp"
+      ],
+      "must_call": [
+        "get_program_status"
+      ]
+    },
+    {
+      "id": "program-reldesemtiv",
+      "category": "programs",
+      "question": "Is reldesemtiv still being developed for ALS?",
+      "verdict": "no",
+      "must_cite_any": [
+        "NCT04944784"
+      ],
+      "must_mention": [
+        "futility"
+      ]
+    },
+    {
+      "id": "compare-endpoints",
+      "category": "comparison",
+      "question": "Which primary endpoints are most common in Phase 3 trials for Alzheimer's, Parkinson's, and ALS?",
+      "must_mention": [
+        "ADAS|CDR",
+        "UPDRS",
+        "ALSFRS"
+      ],
+      "must_call": [
+        "compare_diseases"
+      ]
+    },
+    {
+      "id": "compare-biomarkers",
+      "category": "comparison",
+      "question": "How do biomarkers used in Alzheimer's trials differ from those in ALS trials?",
+      "must_mention": [
+        "amyloid",
+        "neurofilament|NfL"
+      ],
+      "must_call": [
+        "compare_diseases"
+      ]
+    },
+    {
+      "id": "disclosure-amylyx",
+      "category": "disclosures",
+      "question": "What has Amylyx said about AMX0035 in its SEC filings?",
+      "must_mention": [
+        "Amylyx"
+      ],
+      "must_call": [
+        "search_disclosures"
+      ]
     }
   ]
 }

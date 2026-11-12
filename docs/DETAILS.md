@@ -148,6 +148,31 @@ The list covers only medicines authorised **centrally**, for the whole EU at onc
 
 On the 2026-11-12 file: 302 of 2,357 human medicines matched 92 of our drugs (208 currently authorised). Lecanemab (Leqembi, authorised 2025-04-15) and donanemab (Kisunla, 2025-09-24) are authorised; aducanumab's application (Aduhelm) was withdrawn in 2022; two donepezil + memantine combinations were refused in 2013.
 
+## Program status (discontinuation)
+
+`v_program_status` judges each drug in each disease from its interventional trials: **active** (a trial is recruiting, enrolling, or ongoing), **discontinued** (no active trial, and the most recently updated one was terminated, withdrawn, or suspended), **dormant** (no active trial and no update in 3 years), or **completed**. It carries the latest stopped trial and the sponsor's `why_stopped` text. This reads the registry, not company decisions: a sponsor can end a program without stopping a trial, or continue in trials not yet registered. `get_program_status` exposes it to the agent; the weekly news flags a status change that left a drug with no active trial and lists programs stopped in the last 180 days.
+
+## Mechanisms, endpoints, and biomarkers
+
+```bash
+python -m neuroscope.mechanisms load       # ChEMBL, drugs with 2+ trials
+python -m neuroscope.outcomes classify     # standard endpoints and biomarkers in trial outcomes
+```
+
+Mechanisms come from ChEMBL. A ChEMBL molecule is accepted only when its preferred name or a listed synonym has the same key as a trusted name of the drug (the FDA/EMA rule); mechanisms are read from the parent molecule, since ChEMBL files them under salts. On 2026-11-12: 583 drugs looked up, 376 matched, 294 with a mechanism. Endpoints and biomarkers come from a fixed vocabulary in `neuroscope/outcomes.py` (CDR-SB, ADAS-Cog, MDS-UPDRS, OFF time, ALSFRS-R, survival, amyloid and tau PET, p-tau, NfL, DaT-SPECT, alpha-synuclein, SOD1, and others) matched as text in registered outcome measures; 6,040 trials name at least one. `compare_diseases` puts the three diseases side by side with counts and example records.
+
+## Company disclosures (SEC EDGAR)
+
+```bash
+python -m neuroscope.sec load              # needs SEC_USER_AGENT="NeuroScope research you@example.com"
+```
+
+`data/sec_companies.csv` lists listed companies with programs in these diseases, by ticker; the SEC's own ticker file supplies each company number. For each, the press-release exhibit of 8-K filings with item 2.02, 7.01, or 8.01 and of 6-K filings from the last three years, plus the latest 10-K or 20-F, are read. A filing is stored only if a tracked drug is named in it, and only the passages naming one (plus the opening) are kept. Matching is stricter than for abstracts: only drugs with a Phase 2+ program or an approval, never a generic substance (insulin, glucose), names matched as written (so "SAM-e" does not match "same"), and combination products by their brand or code (AMX0035, Relyvrio). `search_disclosures` returns accession numbers, which the citation check verifies, and answers attribute statements to the company.
+
+## Reports
+
+`POST /ask` and `/ask/stream` take `"mode": "report"` (or `python -m neuroscope.agent "topic" --report`). The agent uses a report prompt with fixed sections (summary, regulatory status, clinical development, published evidence, landscape, gaps and caveats), up to 14 lookup rounds, and the same citation and attribution checks. A report counts as three questions against the daily limit and is cached separately from an answer to the same text.
+
 ## Documents and search
 
 ```bash

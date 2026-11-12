@@ -44,7 +44,13 @@ from .embed import call_with_retry
 DEFAULT_MODEL = "gemini-3.8-flash"
 MAX_STEPS = 8
 REPORT_STEPS = 14
-REQUEST_TIMEOUT_MS = 45_000               # a stalled request fails (and is retried) instead of hanging
+# Measured on 2026-11-12: Vertex AI sometimes holds a request for ~40 s before answering, regardless of
+# its size. Responses are always streamed, so this timeout is the longest silence allowed (not the total
+# length of an answer); a stalled request is dropped and retried after 20 s instead of 45.
+REQUEST_TIMEOUT_MS = 20_000
+# Hidden reasoning was most of the time of the final write-up (1,688 thinking tokens for a 644-token
+# answer). Capped; NEUROSCOPE_THINKING_BUDGET overrides it (-1 = the model's own default).
+THINKING_BUDGET = 1024
 
 SYSTEM_PROMPT = """You answer questions about drug development for Alzheimer's disease, Parkinson's disease, and ALS (amyotrophic lateral sclerosis) using the NeuroScope database.
 
@@ -418,6 +424,7 @@ class GeminiModel:
 
         def attempt():
             nonlocal sent_text
+            sent_text = False
             parts, calls, usage = [], [], None
             try:
                 for chunk in self._client.models.generate_content_stream(
@@ -428,7 +435,7 @@ class GeminiModel:
                         parts.append(part)
                         if part.function_call:
                             calls.append(ToolCall(part.function_call.name, dict(part.function_call.args or {})))
-                        elif part.text and not getattr(part, "thought", False):
+                        elif part.text and not getattr(part, "thought", False) and self.on_text:
                             sent_text = True
                             self.on_text(part.text)
             except Exception as exc:
@@ -449,33 +456,24 @@ class GeminiModel:
     def _generate(self) -> ModelTurn:
         from google.genai import errors
         try:
-            if self.on_text:
-                return self._stream()
-            resp = call_with_retry(lambda: self._client.models.generate_content(
-                model=self.model, contents=self._history, config=self._config))
+            return self._stream()               # always streamed: see REQUEST_TIMEOUT_MS
         except errors.APIError as exc:
             message = (getattr(exc, "message", None) or str(exc)).split(". If you ")[0]
             raise RuntimeError(f"Vertex AI request failed ({getattr(exc, 'code', '?')} "
                                f"{getattr(exc, 'status', '')}): {message}") from exc
         except Exception as exc:                 # timeouts and connection errors from the HTTP layer
             raise RuntimeError(f"Vertex AI request did not complete: {type(exc).__name__}: {exc}") from exc
-        usage = resp.usage_metadata
-        if usage:
-            self.input_tokens += usage.prompt_token_count or 0
-            self.output_tokens += usage.candidates_token_count or 0
-        if resp.candidates and resp.candidates[0].content:
-            self._history.append(resp.candidates[0].content)      # kept whole, as the API requires
-        calls = [ToolCall(fc.name, dict(fc.args or {})) for fc in (resp.function_calls or [])]
-        return ModelTurn(calls, None if calls else resp.text)
 
     def start(self, system: str, tool_specs: list[dict], question: str,
               history: list[dict] | None = None) -> ModelTurn:
         t = self._types
         declarations = [t.FunctionDeclaration(name=s["name"], description=s["description"],
                                               parameters_json_schema=s["parameters"]) for s in tool_specs]
+        budget = int(os.environ.get("NEUROSCOPE_THINKING_BUDGET", THINKING_BUDGET))
         self._config = t.GenerateContentConfig(
             system_instruction=system, temperature=0, tools=[t.Tool(function_declarations=declarations)],
-            automatic_function_calling=t.AutomaticFunctionCallingConfig(disable=True))
+            automatic_function_calling=t.AutomaticFunctionCallingConfig(disable=True),
+            thinking_config=None if budget < 0 else t.ThinkingConfig(thinking_budget=budget))
         self._history = []
         for turn in history or []:
             self._history.append(t.Content(role="user", parts=[t.Part(text=turn["question"])]))
