@@ -4,6 +4,8 @@
 
 Sourced neuroscience drug-development intelligence for Alzheimer's disease, Parkinson's disease, and ALS.
 
+![NeuroScope answering "Is opicapone approved for Parkinson's disease in the US and EU?" with verified FDA and EMA citations](docs/demo.gif)
+
 **Live demo: https://neuroscope-api-561220657386.us-central1.run.app** Ask a question about an Alzheimer's, Parkinson's, or ALS drug and get an answer with linked, verified sources. The demo is limited to 50 new questions a day; recently asked questions are answered from a cache.
 
 Milestone 1: the structured data layer. Pulls Alzheimer's, Parkinson's, and ALS trials from ClinicalTrials.gov, normalizes them, resolves drug names to canonical drugs with full provenance, and tracks every change between runs.
