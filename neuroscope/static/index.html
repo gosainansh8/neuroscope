@@ -238,6 +238,22 @@
     .flow-steps li::after { top: auto; bottom: -15px; right: 50%; transform: translateX(50%) rotate(135deg); }
   }
 
+  /* Side by side on wide screens: the steps on the left, this week's news on the right.
+     The row is wider than the rest of the page, centred on it. */
+  .side { display: grid; grid-template-columns: 320px 1fr; gap: 16px; align-items: stretch; margin-top: 30px;
+          width: min(1180px, calc(100vw - 32px)); margin-left: calc(50% - min(590px, 50vw - 16px)); }
+  .side > .card { margin-top: 0; }
+  .side .flow-steps { grid-template-columns: 1fr; gap: 10px; }
+  .side .flow-steps li { display: grid; grid-template-columns: 26px 1fr; gap: 0 10px; padding: 10px 12px; }
+  .side .flow-steps li > .ic { grid-row: span 3; width: 26px; height: 26px; margin: 0; }
+  .side .flow-steps li > b { margin-bottom: 1px; }
+  .side .flow-steps .tools, .side .flow-steps .src { grid-column: 2; }
+  .side .flow-steps li::after { top: auto; bottom: -9px; right: auto; left: 23px; width: 7px; height: 7px;
+                                transform: rotate(135deg); }
+  @media (max-width: 980px) {
+    .side { grid-template-columns: 1fr; width: auto; margin-left: 0; }
+  }
+
   footer { margin-top: 34px; color: var(--faint); font-size: .84rem; display: grid; gap: 8px; }
   footer .how { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; margin: 6px 0 10px;
                 padding-top: 22px; border-top: 1px solid var(--panel-border); }
@@ -339,6 +355,7 @@
     </div>
   </article>
 
+  <div class="side">
   <section class="card flow" aria-labelledby="flow-title">
     <h3 id="flow-title">How an answer is found</h3>
     <p>The model never sees the database directly. It can only ask for these lookups, and every citation is checked afterwards.</p>
@@ -388,6 +405,7 @@
       </div>
     </div>
   </section>
+  </div>
 
   <footer>
     <div class="how">

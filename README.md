@@ -243,6 +243,7 @@ Results on 2026-11-12 with `gemini-3.8-flash` (full reports in `evals/results/`)
 |---|---|---|---|
 | First full run | 37 of 39 | 0 | 0 |
 | Final full run | **39 of 39** (129 of 129 checks) | 0 | 0 |
+| After retry, hybrid search, follow-ups | 38 of 39 (128 of 129) | 0 | 0 |
 
 The first run's failures, and what they showed:
 
@@ -250,7 +251,7 @@ The first run's failures, and what they showed:
 - One case was written wrongly: it expected "which drug works best?" to be declined as out of scope, but the agent answered it well from the literature (no single best drug, with cited reviews). The case was corrected.
 - In a re-run, "Is there published evidence on lecanemab and APOE4?" failed: meaning-based search for the short term "APOE4" returned general lecanemab papers, the excerpts shown to the model start at the beginning of each passage rather than at the match, and the agent searched repeatedly until it hit its step limit. It passed in the final run. Combining keyword and meaning-based search would fix the underlying weakness.
 
-Answers vary from run to run, so a single 39 of 39 is not a guarantee. The cases are also tied to this data snapshot; after a refresh some expected IDs or dates may need updating.
+The one failure in the last run was a correct answer that wrote "October 16, 2003" where the case expected "2003-10-16"; date checks now accept both forms. Answers vary from run to run, so a single 39 of 39 is not a guarantee. The cases are also tied to this data snapshot; after a refresh some expected IDs or dates may need updating.
 
 ## Web page, HTTP API, and deployment
 
