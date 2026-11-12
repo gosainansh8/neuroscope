@@ -26,7 +26,7 @@ docker compose exec -T db sh -c \
     "pg_dump -U postgres --no-owner --no-privileges neuroscope | psql -q -v ON_ERROR_STOP=1 '$TARGET'" >/dev/null
 
 echo "Row counts, local vs cloud:"
-COUNTS="SELECT 'trials', count(*) FROM trials UNION ALL SELECT 'drugs', count(*) FROM drugs UNION ALL SELECT 'interventions', count(*) FROM trial_interventions UNION ALL SELECT 'fda_applications', count(*) FROM fda_applications UNION ALL SELECT 'fda_labels', count(*) FROM fda_labels UNION ALL SELECT 'documents', count(*) FROM documents UNION ALL SELECT 'chunks_with_embeddings', count(*) FROM chunks WHERE embedding IS NOT NULL ORDER BY 1"
+COUNTS="SELECT 'trials', count(*) FROM trials UNION ALL SELECT 'drugs', count(*) FROM drugs UNION ALL SELECT 'interventions', count(*) FROM trial_interventions UNION ALL SELECT 'fda_applications', count(*) FROM fda_applications UNION ALL SELECT 'fda_labels', count(*) FROM fda_labels UNION ALL SELECT 'ema_medicines', count(*) FROM ema_medicines UNION ALL SELECT 'documents', count(*) FROM documents UNION ALL SELECT 'chunks_with_embeddings', count(*) FROM chunks WHERE embedding IS NOT NULL ORDER BY 1"
 LOCAL="$(docker compose exec -T db psql -U postgres -d neuroscope -At -c "$COUNTS")"
 CLOUD="$(docker compose exec -T db psql -At "$TARGET" -c "$COUNTS")"
 paste <(echo "$LOCAL") <(echo "$CLOUD" | cut -d'|' -f2) | column -t

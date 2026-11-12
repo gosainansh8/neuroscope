@@ -212,14 +212,17 @@ def index() -> str:
 
 @app.get("/health")
 def health(conn: psycopg.Connection = Depends(get_conn)) -> dict:
-    trials, drugs, fda, chunks, embedded, latest = conn.execute(
+    trials, drugs, fda, ema, chunks, embedded, latest = conn.execute(
         "SELECT (SELECT COUNT(*) FROM trials), (SELECT COUNT(*) FROM drugs), "
-        "(SELECT COUNT(*) FROM v_drug_fda_approval), (SELECT COUNT(*) FROM chunks), "
+        "(SELECT COUNT(*) FROM v_drug_fda_approval), "
+        "(SELECT COUNT(DISTINCT drug_id) FROM ema_medicines WHERE medicine_status = 'Authorised'), "
+        "(SELECT COUNT(*) FROM chunks), "
         "(SELECT COUNT(*) FROM chunks WHERE embedding IS NOT NULL), "
         "(SELECT MAX(last_retrieved_at)::date::text FROM trials)").fetchone()
     today = conn.execute("SELECT COALESCE((SELECT questions FROM api_usage WHERE day = current_date), 0)"
                          ).fetchone()[0]
     return {"status": "ok", "trials": trials, "drugs": drugs, "drugs_with_fda_approval": fda,
+            "drugs_with_ema_authorisation": ema,
             "document_chunks": chunks, "chunks_with_embeddings": embedded, "trials_last_retrieved": latest,
             "questions_today": today, "daily_question_limit": limits.daily}
 

@@ -6,7 +6,7 @@ Sourced neuroscience drug-development intelligence. Launching with Alzheimer's d
 
 Milestone 1: the structured data layer. Pulls Alzheimer's trials from ClinicalTrials.gov, normalizes them, resolves drug names to canonical drugs with full provenance, and tracks every change between runs.
 
-Milestone 2: FDA approval. Loads approval records from Drugs@FDA and indications from FDA labels, matched to the same canonical drugs. Approval status comes only from these records.
+Milestone 2: approval. Loads approval records from Drugs@FDA and indications from FDA labels, and EU authorisations from the European Medicines Agency, matched to the same canonical drugs. Approval status comes only from these records.
 
 Milestone 3: documents. Loads PubMed abstracts for the most-studied drugs, links each to the drugs it names, and offers keyword search. Semantic search uses Vertex AI embeddings and needs a Google Cloud project.
 
@@ -54,6 +54,7 @@ python -m neuroscope.review --limit 10 --origin live_api --out review.md
 python -m neuroscope.curate unreviewed                     # learned aliases, most trials waiting first
 python -m neuroscope.curate conflicts
 python -m neuroscope.fda load                              # FDA approvals (downloads Drugs@FDA)
+python -m neuroscope.ema load                              # EU approvals (downloads the EMA list)
 python -m neuroscope.fda labels --save-raw data/raw/fda/labels.jsonl   # FDA label indications
 python -m neuroscope.pubmed load --save-raw data/raw/pubmed/ad.xml     # PubMed abstracts
 python -m neuroscope.search "amyloid related imaging abnormalities" --drug lecanemab
@@ -133,10 +134,22 @@ On the 2026-11-06 export: 162 of our drugs matched an approved application. For 
 
 Both loads replace all FDA rows, so re-run them after correcting aliases. Raw downloads are kept under `data/raw/fda/` and can be replayed with `--file` and `--from-jsonl`.
 
+## EU approval (EMA)
+
+```bash
+python -m neuroscope.ema load          # the EMA's public medicines file (about 7 MB, no API key)
+```
+
+The European Medicines Agency publishes one record per medicine it has evaluated: authorised, refused, withdrawn, or with the application withdrawn, with its indication text and dates. Each human medicine is matched to a drug by the same rules as FDA products (`fda.match_product`): its international non-proprietary name, then its active substance, must equal a trusted name as published or with a salt word or radiolabel notation normalised, and several substances match only a combination drug with exactly those substances. Rows go to `ema_medicines`, with the published text, the key that matched, and the raw record. `indication_mentions_alzheimers` is a text search of the indication and therapeutic area, a pointer, not a determination.
+
+The list covers only medicines authorised **centrally**, for the whole EU at once. Many older drugs, including donepezil and galantamine, were authorised country by country and are not in it, so the agent says "no centrally authorised EU medicine", never "not available in Europe". The agent's `get_ema_status` lookup returns each medicine's EMA product number (`EMEA/H/C/005966`), which the citation check verifies like any other identifier.
+
+On the 2026-11-12 file: 302 of 2,357 human medicines matched 92 of our drugs (208 currently authorised). Lecanemab (Leqembi, authorised 2025-04-15) and donanemab (Kisunla, 2025-09-24) are authorised; aducanumab's application (Aduhelm) was withdrawn in 2022; two donepezil + memantine combinations were refused in 2013.
+
 ## Documents and search
 
 ```bash
-python -m neuroscope.pubmed load                 # drugs with 5+ trials, 20 abstracts each (no API key)
+python -m neuroscope.pubmed load --min-trials 2 --per-drug 40   # the current coverage (no API key)
 python -m neuroscope.search "cognitive decline" --drug Leqembi --limit 5
 ```
 
@@ -146,7 +159,7 @@ A document is linked to a drug only when a trusted name of that drug (a verified
 
 Search is Postgres full-text search: it matches word stems (`abnormality` finds `abnormalities`) and ranks by term frequency. It is not semantic search. `--drug` accepts any trusted name, including brands and codes. Every hit prints its source link and publication date.
 
-First load (2026-11-10): 823 abstracts for 67 drugs, 1,312 chunks, 801 abstracts linked to 223 drugs.
+First load (2026-11-10): 823 abstracts for 67 drugs (5+ trials, 20 each), 1,312 chunks. Broadened on 2026-11-12 to drugs with 2+ trials and 40 abstracts each: 4,132 abstracts for 307 drugs, 6,448 chunks, all embedded. PubMed sometimes returns the same title and abstract under two PMIDs; the second is skipped and counted as a duplicate.
 
 ### Semantic search (Vertex AI embeddings)
 
@@ -187,6 +200,7 @@ The model (Gemini on Vertex AI) cannot see the database. It can only call five r
 | `find_drug` | the canonical drug and its verified names, or "not found" with suggestions |
 | `get_trials` | trial counts and the most relevant trials, with NCT IDs |
 | `get_fda_status` | approval records with application numbers, and the label's indication text |
+| `get_ema_status` | EU medicines (authorised, refused, withdrawn) with EMA product numbers and indication text |
 | `search_literature` | PubMed abstracts by meaning, with PMIDs |
 | `list_pipeline` | drugs by trial phase, with whether an FDA record exists |
 
@@ -194,7 +208,7 @@ Each lookup returns its identifiers and the caveats that belong to the data ("tr
 
 Two things keep answers honest:
 
-1. **Instructions.** Use only what the lookups return; cite every claim by its identifier; approval comes only from `get_fda_status`; say a drug is approved for Alzheimer's only when the label text says so, and quote it; say what is missing when the data does not answer.
+1. **Instructions.** Use only what the lookups return; cite every claim by its identifier; approval comes only from `get_fda_status` (US) and `get_ema_status` (EU); say a drug is approved for Alzheimer's only when the label text says so, and quote it; say what is missing when the data does not answer.
 2. **A check in code.** After the model answers, every NCT ID, FDA application number, and PMID in the answer is compared with what the lookups returned in that run. Any identifier that no lookup returned is printed as a warning. This catches invented citations. It does not check that a correctly cited source supports the sentence it is attached to; that still needs a reader.
 
 Checked live on 2026-11-11 with `gemini-3.8-flash`:
@@ -222,7 +236,7 @@ python -m neuroscope.refresh                         # every source, in order
 python -m neuroscope.refresh --steps trials,fda      # some of them
 ```
 
-One command re-fetches all Alzheimer's trials (changes go to `trial_changes`), downloads the latest Drugs@FDA export, re-fetches FDA labels, fetches PubMed abstracts for the most-studied drugs, embeds new passages, and clears the saved answers so none predates the new data. Each step runs on its own, so one unreachable source does not stop the rest, and every run is recorded in `refresh_runs`. `deploy/4_schedule_refresh.sh` runs it every Monday on Google Cloud.
+One command re-fetches all Alzheimer's trials (changes go to `trial_changes`), downloads the latest Drugs@FDA export and EMA medicines file, re-fetches FDA labels, fetches PubMed abstracts (drugs with 2+ trials, 40 each), embeds new passages, and clears the saved answers so none predates the new data. Each step runs on its own, so one unreachable source does not stop the rest, and every run is recorded in `refresh_runs`. `deploy/4_schedule_refresh.sh` runs it every Monday on Google Cloud.
 
 A local run on 2026-11-11, one day after the full load, took about 30 seconds for trials and FDA data and found 15 changed trials: 2 status changes, 2 later primary completion dates, and enrollment updates.
 
@@ -262,7 +276,7 @@ curl -s localhost:8080/health
 curl -s -X POST localhost:8080/ask -H 'content-type: application/json' -d '{"question": "Is lecanemab approved?"}'
 ```
 
-`GET /` is a single web page: a question box, example questions, the answer with its trial IDs, FDA application numbers, and PubMed IDs linked to their public sources, the citation check result, and the lookups the model made. It is one self-contained file (`neuroscope/static/index.html`) with no build step and nothing loaded from other sites. Model output is escaped before any formatting is applied.
+`GET /` is a single web page: a question box, example questions, the answer with its trial IDs, FDA application numbers, EMA product numbers, and PubMed IDs linked to their public sources, the citation check result, and the lookups the model made. It is one self-contained file (`neuroscope/static/index.html`) with no build step and nothing loaded from other sites. Model output is escaped before any formatting is applied.
 
 `POST /ask` returns the answer, each lookup the model made, the identifiers it cited, any citations no lookup supports, and `citations_verified`. `GET /health` reports what the database holds. If the database is unreachable, both answer 503 with a message saying so; if the model service fails, `/ask` answers 502 with the reason.
 
@@ -298,6 +312,7 @@ neuroscope/resolver.py   the merge rules above
 neuroscope/ingest.py     per-study transactions, snapshots, change log
 neuroscope/curate.py     review and correction CLI
 neuroscope/fda.py        FDA approvals (Drugs@FDA) and label indications
+neuroscope/ema.py        EU authorisations (European Medicines Agency)
 neuroscope/pubmed.py     PubMed abstracts, chunking, and drug links
 neuroscope/embed.py      chunk embeddings (Vertex AI)
 neuroscope/search.py     keyword and semantic search over chunks

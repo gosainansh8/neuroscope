@@ -73,7 +73,7 @@ def test_store_links_documents_by_trusted_names_only(conn):
                   "test", "synthetic")
     mentions = article("900000005", "ABC-100 and fakeumab pharmacology.", [(None, "ABC-100 lowered tau. Donepezilat is not a drug.")])
     s = store(conn, parse_articles(article_set(LECANEMAB, DONEPEZIL, UNLINKED, mentions)))
-    assert s == {"abstracts": 4, "new": 4, "changed": 0, "unchanged": 0, "chunks": 4, "drug_links": 4}
+    assert s == {"abstracts": 4, "new": 4, "changed": 0, "unchanged": 0, "duplicates": 0, "chunks": 4, "drug_links": 4}
     assert links(conn, "900000001") == [("lecanemab", "lecanemab")]
     # Brand names are verified seed aliases, so they link too.
     assert links(conn, "900000002") == [("donepezil", "donepezil"), ("memantine", "memantine")]
@@ -155,3 +155,12 @@ def test_relink_follows_corrections_and_skips_drug_classes(conn):
     map_alias(conn, "Zunveyl", "benzgalantamine", note="brand of benzgalantamine")
     assert relink(conn) == {"documents": 1, "drug_links": 1}
     assert links(conn, "900000031") == [("benzgalantamine", "Zunveyl")]
+
+
+def test_identical_abstract_under_a_second_pmid_is_skipped_not_fatal(conn):
+    # Seen live: PubMed returned the same title and abstract under two PMIDs, and the unique
+    # content hash made the whole load fail.
+    twin = LECANEMAB.replace("<PMID>900000001</PMID>", "<PMID>900000009</PMID>")
+    s = store(conn, parse_articles(article_set(LECANEMAB, twin, DONEPEZIL)))
+    assert (s["new"], s["duplicates"]) == (2, 1)
+    assert [r[0] for r in conn.execute("SELECT external_id FROM documents ORDER BY 1")] == ["900000001", "900000002"]

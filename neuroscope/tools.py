@@ -3,7 +3,7 @@
 These are ordinary functions over the database: no model, no network (except
 literature search by meaning, which embeds the question). Everything an agent
 is allowed to say must come from what these return, so each result carries
-the identifiers needed to cite it (NCT IDs, FDA application numbers, PMIDs)
+the identifiers needed to cite it (NCT IDs, FDA application numbers, EMA product numbers, PMIDs)
 and the caveats that travel with the data.
 """
 
@@ -97,7 +97,7 @@ def get_fda_status(conn: psycopg.Connection, drug: str) -> dict:
     if not row:
         return {"found": True, "canonical_name": canonical, "fda_approval_record": False,
                 "caveat": "No matched FDA approval record. This is not proof the drug is unapproved: "
-                          "records match by active-ingredient name, and only US FDA data is loaded."}
+                          "records match by active-ingredient name. For the European Union, use get_ema_status."}
     apps = conn.execute(
         "SELECT DISTINCT a.application_number, a.application_type, a.sponsor_name, a.original_approval_date::text "
         "FROM fda_applications a JOIN fda_products p ON p.application_number = a.application_number "
@@ -128,6 +128,41 @@ def get_fda_status(conn: psycopg.Connection, drug: str) -> dict:
     }
 
 
+EMA_NOTE = ("The EMA list covers only medicines authorised centrally for the whole EU. Many older drugs "
+            "were authorised country by country instead, so no EMA record is not proof a drug is "
+            "unavailable in Europe. Approval for a use is shown only by the indication text: quote it.")
+
+
+def get_ema_status(conn: psycopg.Connection, drug: str) -> dict:
+    """European Medicines Agency records for a drug: authorised, refused, withdrawn, with indications."""
+    hit = _drug(conn, drug)
+    if not hit:
+        return _unknown(conn, drug)
+    drug_id, canonical = hit
+    rows = conn.execute(
+        """
+        SELECT ema_product_number, name, medicine_status, authorisation_date::text, refusal_date::text,
+               application_withdrawal_date::text, withdrawal_date::text, marketing_authorisation_holder,
+               conditional_approval, generic, left(therapeutic_indication, 900), indication_mentions_alzheimers,
+               url, source_timestamp::date::text
+        FROM ema_medicines WHERE drug_id = %s
+        ORDER BY (medicine_status = 'Authorised') DESC, generic, authorisation_date NULLS LAST, name LIMIT 8
+        """, (drug_id,)).fetchall()
+    if not rows:
+        return {"found": True, "canonical_name": canonical, "ema_record": False, "caveat": EMA_NOTE}
+    keys = ["ema_product_number", "name", "status", "authorisation_date", "refusal_date",
+            "application_withdrawn_date", "withdrawn_or_lapsed_date", "holder", "conditional_approval",
+            "generic", "indication_text", "indication_mentions_alzheimers", "url"]
+    medicines = [{k: v for k, v in zip(keys, r) if v not in (None, False)} for r in rows]
+    total, authorised = conn.execute(
+        "SELECT COUNT(*), COUNT(*) FILTER (WHERE medicine_status = 'Authorised') FROM ema_medicines "
+        "WHERE drug_id = %s", (drug_id,)).fetchone()
+    return {"found": True, "canonical_name": canonical, "ema_record": True,
+            "currently_authorised_in_eu": authorised > 0, "n_medicines": total, "n_authorised": authorised,
+            "medicines_shown": len(medicines), "medicines": medicines, "ema_file_date": rows[0][13],
+            "caveat": EMA_NOTE}
+
+
 def search_literature(conn: psycopg.Connection, query: str, drug: str | None = None, limit: int = 5,
                       embedder=None) -> dict:
     """PubMed abstracts matching a question: keyword and meaning combined when an embedder is
@@ -153,13 +188,16 @@ def list_pipeline(conn: psycopg.Connection, min_phase: float = 3, active_only: b
     rows = conn.execute(
         f"""
         SELECT v.canonical_name, v.n_trials, v.n_active_trials, v.highest_phase_any, v.highest_phase_active,
-               f.first_approval_date::text, f.indications_mention_alzheimers
+               f.first_approval_date::text, f.indications_mention_alzheimers,
+               EXISTS (SELECT 1 FROM ema_medicines e WHERE e.drug_id = v.drug_id
+                       AND e.medicine_status = 'Authorised') AS ema_authorised
         FROM v_drug_pipeline v LEFT JOIN v_drug_fda_approval f ON f.drug_id = v.drug_id
         WHERE v.{column} >= %s AND NOT v.is_class ORDER BY v.n_active_trials DESC, v.n_trials DESC, v.canonical_name LIMIT %s
         """, (min_phase, limit)).fetchall()
     keys = ["drug", "n_trials", "n_active_trials", "highest_phase_any", "highest_phase_active",
-            "fda_first_approval_date", "fda_label_mentions_alzheimers"]
+            "fda_first_approval_date", "fda_label_mentions_alzheimers", "ema_authorised_medicine"]
     return {"min_phase": min_phase, "active_only": active_only, "count": len(rows),
             "drugs": [dict(zip(keys, [float(v) if hasattr(v, "is_finite") else v for v in r])) for r in rows],
             "caveat": "Phases are trial phases. fda_first_approval_date is approval for any use; null means "
-                      "no matched FDA record. Drug classes are excluded; some rows may still be comparators."}
+                      "no matched FDA record. ema_authorised_medicine is a centrally authorised EU medicine for any use. "
+                      "Drug classes are excluded; some rows may still be comparators."}

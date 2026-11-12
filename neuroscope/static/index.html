@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="description" content="Sourced answers about Alzheimer's drug development, from ClinicalTrials.gov, FDA records, and PubMed.">
+<meta name="description" content="Sourced answers about Alzheimer's drug development, from ClinicalTrials.gov, FDA and EMA records, and PubMed.">
 <meta name="color-scheme" content="light dark">
 <title>NeuroScope</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2036%2036'%3E%3Crect%20width='36'%20height='36'%20rx='10'%20fill='%235b5bd6'/%3E%3Cg%20transform='translate%285%205%29'%20fill='none'%20stroke='white'%20stroke-linecap='round'%20stroke-linejoin='round'%3E%3Cg%20transform='scale%28.8%29'%20stroke-width='2.4'%3E%3Cpath%20d='M11.5%204.6C9.6%203.6%207.3%204.5%206.9%206.5%204.9%206.9%203.7%208.9%204.4%2010.9c-1.4%201.2-1.4%203.6.1%204.8-.3%202.1%201.3%204%203.4%203.9.8%201.5%202.7%201.9%203.6.8z'/%3E%3Cpath%20d='M12.5%204.6c1.9-1%204.2-.1%204.6%201.9%202%20.4%203.2%202.4%202.5%204.4%201.4%201.2%201.4%203.6-.1%204.8.3%202.1-1.3%204-3.4%203.9-.8%201.5-2.7%201.9-3.6.8z'/%3E%3Cpath%20d='M7.3%209.3c1.4.1%202.5.9%202.9%202.2M6.5%2013.7c1.6-.3%203%20.3%203.7%201.6M9.4%206.7c.6.6.9%201.4.8%202.2'/%3E%3Cpath%20d='M16.7%209.3c-1.4.1-2.5.9-2.9%202.2M17.5%2013.7c-1.6-.3-3%20.3-3.7%201.6M14.6%206.7c-.6.6-.9%201.4-.8%202.2'/%3E%3C/g%3E%3Ccircle%20cx='16'%20cy='16'%20r='5'%20fill='rgba%28255%2C255%2C255%2C.25%29'%20stroke-width='2.2'/%3E%3Cpath%20d='M19.6%2019.6%2024%2024'%20stroke-width='3.0'/%3E%3C/g%3E%3C/svg%3E">
@@ -73,7 +73,7 @@
              letter-spacing: -.015em; margin: 0 0 16px; }
   .hero h2 em { font-style: italic; font-weight: 500; color: var(--accent); }
   .hero p { color: var(--muted); margin: 0; font-size: 1.08rem; max-width: 62ch; }
-  .readout { display: grid; grid-template-columns: repeat(5, 1fr); margin-top: 24px;
+  .readout { display: grid; grid-template-columns: repeat(6, 1fr); margin-top: 24px;
              border-top: 1px solid var(--panel-border); border-bottom: 1px solid var(--panel-border);
              font: .78rem/1.2 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--faint); }
   .readout > span { padding: 12px 14px; border-left: 1px solid var(--panel-border); }
@@ -375,15 +375,16 @@
   <section class="hero" id="ask">
     <div class="eyebrow"><span class="live" aria-hidden="true"></span>Alzheimer's drug intelligence · updated weekly</div>
     <h2>Every answer, <em>traced to its source.</em></h2>
-    <p>Ask about any Alzheimer's drug's trials, FDA approval, or published evidence. Answers come only from public records, and every citation is checked against the database.</p>
+    <p>Ask about any Alzheimer's drug's trials, US and EU approval, or published evidence. Answers come only from public records, and every citation is checked against the database.</p>
     <div class="readout" id="stats" aria-label="What the database holds" hidden>
       <span><b data-stat="trials"></b>Trials</span>
       <span><b data-stat="drugs"></b>Drugs</span>
       <span><b data-stat="drugs_with_fda_approval"></b>FDA-approved</span>
+      <span><b data-stat="drugs_with_ema_authorisation"></b>EU-authorised</span>
       <span><b data-stat="document_chunks"></b>Passages</span>
       <span class="quota" title="New questions answered today; repeats of recent questions are free"><b id="quota"></b>Questions today</span>
     </div>
-    <p class="sources-caption">Sources: <span>ClinicalTrials.gov</span> · <span>Drugs@FDA &amp; FDA labels</span> · <span>PubMed</span></p>
+    <p class="sources-caption">Sources: <span>ClinicalTrials.gov</span> · <span>Drugs@FDA &amp; FDA labels</span> · <span>EMA</span> · <span>PubMed</span></p>
   </section>
 
   <form id="ask-form" class="card">
@@ -457,8 +458,8 @@
       <li class="t">
         <span class="ic" aria-hidden="true"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5.5" rx="7.5" ry="2.8"/><path d="M4.5 5.5v13c0 1.5 3.4 2.8 7.5 2.8s7.5-1.3 7.5-2.8v-13M4.5 12c0 1.5 3.4 2.8 7.5 2.8s7.5-1.3 7.5-2.8"/></svg></span>
         <span class="nerve">Memory recall</span><b>3. Database lookups</b>Read-only, at most 8 rounds.
-        <span class="tools"><span>drug names</span><span>trials</span><span>FDA status</span><span>literature</span><span>pipeline</span></span>
-        <span class="src">ClinicalTrials.gov · FDA · PubMed, refreshed weekly</span>
+        <span class="tools"><span>drug names</span><span>trials</span><span>FDA status</span><span>EU status</span><span>literature</span><span>pipeline</span></span>
+        <span class="src">ClinicalTrials.gov · FDA · EMA · PubMed, refreshed weekly</span>
       </li>
       <li>
         <span class="ic" aria-hidden="true"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4l10.5-10.5a2.8 2.8 0 0 0-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg></span>
@@ -466,7 +467,7 @@
       </li>
       <li class="ok">
         <span class="ic" aria-hidden="true"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7.5 3v5.5c0 4.6-3.2 8.3-7.5 9.5-4.3-1.2-7.5-4.9-7.5-9.5V6z"/><path d="M8.6 12.2l2.3 2.3 4.6-4.8"/></svg></span>
-        <span class="nerve">Feedback</span><b>5. Citations checked</b>Code, not the model, confirms every trial, FDA, and PubMed ID came from a lookup.
+        <span class="nerve">Feedback</span><b>5. Citations checked</b>Code, not the model, confirms every trial, FDA, EMA, and PubMed ID came from a lookup.
       </li>
     </ol>
   </section>
@@ -502,7 +503,7 @@
     <div class="synapses">
     <details>
       <summary>Where does the information come from?</summary>
-      <p>ClinicalTrials.gov for trials, the FDA's Drugs@FDA database and drug labels for approvals, and PubMed for published abstracts. All three refresh automatically every Monday.</p>
+      <p>ClinicalTrials.gov for trials, the FDA's Drugs@FDA database and drug labels for US approvals, the European Medicines Agency's medicines list for EU approvals, and PubMed for published abstracts. All of them refresh automatically every Monday.</p>
     </details>
     <details>
       <summary>How does it avoid making things up?</summary>
@@ -514,7 +515,7 @@
     </details>
     <details>
       <summary>What does "no matched FDA approval record" mean?</summary>
-      <p>No FDA approval matched the drug's name. That usually means it is not approved, but it is not proof, since only exact names and US FDA data are used. Approval is never inferred from a drug reaching Phase 3 or 4.</p>
+      <p>No FDA approval matched the drug's name. That usually means it is not approved, but it is not proof, since only exact names are matched. For Europe, only medicines authorised centrally by the EMA are listed; older drugs approved country by country are not. Approval is never inferred from a drug reaching Phase 3 or 4.</p>
     </details>
     <details>
       <summary>Can I trust every answer?</summary>
@@ -546,6 +547,7 @@ const escapeHtml = (s) => s.replace(/[&<>"']/g, (c) => ({"&":"&amp;","<":"&lt;",
 
 const TRIAL_URL = (id) => `https://clinicaltrials.gov/study/${id}`;
 const PUBMED_URL = (id) => `https://pubmed.ncbi.nlm.nih.gov/${id}/`;
+const EMA_URL = (id) => `https://www.ema.europa.eu/en/search?search_api_fulltext=${encodeURIComponent(id)}`;
 const FDA_URL = (num) => `https://www.accessdata.fda.gov/scripts/cder/daf/index.cfm?event=overview.process&ApplNo=${num}`;
 
 // Identifiers become links to their public source. Applied to already-escaped text only.
@@ -554,7 +556,8 @@ function linkIdentifiers(html) {
     .replace(/\bNCT\d{8}\b/g, (m) => `<a class="trial" href="${TRIAL_URL(m)}" target="_blank" rel="noopener">${m}</a>`)
     .replace(/\bPMID:?\s*(\d{6,9})\b/g, (m, id) => `<a class="paper" href="${PUBMED_URL(id)}" target="_blank" rel="noopener">${m}</a>`)
     .replace(/\b(NDA|BLA|ANDA)[\s-]?(\d{6})\b/g, (m, kind, num) =>
-      `<a class="fda" href="${FDA_URL(num).replace(/&/g, "&amp;")}" target="_blank" rel="noopener">${m}</a>`);
+      `<a class="fda" href="${FDA_URL(num).replace(/&/g, "&amp;")}" target="_blank" rel="noopener">${m}</a>`)
+    .replace(/\bEMEA\/H\/C\/\d{6}\b/g, (m) => `<a class="fda" href="${EMA_URL(m)}" target="_blank" rel="noopener">${m}</a>`);
 }
 
 // A small, safe renderer for the Markdown the model writes: the text is escaped first,
@@ -584,6 +587,7 @@ function renderSources(cited) {
   const groups = [
     ["trial", "Clinical trial", cited.nct || [], (id) => TRIAL_URL(id), (id) => id],
     ["fda", "FDA application", cited.fda_application || [], (id) => FDA_URL(id.replace(/^\D+/, "")), (id) => id],
+    ["fda", "EMA medicine", cited.ema_product || [], (id) => EMA_URL(id), (id) => id],
     ["paper", "PubMed", cited.pmid || [], (id) => PUBMED_URL(id), (id) => `PMID ${id}`],
   ];
   const box = $("sources");
@@ -605,7 +609,7 @@ function renderSources(cited) {
 }
 
 const TOOL_LABELS = {
-  find_drug: "Identified the drug", get_trials: "Checked clinical trials", get_fda_status: "Read FDA records",
+  find_drug: "Identified the drug", get_trials: "Checked clinical trials", get_fda_status: "Read FDA records", get_ema_status: "Read EMA records",
   search_literature: "Searched the literature", list_pipeline: "Listed the drug pipeline",
 };
 

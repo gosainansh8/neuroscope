@@ -1,0 +1,252 @@
+{
+ "model": "gemini-3.8-flash",
+ "rows": [
+  {
+   "id": "ema-lecanemab",
+   "category": "eu_approval",
+   "question": "Is lecanemab authorised in the European Union?",
+   "passed": true,
+   "checks": {
+    "verdict": {
+     "passed": true,
+     "detail": "expected yes, got yes"
+    },
+    "mentions /2025-04-15|April 15,? 2025|15 April 2025/": {
+     "passed": true,
+     "detail": ""
+    },
+    "cites an expected record": {
+     "passed": true,
+     "detail": "EMEA/H/C/005966"
+    },
+    "called get_ema_status": {
+     "passed": true,
+     "detail": ""
+    },
+    "no unsupported citations": {
+     "passed": true,
+     "detail": ""
+    }
+   },
+   "answer": "**Yes, lecanemab is authorised in the European Union.**\n\nAccording to European Medicines Agency (EMA) records (file date: 2026-11-12):\n\n* **Medicine Name:** Leqembi\n* **EMA Product Number:** EMEA/H/C/005966\n* **Status:** Authorised (Authorisation date: 2025-04-15)\n* **Marketing Authorisation Holder:** Eisai GmbH\n* **Indication:** Lecanemab is indicated for Alzheimer's disease. The official indication text states that *\"Leqembi is indicated for the treatment of adult patients with a clinical diagnosis of mild cognitive impairment and mild dementia due to Alzheimer\u2019s disease (Early Alzheimer\u2019s disease) who are apolipoprotein E 4 (ApoE \u03b54) non-carriers or heterozygotes with confirmed amyloid pathology (see section 4.4).\"*",
+   "lookups": [
+    {
+     "tool": "find_drug",
+     "arguments": {
+      "name": "lecanemab"
+     }
+    },
+    {
+     "tool": "get_ema_status",
+     "arguments": {
+      "drug": "lecanemab"
+     }
+    }
+   ],
+   "attribution_warnings": [],
+   "seconds": 48.7,
+   "input_tokens": 2704,
+   "output_tokens": 239
+  },
+  {
+   "id": "ema-kisunla",
+   "category": "eu_approval",
+   "question": "Has the EMA approved Kisunla?",
+   "passed": true,
+   "checks": {
+    "verdict": {
+     "passed": true,
+     "detail": "expected yes, got yes"
+    },
+    "mentions /2025-09-24|September 24,? 2025|24 September 2025/": {
+     "passed": true,
+     "detail": ""
+    },
+    "mentions /donanemab/": {
+     "passed": true,
+     "detail": ""
+    },
+    "cites an expected record": {
+     "passed": true,
+     "detail": "EMEA/H/C/006024"
+    },
+    "called get_ema_status": {
+     "passed": true,
+     "detail": ""
+    },
+    "no unsupported citations": {
+     "passed": true,
+     "detail": ""
+    }
+   },
+   "answer": "Yes, the European Medicines Agency (EMA) has centrally authorised Kisunla (donanemab) in the European Union.\n\n**Details:**\n- **Product Name:** Kisunla (donanemab)\n- **EMA Product Number:** EMEA/H/C/006024\n- **Marketing Authorisation Holder:** Eli Lilly Nederland B.V.\n- **Authorisation Date:** 2025-09-24\n- **Status:** Authorised\n- **Indication:** Donanemab is authorised for Alzheimer's disease with the following indication text: *\"Donanemab is indicated for the treatment of adult patients with a clinical diagnosis of mild cognitive impairment and mild dementia due to Alzheimer\u2019s disease (Early symptomatic Alzheimer\u2019s disease) who are apolipoprotein E \u03b54 (ApoE \u03b54) heterozygotes or non-carriers with confirmed amyloid pathology (see section 4.4).\"*\n\n*(Source: EMA records as of file date 2026-11-12. Note that EMA records cover only medicines authorised centrally for the whole European Union).*",
+   "lookups": [
+    {
+     "tool": "find_drug",
+     "arguments": {
+      "name": "Kisunla"
+     }
+    },
+    {
+     "tool": "get_ema_status",
+     "arguments": {
+      "drug": "donanemab"
+     }
+    }
+   ],
+   "attribution_warnings": [],
+   "seconds": 20.0,
+   "input_tokens": 2759,
+   "output_tokens": 275
+  },
+  {
+   "id": "ema-aducanumab",
+   "category": "eu_approval",
+   "question": "Is aducanumab approved in Europe?",
+   "passed": true,
+   "checks": {
+    "verdict": {
+     "passed": true,
+     "detail": "expected no, got no"
+    },
+    "mentions /withdr/": {
+     "passed": true,
+     "detail": ""
+    },
+    "cites an expected record": {
+     "passed": true,
+     "detail": "EMEA/H/C/005558"
+    },
+    "called get_ema_status": {
+     "passed": true,
+     "detail": ""
+    },
+    "no unsupported citations": {
+     "passed": true,
+     "detail": ""
+    }
+   },
+   "answer": "**No**, aducanumab is not centrally authorised in the European Union.\n\nAccording to the European Medicines Agency (EMA) records (source date: 2026-11-12):\n* **Medicine:** Aduhelm (**EMEA/H/C/005558**)\n* **Status:** \"Application withdrawn\" (withdrawal date: 2022-04-20)\n* **Currently authorised in EU:** False\n\n*(Note: The EMA list covers only medicines authorised centrally for the whole EU. While aducanumab has no centrally authorised status, older drugs were sometimes authorised country-by-country, so the lack of central authorisation is not definitive proof of unavailability across all of Europe).*",
+   "lookups": [
+    {
+     "tool": "find_drug",
+     "arguments": {
+      "name": "aducanumab"
+     }
+    },
+    {
+     "tool": "get_ema_status",
+     "arguments": {
+      "drug": "aducanumab"
+     }
+    }
+   ],
+   "attribution_warnings": [],
+   "seconds": 104.1,
+   "input_tokens": 2599,
+   "output_tokens": 195
+  },
+  {
+   "id": "ema-donepezil-national",
+   "category": "eu_approval",
+   "question": "Is donepezil authorised in the EU?",
+   "passed": true,
+   "checks": {
+    "mentions /central|country|national/": {
+     "passed": true,
+     "detail": ""
+    },
+    "avoids /not (authori[sz]ed|approved|available) in (the EU|Europe)/": {
+     "passed": true,
+     "detail": ""
+    },
+    "called get_ema_status": {
+     "passed": true,
+     "detail": ""
+    },
+    "no unsupported citations": {
+     "passed": true,
+     "detail": ""
+    }
+   },
+   "answer": "There is **no centrally authorised EU medicine** record for donepezil from the European Medicines Agency (EMA). \n\nThis does not mean the drug is unavailable in Europe: the EMA database covers only medicines authorised centrally for the entire European Union, and many older drugs were authorised country by country instead.",
+   "lookups": [
+    {
+     "tool": "find_drug",
+     "arguments": {
+      "name": "donepezil"
+     }
+    },
+    {
+     "tool": "get_ema_status",
+     "arguments": {
+      "drug": "donepezil"
+     }
+    }
+   ],
+   "attribution_warnings": [],
+   "seconds": 53.6,
+   "input_tokens": 2751,
+   "output_tokens": 98
+  },
+  {
+   "id": "ema-combination-refused",
+   "category": "eu_approval",
+   "question": "Did the EMA authorise a donepezil and memantine combination?",
+   "passed": true,
+   "checks": {
+    "verdict": {
+     "passed": true,
+     "detail": "expected no, got no"
+    },
+    "mentions /refus/": {
+     "passed": true,
+     "detail": ""
+    },
+    "cites an expected record": {
+     "passed": true,
+     "detail": "EMEA/H/C/002424, EMEA/H/C/002708"
+    },
+    "called get_ema_status": {
+     "passed": true,
+     "detail": ""
+    },
+    "no unsupported citations": {
+     "passed": true,
+     "detail": ""
+    }
+   },
+   "answer": "**No.** The European Medicines Agency (EMA) did not centrally authorise a donepezil and memantine combination; both central marketing authorisation applications were refused.\n\nSupporting records from the EMA:\n* **Acrescent** (EMEA/H/C/002424; marketing authorisation holder: H. Lundbeck A/S), submitted for the *\"Treatment of Alzheimers disease\"*, was **Refused** on 2013-02-20.\n* **Balaxur** (EMEA/H/C/002708; marketing authorisation holder: Merz Pharmaceuticals GmbH) was also **Refused** on 2013-02-20.\n\n*Caveat:* The EMA list covers only medicines evaluated centrally for the whole European Union. Older medicines or formulations may have been evaluated or authorised country by country instead, so the absence of a central EU authorisation is not definitive proof that a medicine is unavailable in individual European countries.",
+   "lookups": [
+    {
+     "tool": "find_drug",
+     "arguments": {
+      "name": "donepezil memantine"
+     }
+    },
+    {
+     "tool": "find_drug",
+     "arguments": {
+      "name": "Namzaric"
+     }
+    },
+    {
+     "tool": "get_ema_status",
+     "arguments": {
+      "drug": "donepezil + memantine"
+     }
+    },
+    {
+     "tool": "get_ema_status",
+     "arguments": {
+      "drug": "Namzaric"
+     }
+    }
+   ],
+   "attribution_warnings": [],
+   "seconds": 115.7,
+   "input_tokens": 4869,
+   "output_tokens": 288
+  }
+ ]
+}

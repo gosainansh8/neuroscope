@@ -159,7 +159,8 @@ def fetch_xml(session, pmids: list[str]) -> str:
 def store(conn: psycopg.Connection, abstracts: Iterator[Abstract]) -> dict[str, int]:
     """Insert new abstracts, re-chunk changed ones, and (re)link every stored abstract to drugs."""
     patterns = name_patterns(conn)
-    summary = {"abstracts": 0, "new": 0, "changed": 0, "unchanged": 0, "chunks": 0, "drug_links": 0}
+    summary = {"abstracts": 0, "new": 0, "changed": 0, "unchanged": 0, "duplicates": 0, "chunks": 0,
+               "drug_links": 0}
     with conn.transaction():
         for ab in abstracts:
             summary["abstracts"] += 1
@@ -170,6 +171,10 @@ def store(conn: psycopg.Connection, abstracts: Iterator[Abstract]) -> dict[str, 
                 doc_id = row[0]
                 conn.execute("UPDATE documents SET retrieved_at = now() WHERE id = %s", (doc_id,))
                 summary["unchanged"] += 1
+            elif conn.execute("SELECT 1 FROM documents WHERE content_hash = %s", (digest,)).fetchone():
+                # The same title and abstract under another PMID (a duplicate PubMed record): keep one.
+                summary["duplicates"] += 1
+                continue
             else:
                 fields = (ab.title, f"https://pubmed.ncbi.nlm.nih.gov/{ab.pmid}/", ab.published_date,
                           ab.published_date_precision, ab.journal, digest)
@@ -276,7 +281,7 @@ def main(argv: list[str] | None = None) -> int:
                     fh.write("\n<!--neuroscope-part-->\n".join(raw_parts or []))
         s = store(conn, iter(abstracts))
     print(f"PubMed: {s['abstracts']} abstracts ({s['new']} new, {s['changed']} changed, {s['unchanged']} "
-          f"unchanged), {s['chunks']} chunks written, {s['drug_links']} drug links")
+          f"unchanged, {s['duplicates']} duplicates skipped), {s['chunks']} chunks written, {s['drug_links']} drug links")
     return 0
 
 

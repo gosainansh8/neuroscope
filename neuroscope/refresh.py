@@ -8,6 +8,7 @@ Steps, in order:
     schema       apply migrations (db init), so the database matches the code
     trials       re-fetch every Alzheimer's study from ClinicalTrials.gov; changes go to trial_changes
     fda          download the latest Drugs@FDA export and rebuild the FDA approval rows
+    ema          download the EMA medicines list and rebuild the EU authorisation rows
     labels       re-fetch FDA label indications for the approved applications
     literature   fetch PubMed abstracts for the most-studied drugs (new ones are added, changed ones re-chunked)
     embeddings   embed passages that have no embedding yet (Vertex AI)
@@ -38,7 +39,8 @@ from .db import ROOT, connect, init_db
 log = logging.getLogger("neuroscope.refresh")
 
 REFRESH_TABLE_SQL = ROOT / "db" / "migrations" / "005_refresh_runs.sql"
-STEPS = ["schema", "trials", "fda", "labels", "literature", "embeddings", "cache"]
+LITERATURE_MIN_TRIALS, LITERATURE_PER_DRUG = 2, 40     # drugs with 2+ trials, 40 abstracts each
+STEPS = ["schema", "trials", "fda", "ema", "labels", "literature", "embeddings", "cache"]
 
 
 def step_schema(conn: psycopg.Connection) -> dict:
@@ -64,6 +66,14 @@ def step_fda(conn: psycopg.Connection) -> dict:
         return load(conn, download(Path(tmp)))
 
 
+def step_ema(conn: psycopg.Connection) -> dict:
+    from pathlib import Path
+
+    from .ema import download, load
+    with tempfile.TemporaryDirectory() as tmp:
+        return load(conn, download(Path(tmp)))
+
+
 def step_labels(conn: psycopg.Connection) -> dict:
     from .fda import iter_labels, labelled_application_numbers, load_labels
     return load_labels(conn, iter(list(iter_labels(labelled_application_numbers(conn)))))
@@ -72,7 +82,7 @@ def step_labels(conn: psycopg.Connection) -> dict:
 def step_literature(conn: psycopg.Connection) -> dict:
     from .pubmed import iter_live, store
     skipped: list[str] = []
-    abstracts = list(iter_live(conn, min_trials=5, per_drug=20, max_drugs=None, skipped=skipped))
+    abstracts = list(iter_live(conn, min_trials=LITERATURE_MIN_TRIALS, per_drug=LITERATURE_PER_DRUG, max_drugs=None, skipped=skipped))
     if not abstracts and skipped:
         raise RuntimeError(f"PubMed failed for every drug tried ({len(skipped)})")
     return {**store(conn, iter(abstracts)), "drugs_skipped": skipped}
@@ -90,7 +100,7 @@ def step_cache(conn: psycopg.Connection) -> dict:
 
 
 STEP_FUNCTIONS: dict[str, Callable[[psycopg.Connection], dict]] = {
-    "schema": step_schema, "trials": step_trials, "fda": step_fda, "labels": step_labels,
+    "schema": step_schema, "trials": step_trials, "fda": step_fda, "ema": step_ema, "labels": step_labels,
     "literature": step_literature, "embeddings": step_embeddings, "cache": step_cache,
 }
 

@@ -15,7 +15,7 @@ WHAT KEEPS IT HONEST
   - Instructions: answer only from tool results, cite identifiers, say so when
     the data does not answer the question, never infer approval from trials.
   - A check in code, not in the prompt: every NCT ID, FDA application number,
-    and PMID in the answer must appear in a tool result from this run. Any that
+    EMA product number, and PMID in the answer must appear in a tool result from this run. Any that
     do not are reported as unsupported. The check cannot tell whether a correctly
     cited source actually supports the sentence; that still needs a reader.
 
@@ -48,9 +48,9 @@ SYSTEM_PROMPT = """You answer questions about Alzheimer's disease drug developme
 
 Rules:
 1. Use only facts returned by the tools in this conversation. Do not use your own memory for any fact about a drug, trial, approval, or paper. If the tools do not answer the question, say what is missing.
-2. Cite the source of every factual claim with its identifier exactly as the tool returned it: trial IDs (NCT...), FDA application numbers (NDA..., BLA..., ANDA...), and PubMed IDs written as "PMID 12345678". Never write an identifier that a tool did not return.
-3. Approval status comes only from get_fda_status. Never infer approval, or lack of it, from trial phase, trial status, or completion. If there is no FDA record, say "no matched FDA approval record" and that this is not proof the drug is unapproved.
-4. "FDA-approved" means approved for at least one use. Say a drug is approved for Alzheimer's disease only if the label text returned by the tool says so, and quote the relevant words.
+2. Cite the source of every factual claim with its identifier exactly as the tool returned it: trial IDs (NCT...), FDA application numbers (NDA..., BLA..., ANDA...), EMA product numbers (EMEA/H/C/...), and PubMed IDs written as "PMID 12345678". Never write an identifier that a tool did not return.
+3. Approval status comes only from get_fda_status (United States) and get_ema_status (European Union). Never infer approval, or lack of it, from trial phase, trial status, or completion. If there is no FDA record, say "no matched FDA approval record" and that this is not proof the drug is unapproved. If there is no EMA record, say "no centrally authorised EU medicine", not that it is unavailable in Europe. Name the regulator for every approval you mention; when a question asks whether a drug is approved without naming a country, check both.
+4. "FDA-approved" and "EU-authorised" mean approved for at least one use. Say a drug is approved for Alzheimer's disease only if the label or indication text returned by the tool says so, and quote the relevant words.
 5. Give dates as the tools give them, and say which source date applies when it matters.
 6. Pass on the caveats that come with tool results when they affect the answer.
 7. Be concise and plain. Start with the direct answer, then the supporting facts with their citations.
@@ -70,6 +70,10 @@ TOOL_SPECS: list[dict[str, Any]] = [
      "description": "US FDA approval records and label indication text for one drug. The only source of "
                     "approval status.",
      "parameters": {"type": "object", "properties": {"drug": {"type": "string"}}, "required": ["drug"]}},
+    {"name": "get_ema_status",
+     "description": "European Medicines Agency records for one drug: centrally authorised, refused, or "
+                    "withdrawn EU medicines with their indication text. The only source of EU approval status.",
+     "parameters": {"type": "object", "properties": {"drug": {"type": "string"}}, "required": ["drug"]}},
     {"name": "search_literature",
      "description": "Search stored PubMed abstracts by meaning. Optionally restrict to one drug.",
      "parameters": {"type": "object", "properties": {
@@ -88,6 +92,7 @@ _ID_PATTERNS = {
     # Models also write "NDA 209637" or "NDA-209637"; both are read as NDA209637.
     "fda_application": re.compile(r"\b(NDA|BLA|ANDA)[\s-]?(\d{6})\b"),
     "pmid": re.compile(r"(?:PMID:?\s*|pubmed\.ncbi\.nlm\.nih\.gov/)(\d{6,9})"),
+    "ema_product": re.compile(r"\bEMEA/H/C/\d{6}\b"),
 }
 
 
@@ -175,6 +180,10 @@ def _owners(steps: list[tuple[ToolCall, dict]]) -> tuple[dict[str, set[str]], di
                 owners.setdefault(a["application_number"], set()).add(drug)
             for n in ((result.get("label") or {}).get("application_numbers") or []):
                 owners.setdefault(n, set()).add(drug)
+        elif call.name == "get_ema_status" and drug:
+            for m in result.get("medicines") or []:
+                owners.setdefault(m["ema_product_number"], set()).add(drug)
+                add_name(m["name"], drug)
         elif call.name == "search_literature":
             for r in result.get("results") or []:
                 owners.setdefault(r["pmid"], set()).update(r.get("linked_drugs") or [])
@@ -215,6 +224,7 @@ def build_tools(conn: psycopg.Connection, embedder=None) -> dict[str, Callable[.
         "find_drug": lambda name: tools.find_drug(conn, name),
         "get_trials": lambda drug, limit=8: tools.get_trials(conn, drug, min(int(limit), 15)),
         "get_fda_status": lambda drug: tools.get_fda_status(conn, drug),
+        "get_ema_status": lambda drug: tools.get_ema_status(conn, drug),
         "search_literature": lambda query, drug=None, limit=5: tools.search_literature(
             conn, query, drug or None, min(int(limit), 8), embedder),
         "list_pipeline": lambda min_phase=3, active_only=True, limit=25: tools.list_pipeline(
