@@ -108,22 +108,19 @@
   button.primary:hover { transform: translateY(-1px); }
   button.primary:disabled { opacity: .55; cursor: default; transform: none; }
   .hint { color: var(--faint); font-size: .8rem; margin: 8px 4px 0; }
-  .followup { display: flex; align-items: center; gap: 10px; margin: 10px 0 0; padding: 6px 6px 6px 14px;
-              font-size: .9rem; color: var(--muted); border-radius: 999px;
-              background: linear-gradient(90deg, var(--accent-soft), transparent 85%);
-              border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent); }
+  .followup { display: flex; align-items: center; gap: 10px; margin: 8px 0 0; padding: 7px 7px 7px 14px;
+              font-size: .92rem; color: var(--muted); border-radius: 12px; background: var(--panel);
+              border: 1px solid var(--panel-border); border-left: 3px solid var(--accent-2); }
   .followup[hidden] { display: none; }
   .followup .fu-icon { flex: none; color: var(--accent-2); }
-  .followup .fu-label { flex: none; font: 600 .74rem/1 var(--mono); letter-spacing: .1em; text-transform: uppercase;
-                        color: var(--accent-2); }
+  .followup .fu-label { flex: none; color: var(--muted); }
   .followup b { flex: 1; min-width: 0; color: var(--text); font-weight: 600; white-space: nowrap; overflow: hidden;
                 text-overflow: ellipsis; }
-  .followup #new-topic { flex: none; display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px;
-                         border-radius: 999px; font: 600 .86rem/1 inherit; cursor: pointer; color: var(--text);
-                         background: var(--panel-solid); border: 1px solid color-mix(in srgb, var(--accent) 55%, transparent);
-                         transition: background .15s, color .15s, border-color .15s; }
+  .followup #new-topic { flex: none; display: inline-flex; align-items: center; gap: 6px; padding: 8px 13px;
+                         border-radius: 8px; font: 600 .86rem/1 inherit; cursor: pointer; color: var(--accent-2);
+                         background: var(--accent-soft); border: 0; transition: background .15s, color .15s; }
   .followup #new-topic svg { color: var(--accent-2); }
-  .followup #new-topic:hover { color: #fff; border-color: transparent;
+  .followup #new-topic:hover { color: #fff;
                                background: linear-gradient(135deg, var(--accent), var(--accent-2)); }
   .followup #new-topic:hover svg { color: #fff; }
   @media (max-width: 620px) { .followup .fu-label { display: none; } }
@@ -435,7 +432,7 @@
   </form>
   <div id="followup" class="followup" hidden aria-live="polite">
     <svg class="fu-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4v7a4 4 0 0 0 4 4h12"/><path d="M15 10l5 5-5 5"/></svg>
-    <span class="fu-label">Following up on</span>
+    <span class="fu-label">Follow-up to</span>
     <b id="followup-q"></b>
     <button type="button" id="new-topic" title="Forget the earlier question and start fresh">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
@@ -547,39 +544,23 @@
     <div class="synapses">
     <details>
       <summary>Where does the information come from?</summary>
-      <p>ClinicalTrials.gov for trials, the FDA's Drugs@FDA database and drug labels for US approvals, the European Medicines Agency's medicines list for EU approvals, and PubMed for published abstracts. All of them refresh automatically every Monday.</p>
+      <p>Trials from ClinicalTrials.gov, US approvals and labels from the FDA, EU approvals from the European Medicines Agency, abstracts from PubMed, company press releases and annual reports from SEC filings, and mechanisms from ChEMBL, for Alzheimer's, Parkinson's, and ALS. Everything refreshes every Monday.</p>
     </details>
     <details>
       <summary>How does it avoid making things up?</summary>
-      <p>The language model never sees the database directly: it can only request a few read-only lookups and must answer from what they return. Code, not the model, then checks that every trial ID, FDA application number, EMA product number, and PubMed ID in the answer came from one of those lookups.</p>
+      <p>The model never sees the database: it can only request read-only lookups and must answer from what they return. Code, not the model, then checks that every trial, FDA, EMA, SEC, and PubMed ID in the answer came from one of those lookups. The check confirms a source is real, not that it supports the exact sentence, so follow the links for anything important.</p>
     </details>
     <details>
-      <summary>Does "FDA-approved" mean approved for Alzheimer's, Parkinson's, or ALS?</summary>
-      <p>Not necessarily. It means approved for at least one use; semaglutide, for example, is approved for diabetes, not Alzheimer's. Whether a use includes a given disease comes only from the drug's label or EU indication text, which answers quote.</p>
+      <summary>Does "FDA-approved" mean approved for this disease?</summary>
+      <p>Not necessarily. It means approved for at least one use; semaglutide is approved for diabetes, not Alzheimer's. Approval for a disease comes only from the label or EU indication text, which answers quote. No matched record is not proof a drug is unapproved, and approval is never inferred from a drug reaching Phase 3.</p>
     </details>
     <details>
-      <summary>What does "no matched FDA approval record" mean?</summary>
-      <p>No FDA approval matched the drug's name. That usually means it is not approved, but it is not proof, since only exact names are matched. For Europe, only medicines authorised centrally by the EMA are listed; older drugs approved country by country are not. Approval is never inferred from a drug reaching Phase 3 or 4.</p>
-    </details>
-    <details>
-      <summary>Which diseases are covered?</summary>
-      <p>Alzheimer's disease, Parkinson's disease, and ALS. A trial counts toward a disease when ClinicalTrials.gov's search for that disease returns it, so a trial can count toward more than one.</p>
-    </details>
-    <details>
-      <summary>Can I trust every answer?</summary>
-      <p>Treat answers as a well-sourced starting point. The check confirms each cited record is real, not that it supports the exact sentence, so follow the links for anything important.</p>
-    </details>
-    <details>
-      <summary>Why is there a daily question limit?</summary>
-      <p>Each new question costs a language-model call, so the demo answers up to 50 new questions a day. Recently asked questions come from saved answers and don't count.</p>
+      <summary>What is the difference between Answer and Report?</summary>
+      <p>Answer replies to one question. Report writes a sectioned briefing on a topic (a drug, a pipeline, a comparison) with the same citation check; it makes more lookups, so it counts as three of the 50 daily questions.</p>
     </details>
     <details>
       <summary>Is this medical advice?</summary>
-      <p>No. It summarizes public research and regulatory records and does not recommend treatments. Talk to a doctor about medical decisions.</p>
-    </details>
-    <details>
-      <summary>How was it built?</summary>
-      <p>Python and Postgres with vector search, Gemini on Google Cloud for answers and embeddings, and Cloud Run for hosting. The code is on <a href="https://github.com/gosainansh8/neuroscope" target="_blank" rel="noopener">GitHub</a>.</p>
+      <p>No. It summarizes public research, regulatory, and company records and does not recommend treatments. Talk to a doctor about medical decisions. The code is on <a href="https://github.com/gosainansh8/neuroscope" target="_blank" rel="noopener">GitHub</a>.</p>
     </details>
     </div>
   </section>
