@@ -1,0 +1,82 @@
+action,alias,drug,confidence,reason
+map,KW-6002,istradefylline,high,KW-6002 is Kyowa Kirin's development code for istradefylline
+map,Opicapone,opicapone,high,Confirms opicapone as its own drug (it was learned under its code)
+map,BIA 9-1067,opicapone,high,BIA 9-1067 is Bial's development code for opicapone
+map,BIA 1067,opicapone,high,Shortened form of BIA 9-1067 (opicapone)
+map,Ongentys,opicapone,high,Ongentys is the brand name of opicapone
+map,SPM 962,rotigotine,high,SPM 962 is the development code of rotigotine transdermal
+map,Neupro,rotigotine,high,Neupro is the brand name of rotigotine transdermal
+map,Sifrol,pramipexole,high,Sifrol is a brand name of pramipexole
+map,Mirapex,pramipexole,high,Mirapex is a brand name of pramipexole
+map,Requip,ropinirole,high,Requip is the brand name of ropinirole
+map,Xadago,safinamide,high,Xadago is the brand name of safinamide
+map,safinamide methanesulfonate,safinamide,high,Salt form of safinamide
+map,Azilect,rasagiline,high,Azilect is the brand name of rasagiline
+map,TVP1012,rasagiline,high,TVP-1012 is Teva's development code for rasagiline
+map,Comtan,entacapone,high,Comtan is the brand name of entacapone
+map,PF-06649751,tavapadon,high,PF-06649751 is Pfizer's development code for tavapadon
+map,ADS-5102,amantadine,medium,ADS-5102 is extended-release amantadine (Gocovri); the active drug is amantadine
+map,ACP-103,pimavanserin,high,ACP-103 is Acadia's development code for pimavanserin
+map,KW-6500,apomorphine,high,KW-6500 is Kyowa Kirin's code for apomorphine (the registry record lists both)
+map,JP 1730,fipamezole,high,JP-1730 is the development code of fipamezole
+map,E2007,perampanel,high,E2007 is Eisai's development code for perampanel
+map,Circadin,melatonin,high,Circadin is a prolonged-release melatonin brand; the active drug is melatonin
+map,L-DOPA,levodopa,high,L-DOPA is levodopa
+map,L-dopa,levodopa,high,L-dopa is levodopa
+map,Pardoprunox,Pardoprunox,high,Pardoprunox (SLV308) is a separate dopamine partial agonist and must not link to levodopa
+map,Sinemet,carbidopa + levodopa,high,Sinemet is the brand of carbidopa-levodopa
+map,carbidopa-levodopa,carbidopa + levodopa,high,Same two-drug combination written with a hyphen
+map,Carbidopa Levodopa,carbidopa + levodopa,high,Same two-drug combination
+map,carbidopa 100 + levodopa,carbidopa + levodopa,high,Dose number left inside the first component name
+map,CD-LD,carbidopa + levodopa,high,Common abbreviation for carbidopa-levodopa
+map,Madopar,benserazide + levodopa,high,Madopar is the brand of benserazide-levodopa
+map,benserazide 100 + levodopa,benserazide + levodopa,high,Dose number left inside the first component name
+map,LCIG,levodopa-carbidopa intestinal gel,high,LCIG is levodopa-carbidopa intestinal gel; kept as its own formulation
+map,Levodopa-Carbidopa Intestinal Gel,levodopa-carbidopa intestinal gel,high,Same product written out
+map,Duodopa,levodopa-carbidopa intestinal gel,high,Duodopa is the EU brand of levodopa-carbidopa intestinal gel
+map,Duopa,levodopa-carbidopa intestinal gel,high,Duopa is the US brand of levodopa-carbidopa intestinal gel
+map,continuous intrajejunal of levodopa-carbidopa,levodopa-carbidopa intestinal gel,high,Describes intestinal gel infusion
+map,IPX066,IPX066,high,IPX066 (Rytary) is extended-release carbidopa-levodopa; kept as its own formulation
+map,IPX066 LD,IPX066,high,IPX066 with a dose suffix
+map,Rytary,IPX066,high,Rytary is the brand of IPX066
+map,IPX203 CD-LD,IPX203,high,IPX203 (Crexont) with its ingredient abbreviation
+map,ABBV-951,foscarbidopa + foslevodopa,high,ABBV-951 is foscarbidopa/foslevodopa (Vyalev)
+map,CVT-301,levodopa inhalation powder,high,CVT-301 is inhaled levodopa (Inbrija)
+map,Inbrija,levodopa inhalation powder,high,Inbrija is the brand of CVT-301
+map,inhaled levodopa,levodopa inhalation powder,high,Same product
+reject,level,,high,Fragment of a sentence learned as a drug name; not a drug
+map,Dexpramipexole,dexpramipexole,high,Dexpramipexole is the INN of R-pramipexole
+map,R-pramipexole,dexpramipexole,high,R-pramipexole is dexpramipexole
+map,CK-2017357,tirasemtiv,high,CK-2017357 is Cytokinetics' development code for tirasemtiv
+map,AMX0035,phenylbutyrate + taurursodiol,high,AMX0035 is sodium phenylbutyrate and taurursodiol (Relyvrio)
+map,Relyvrio,phenylbutyrate + taurursodiol,high,Relyvrio is the brand of AMX0035
+map,Qalsody,tofersen,high,Qalsody is the brand name of tofersen
+map,BIIB067,tofersen,high,BIIB067 is Biogen's development code for tofersen
+map,Radicava,edaravone,high,Radicava is the brand name of edaravone
+map,MCI-186,edaravone,high,MCI-186 is the development code of edaravone
+map,Rilutek,riluzole,high,Rilutek is the brand name of riluzole
+map,DaTscan,[123I]ioflupane,high,DaTscan is the brand of ioflupane I-123
+map,[123I]DaTSCAN Ioflupane,[123I]ioflupane,high,Same tracer
+map,18F-GE180,flutriciclamide,high,GE-180 is flutriciclamide (the registry record lists both)
+map,Coenzyme Q10,Coenzyme Q10,high,Confirms the drug's own name
+map,CoQ10,Coenzyme Q10,high,Abbreviation of coenzyme Q10
+map,coenzyme q,Coenzyme Q10,high,Truncated name of coenzyme Q10
+map,NAC,n-acetylcysteine,high,NAC is N-acetylcysteine
+map,n-acetylcysteine treatment,n-acetylcysteine,high,Arm label around the drug name
+map,Abraxane,nab-paclitaxel,high,Abraxane is nab-paclitaxel
+map,Platinol,cisplatin,high,Platinol is a brand of cisplatin
+map,Platinol-AQ,cisplatin,high,Platinol-AQ is a brand of cisplatin
+map,Cisplatin 100 mg/m^2,cisplatin,high,Dose written into the name
+map,IL-2,aldesleukin,medium,IL-2 in these trials is recombinant interleukin-2 (aldesleukin)
+map,Interleukin-2,aldesleukin,medium,Recombinant interleukin-2 is aldesleukin
+map,Proleukin,aldesleukin,high,Proleukin is the brand of aldesleukin
+map,G-CSF,granulocyte colony stimulating factor,high,Abbreviation
+map,Albutein,human albumin,high,Albutein is a brand of human albumin
+map,Triumeq,abacavir + dolutegravir + lamivudine,high,Triumeq is abacavir/dolutegravir/lamivudine
+map,5FU,5-fluorouracil,high,5FU is 5-fluorouracil
+map,Botox,botulinum toxin,medium,Botox is onabotulinumtoxinA; linked to the generic botulinum toxin drug already used
+reject,brand name,,high,Form-field label not a drug name
+reject,or equivalent,,high,Phrase not a drug name
+reject,PET tracer,,high,Generic description not a drug name
+reject,test,,high,Arm label not a drug name
+reject,test IMP,,high,Arm label not a drug name

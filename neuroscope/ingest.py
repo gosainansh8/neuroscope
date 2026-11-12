@@ -2,6 +2,7 @@
 
 Usage:
     python -m neuroscope.ingest                                # Alzheimer's, live API
+    python -m neuroscope.ingest --disease parkinsons           # another disease from the diseases table
     python -m neuroscope.ingest --limit 50                     # quick smoke test
     python -m neuroscope.ingest --save-raw data/raw/ad.jsonl   # also keep the raw JSON
     python -m neuroscope.ingest --from-jsonl data/raw/ad.jsonl # replay offline
@@ -15,6 +16,7 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import re
 import sys
 from dataclasses import dataclass
 from typing import Iterable
@@ -53,6 +55,7 @@ class RunSummary:
     failed: int = 0
     drugs_created: int = 0
     conflicts: int = 0
+    off_topic: int = 0          # returned by the disease query but not about the disease: skipped
 
 
 def _upsert_sponsor(cur, sponsor: tuple[str, str | None] | None) -> int | None:
@@ -186,8 +189,11 @@ def process_study(cur, raw: dict, run_id: int, summary: RunSummary, origin: str)
 
 
 def run_ingestion(conn: psycopg.Connection, studies: Iterable[dict], query: str,
-                  origin: str, save_raw_path: str | None = None) -> RunSummary:
-    """origin is 'live_api', 'replay', or 'synthetic' and is stamped on every trial."""
+                  origin: str, save_raw_path: str | None = None, disease: str | None = None) -> RunSummary:
+    """origin is 'live_api', 'replay', or 'synthetic' and is stamped on every trial.
+    `disease` (a diseases.slug) tags every on-topic study this query returned as belonging to that
+    disease. A study whose conditions, keywords, and titles do not match the disease's topic
+    pattern is skipped and counted as off_topic (registry synonyms return such studies)."""
     if origin not in ("live_api", "replay", "synthetic"):
         raise ValueError(f"bad origin: {origin}")
     cur = conn.execute("INSERT INTO ingestion_runs (query, data_origin) VALUES (%s, %s) RETURNING id",
@@ -195,6 +201,7 @@ def run_ingestion(conn: psycopg.Connection, studies: Iterable[dict], query: str,
     run_id = cur.fetchone()[0]
     conn.commit()
     summary = RunSummary(run_id=run_id)
+    topic = topic_regex(conn, disease) if disease else None
 
     raw_fh = open(save_raw_path, "w", encoding="utf-8") if save_raw_path else None
     try:
@@ -203,10 +210,16 @@ def run_ingestion(conn: psycopg.Connection, studies: Iterable[dict], query: str,
             if raw_fh:
                 raw_fh.write(json.dumps(raw) + "\n")
             nct = (raw.get("protocolSection") or {}).get("identificationModule", {}).get("nctId", "?")
+            if topic and not on_topic(raw, topic):
+                summary.off_topic += 1
+                continue
             try:
                 with conn.transaction():
                     with conn.cursor() as c:
                         outcome = process_study(c, raw, run_id, summary, origin)
+                        if disease:
+                            c.execute("INSERT INTO trial_diseases (nct_id, disease, first_run_id) "
+                                      "VALUES (%s, %s, %s) ON CONFLICT DO NOTHING", (nct, disease, run_id))
                 setattr(summary, outcome, getattr(summary, outcome) + 1)
             except Exception as exc:  # one bad record must not stop the run
                 summary.failed += 1
@@ -235,13 +248,68 @@ def run_ingestion(conn: psycopg.Connection, studies: Iterable[dict], query: str,
     return summary
 
 
+def topic_regex(conn: psycopg.Connection, disease: str) -> re.Pattern:
+    pattern = conn.execute("SELECT topic_pattern FROM diseases WHERE slug = %s", (disease,)).fetchone()[0]
+    return re.compile(pattern, re.IGNORECASE)
+
+
+def topic_text(conditions, keywords, brief_title, official_title) -> str:
+    return " ".join([*(conditions or []), *(keywords or []), brief_title or "", official_title or ""])
+
+
+def on_topic(raw: dict, topic: re.Pattern) -> bool:
+    ps = raw.get("protocolSection") or {}
+    cond = ps.get("conditionsModule") or {}
+    ident = ps.get("identificationModule") or {}
+    return bool(topic.search(topic_text(cond.get("conditions"), cond.get("keywords"),
+                                        ident.get("briefTitle"), ident.get("officialTitle"))))
+
+
+def prune_off_topic(conn: psycopg.Connection) -> dict[str, int]:
+    """Drop disease tags whose trial is not about that disease, then delete trials left with no
+    disease (with their snapshots, change rows, and conflicts), then re-link interventions so drugs
+    used only by deleted trials are removed. Does nothing before any trial has a disease tag."""
+    from .curate import reresolve
+    if not conn.execute("SELECT 1 FROM trial_diseases LIMIT 1").fetchone():
+        return {"tags_removed": 0, "trials_deleted": 0}
+    patterns = {slug: re.compile(p, re.IGNORECASE) for slug, p in
+                conn.execute("SELECT slug, topic_pattern FROM diseases").fetchall()}
+    rows = conn.execute(
+        "SELECT td.nct_id, td.disease, t.conditions, t.keywords, t.brief_title, t.official_title "
+        "FROM trial_diseases td JOIN trials t ON t.nct_id = td.nct_id").fetchall()
+    stale = [(n, d) for n, d, *text in rows if not patterns[d].search(topic_text(*text))]
+    with conn.transaction():
+        for nct, disease in stale:
+            conn.execute("DELETE FROM trial_diseases WHERE nct_id = %s AND disease = %s", (nct, disease))
+        orphans = [r[0] for r in conn.execute(
+            "SELECT nct_id FROM trials t WHERE NOT EXISTS (SELECT 1 FROM trial_diseases td "
+            "WHERE td.nct_id = t.nct_id)")]
+        for table in ("trial_snapshots", "trial_changes", "drug_alias_conflicts"):
+            conn.execute(f"DELETE FROM {table} WHERE nct_id = ANY(%s)", (orphans,))
+        conn.execute("DELETE FROM trials WHERE nct_id = ANY(%s)", (orphans,))
+    if orphans:
+        reresolve(conn)
+    return {"tags_removed": len(stale), "trials_deleted": len(orphans)}
+
+
+def condition_for(conn: psycopg.Connection, disease: str) -> str:
+    row = conn.execute("SELECT ct_condition FROM diseases WHERE slug = %s", (disease,)).fetchone()
+    if not row:
+        known = [r[0] for r in conn.execute("SELECT slug FROM diseases ORDER BY sort_order")]
+        raise SystemExit(f"Unknown disease {disease!r}. Known: {', '.join(known)}")
+    return row[0]
+
+
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    p.add_argument("--condition", default=DEFAULT_CONDITION)
+    p.add_argument("--disease", default="alzheimers", help="a diseases.slug: alzheimers, parkinsons, als")
+    p.add_argument("--condition", default=None, help="a raw ClinicalTrials.gov condition query, untagged")
     p.add_argument("--limit", type=int, default=None, help="stop after N studies")
     p.add_argument("--page-size", type=int, default=200, help="studies per API page (max 1000)")
     p.add_argument("--save-raw", metavar="PATH", help="write raw study JSON lines here")
     p.add_argument("--from-jsonl", metavar="PATH", help="replay studies from a saved file")
+    p.add_argument("--prune-off-topic", action="store_true",
+                   help="remove trials whose text does not name any disease they were tagged with, then exit")
     p.add_argument("--synthetic", action="store_true",
                    help="with --from-jsonl: label the data as synthetic test fixtures")
     args = p.parse_args(argv)
@@ -252,17 +320,23 @@ def main(argv: list[str] | None = None) -> int:
         studies = iter_studies_from_jsonl(args.from_jsonl)
         query = f"file:{args.from_jsonl}"
         origin = "synthetic" if args.synthetic else "replay"
-    else:
-        studies = iter_studies(args.condition, page_size=args.page_size, max_studies=args.limit)
-        query = f"cond:{args.condition}"
-        origin = "live_api"
-
+    disease = None if args.condition else args.disease
+    if args.prune_off_topic:
+        with connect() as conn:
+            r = prune_off_topic(conn)
+        print(f"Removed {r['tags_removed']} off-topic disease tags and deleted {r['trials_deleted']} trials")
+        return 0
     with connect() as conn:
-        s = run_ingestion(conn, studies, query, origin, save_raw_path=args.save_raw)
+        if not args.from_jsonl:
+            condition = args.condition or condition_for(conn, disease)
+            studies = iter_studies(condition, page_size=args.page_size, max_studies=args.limit)
+            query = f"cond:{condition}"
+            origin = "live_api"
+        s = run_ingestion(conn, studies, query, origin, save_raw_path=args.save_raw, disease=disease)
 
     print(
         f"Run {s.run_id}: fetched {s.fetched}, new {s.new}, changed {s.changed}, "
-        f"unchanged {s.unchanged}, failed {s.failed}; "
+        f"unchanged {s.unchanged}, failed {s.failed}, off-topic skipped {s.off_topic}; "
         f"drugs created {s.drugs_created}, alias conflicts {s.conflicts}"
     )
     return 1 if s.failed and s.failed == s.fetched else 0

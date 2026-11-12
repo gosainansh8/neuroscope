@@ -498,6 +498,126 @@
       "must_call": [
         "get_ema_status"
       ]
+    },
+    {
+      "id": "pd-istradefylline",
+      "category": "parkinsons",
+      "question": "Is istradefylline approved for Parkinson's disease?",
+      "verdict": "yes",
+      "must_cite_any": [
+        "NDA022075"
+      ],
+      "must_mention": [
+        "2019-08-27|August 27,? 2019"
+      ],
+      "must_call": [
+        "get_fda_status"
+      ]
+    },
+    {
+      "id": "pd-opicapone-code",
+      "category": "parkinsons",
+      "question": "Is BIA 9-1067 approved anywhere?",
+      "verdict": "yes",
+      "must_cite_any": [
+        "NDA212489",
+        "EMEA/H/C/002790"
+      ],
+      "must_mention": [
+        "opicapone"
+      ]
+    },
+    {
+      "id": "pd-istradefylline-eu",
+      "category": "parkinsons",
+      "question": "Is istradefylline authorised in the EU?",
+      "verdict": "no",
+      "must_cite_any": [
+        "EMEA/H/C/005308"
+      ],
+      "must_mention": [
+        "refus"
+      ],
+      "must_call": [
+        "get_ema_status"
+      ]
+    },
+    {
+      "id": "pd-vyalev",
+      "category": "parkinsons",
+      "question": "Has the FDA approved ABBV-951?",
+      "verdict": "yes",
+      "must_cite_any": [
+        "NDA216962"
+      ],
+      "must_mention": [
+        "2024-10-16|October 16,? 2024",
+        "foslevodopa"
+      ]
+    },
+    {
+      "id": "als-tofersen",
+      "category": "als",
+      "question": "Is tofersen approved for ALS?",
+      "verdict": "yes",
+      "must_cite_any": [
+        "NDA215887",
+        "EMEA/H/C/005493"
+      ],
+      "must_mention": [
+        "2023-04-25|April 25,? 2023|2024-05-29|May 29,? 2024",
+        "SOD1|superoxide dismutase"
+      ]
+    },
+    {
+      "id": "als-edaravone-eu",
+      "category": "als",
+      "question": "Is edaravone authorised in the European Union?",
+      "verdict": "no",
+      "must_cite_any": [
+        "EMEA/H/C/004938"
+      ],
+      "must_mention": [
+        "withdr"
+      ],
+      "must_call": [
+        "get_ema_status"
+      ]
+    },
+    {
+      "id": "als-masitinib",
+      "category": "als",
+      "question": "Has masitinib been approved for ALS?",
+      "verdict": "no",
+      "must_cite_any": [
+        "EMEA/H/C/005897",
+        "EMEA/H/C/004398"
+      ],
+      "must_mention": [
+        "refus"
+      ]
+    },
+    {
+      "id": "als-relyvrio",
+      "category": "als",
+      "question": "Is AMX0035 FDA approved, and what happened in Europe?",
+      "verdict": "yes",
+      "must_cite_any": [
+        "NDA216660"
+      ],
+      "must_mention": [
+        "2022-09-29|September 29,? 2022",
+        "refus"
+      ]
+    },
+    {
+      "id": "als-pipeline",
+      "category": "als",
+      "question": "Which drugs have been tested in the most ALS trials?",
+      "must_mention": [
+        "riluzole",
+        "edaravone"
+      ]
     }
   ]
 }

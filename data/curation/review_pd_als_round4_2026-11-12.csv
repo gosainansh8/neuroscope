@@ -1,0 +1,18 @@
+action,alias,drug,confidence,reason
+map,BIA 3-202,nebicapone,high,BIA 3-202 is Bial's development code for nebicapone
+map,Edaravone,edaravone,high,Confirms the drug's own name
+map,CNM-Au8,gold nanocrystals,high,CNM-Au8 is Clene's gold nanocrystal suspension
+map,MK-7684A,pembrolizumab + vibostolimab coformulation,high,MK-7684A is the pembrolizumab/vibostolimab coformulation
+map,Mesenchymal Stem Cells,bone marrow derived mesenchymal stem cells,medium,The registry record describes bone marrow derived MSCs
+map,NurOwn,nurown msc-ntf cells,high,NurOwn is BrainStorm's MSC-NTF cell product
+map,SPG302,SPG302,high,Confirms the drug's own name
+map,IPX203,IPX203,high,Confirms the drug's own name
+map,IRL790,IRL790,high,Confirms the drug's own name (mesdopetam)
+map,NS 2330,tesofensine,high,NS 2330 is the development code of tesofensine
+map,MK-4280A,favezelimab + pembrolizumab,high,MK-4280A is the favezelimab/pembrolizumab coformulation
+map,JM-010,JM-010 A,medium,Same product; the A is an arm suffix
+map,LY3154207,mevidalen,high,LY3154207 is Lilly's development code for mevidalen
+map,UCB0599,minzasolmin,high,UCB0599 is UCB's development code for minzasolmin
+map,HER3-DXd,patritumab deruxtecan,high,HER3-DXd is patritumab deruxtecan
+map,pitolisant,pitolisant,high,Confirms the drug's own name
+map,Rozerem,ramelteon,high,Rozerem is the brand name of ramelteon

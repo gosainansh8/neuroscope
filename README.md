@@ -1,10 +1,12 @@
 # NeuroScope
 
-Sourced neuroscience drug-development intelligence. Launching with Alzheimer's disease.
+[![tests](https://github.com/gosainansh8/neuroscope/actions/workflows/tests.yml/badge.svg)](https://github.com/gosainansh8/neuroscope/actions/workflows/tests.yml)
 
-**Live demo: https://neuroscope-api-561220657386.us-central1.run.app** Ask a question about an Alzheimer's drug and get an answer with linked, verified sources. The demo is limited to 50 new questions a day; recently asked questions are answered from a cache.
+Sourced neuroscience drug-development intelligence for Alzheimer's disease, Parkinson's disease, and ALS.
 
-Milestone 1: the structured data layer. Pulls Alzheimer's trials from ClinicalTrials.gov, normalizes them, resolves drug names to canonical drugs with full provenance, and tracks every change between runs.
+**Live demo: https://neuroscope-api-561220657386.us-central1.run.app** Ask a question about an Alzheimer's, Parkinson's, or ALS drug and get an answer with linked, verified sources. The demo is limited to 50 new questions a day; recently asked questions are answered from a cache.
+
+Milestone 1: the structured data layer. Pulls Alzheimer's, Parkinson's, and ALS trials from ClinicalTrials.gov, normalizes them, resolves drug names to canonical drugs with full provenance, and tracks every change between runs.
 
 Milestone 2: approval. Loads approval records from Drugs@FDA and indications from FDA labels, and EU authorisations from the European Medicines Agency, matched to the same canonical drugs. Approval status comes only from these records.
 
@@ -99,6 +101,20 @@ Drug classes (`cholinesterase inhibitors`, `SSRI`, `GLP-1 Receptor Agonists`) ar
 Many corrections at once: put them in a CSV (`action,alias,drug,confidence,reason`) and run `python -m neuroscope.curate apply FILE.csv --dry-run` to see the before/after counts with nothing changed, then without `--dry-run` to apply all rows (or none, if any row is invalid) and reresolve. Actions: `class` (this drug is a drug class), `map` (this name is this drug; mapping a name to itself confirms it or splits it off as its own drug), `reject` (this text is not a drug name: it never matches, never names a drug, and an intervention registered only under it stays unlinked), and `resolve` (the alias column holds an NCT ID; that trial's conflicts are marked reviewed and its links stay as they are). `data/curation/proposed_aliases_2026-11-10.csv` holds the 69 corrections from the first full load, approved and applied on 2026-11-10 (pending 127 to 59, conflicts 99 to 44). Mappings were checked against registry records that list both names and, for less common codes, public sources. It merges unlabeled tracer names, PET-scan names, and salt forms into the base drug by decision, not by rule. Two later one-line files (`review_round3`, `review_round4`) merged duplicates found while loading FDA and PubMed data. `data/curation/review_round2_2026-11-10.csv` (96 rows, applied the same day) finished the review: pending 59 to 6, open conflicts 44 to 0, with 31 conflicts marked reviewed and left as they are (multi-tracer studies, formulation variants kept separate, wrong sponsor otherNames). A fresh database needs all five files applied again after ingestion: `proposed_aliases`, then rounds 2 to 5, followed by `pubmed relink`.
 
 This replaced an earlier default in which unreviewed aliases matched everywhere. In a 1,500-record live sample, that default had linked FDG-PET interventions to insulin, `AH110690` to the wrong tracer, and `Treatment A` to atabecestat. The cost is more unlinked interventions until review (127 of 7,217 in the full Alzheimer's load of 4,341 trials on 2026-11-10, plus 99 conflicts) and some duplicate auto-created drugs that surface as conflicts (e.g. `bapineuzumab` and `AAB-001`) instead of being silently merged. `NEUROSCOPE_TRUST_UNREVIEWED_ALIASES=1` restores the old behavior for ingestion and `reresolve`.
+
+## Diseases
+
+```bash
+python -m neuroscope.ingest --disease parkinsons --save-raw data/raw/pd.jsonl   # alzheimers | parkinsons | als
+python -m neuroscope.ingest --prune-off-topic                                   # after changing a topic rule
+python -m neuroscope.pubmed load --disease parkinsons --min-trials 2 --per-drug 40
+```
+
+The `diseases` table names each disease, its ClinicalTrials.gov condition query, its PubMed search term, and two patterns. A trial belongs to a disease (`trial_diseases`) when that disease's registry search returned it **and** its conditions, keywords, or titles match the disease's topic pattern. The second test matters: the registry expands queries with synonyms, so "Parkinson Disease" also returned 251 cancer trials through "PD" (as in PD-1), and "Alzheimer Disease" returned app and stress studies through "AD" and "APP". Those are skipped at ingestion and counted as off-topic. The Alzheimer's rule keeps dementia, amyloid, tau, and MCI studies, which the field counts as its own. A trial can belong to more than one disease.
+
+Every lookup takes an optional disease: `get_trials` and `list_pipeline` count only that disease's trials (`v_drug_disease_pipeline`), and `get_fda_status` and `get_ema_status` show first the label or indication text that mentions it. The approval rules do not change: approval for a disease is stated only when the label or indication text says so.
+
+Loaded on 2026-11-12: 4,192 Alzheimer's, 4,824 Parkinson's, and 1,020 ALS trials (9,815 in all, after 401 off-topic studies were removed, 149 of them from the earlier Alzheimer's load). The new names were reviewed in five files (`data/curation/review_pd_als*_2026-11-12.csv`): development codes and brands mapped to their drugs (KW-6002 to istradefylline, BIA 9-1067 to opicapone, Sinemet to carbidopa + levodopa), wrong automatic links undone (pardoprunox had been attached to levodopa, Apokyn to the apomorphine film), distinct formulations kept separate (levodopa-carbidopa intestinal gel, IPX066, IPX203, inhaled levodopa), and classes marked. Open name conflicts went from 159 to 0, and interventions waiting on review from 303 to 62.
 
 ## Provenance and correcting a wrong merge
 

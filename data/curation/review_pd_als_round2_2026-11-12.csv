@@ -1,0 +1,13 @@
+action,alias,drug,confidence,reason
+map,Apokyn,apomorphine,high,Apokyn is apomorphine injection; it is not APL-130277 (sublingual film)
+map,APO-go,apomorphine,high,APO-go is a brand of apomorphine
+map,amomorphine,apomorphine,medium,Misspelling of apomorphine in the registry record
+map,ABT-SLV187,levodopa-carbidopa intestinal gel,high,ABT-SLV187 is Abbott's code for levodopa-carbidopa intestinal gel
+map,CLES,levodopa-carbidopa intestinal gel,high,CLES is carbidopa-levodopa enteral suspension (the intestinal gel)
+map,Albutein for perfusion,human albumin,high,Albutein is a brand of human albumin
+map,ND0612,ND0612,high,ND0612 is continuous subcutaneous levodopa-carbidopa; kept as its own formulation
+map,Zelapar,selegiline,high,Zelapar is orally disintegrating selegiline
+map,Ursodiol,ursodeoxycholic acid,high,Ursodiol is ursodeoxycholic acid; it is not tauroursodeoxycholic acid (TUDCA)
+map,[123I]ß CIT,[123I]β-CIT,high,Same tracer written with a German sharp s instead of beta
+reject,SPECT imaging,,high,Procedure not a drug name
+reject,low dose,,high,Dose label not a drug name

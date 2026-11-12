@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="description" content="Sourced answers about Alzheimer's drug development, from ClinicalTrials.gov, FDA and EMA records, and PubMed.">
+<meta name="description" content="Sourced answers about Alzheimer's, Parkinson's, and ALS drug development, from ClinicalTrials.gov, FDA and EMA records, and PubMed.">
 <meta name="color-scheme" content="light dark">
 <title>NeuroScope</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2036%2036'%3E%3Crect%20width='36'%20height='36'%20rx='10'%20fill='%235b5bd6'/%3E%3Cg%20transform='translate%285%205%29'%20fill='none'%20stroke='white'%20stroke-linecap='round'%20stroke-linejoin='round'%3E%3Cg%20transform='scale%28.8%29'%20stroke-width='2.4'%3E%3Cpath%20d='M11.5%204.6C9.6%203.6%207.3%204.5%206.9%206.5%204.9%206.9%203.7%208.9%204.4%2010.9c-1.4%201.2-1.4%203.6.1%204.8-.3%202.1%201.3%204%203.4%203.9.8%201.5%202.7%201.9%203.6.8z'/%3E%3Cpath%20d='M12.5%204.6c1.9-1%204.2-.1%204.6%201.9%202%20.4%203.2%202.4%202.5%204.4%201.4%201.2%201.4%203.6-.1%204.8.3%202.1-1.3%204-3.4%203.9-.8%201.5-2.7%201.9-3.6.8z'/%3E%3Cpath%20d='M7.3%209.3c1.4.1%202.5.9%202.9%202.2M6.5%2013.7c1.6-.3%203%20.3%203.7%201.6M9.4%206.7c.6.6.9%201.4.8%202.2'/%3E%3Cpath%20d='M16.7%209.3c-1.4.1-2.5.9-2.9%202.2M17.5%2013.7c-1.6-.3-3%20.3-3.7%201.6M14.6%206.7c-.6.6-.9%201.4-.8%202.2'/%3E%3C/g%3E%3Ccircle%20cx='16'%20cy='16'%20r='5'%20fill='rgba%28255%2C255%2C255%2C.25%29'%20stroke-width='2.2'/%3E%3Cpath%20d='M19.6%2019.6%2024%2024'%20stroke-width='3.0'/%3E%3C/g%3E%3C/svg%3E">
@@ -235,6 +235,7 @@
   .tabs a[aria-current="true"] { color: var(--accent-text); background: linear-gradient(135deg, var(--accent), var(--accent-2));
                                  box-shadow: 0 4px 14px rgba(91, 91, 214, .35); }
   header.topbar .pill { border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent); }
+  @media (max-width: 900px) { header.topbar .pill { display: none; } }
   #ask, #how, #changes, #faq { scroll-margin-top: 84px; }
   @media (max-width: 620px) {
     .topbar-inner { padding: 10px 14px; }
@@ -302,6 +303,13 @@
   .change-list .title { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
                         margin-top: 2px; color: var(--text); }
   .change-list .brand { font-weight: 650; color: var(--text); }
+  .dtags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+  .dtags:empty { display: none; }
+  .dtag { padding: 1px 7px; border-radius: 999px; font: 600 .7rem/1.5 var(--mono); letter-spacing: .04em;
+          border: 1px solid var(--panel-border); color: var(--muted); }
+  .dtag.alzheimers { color: var(--trial); border-color: color-mix(in srgb, var(--trial) 40%, transparent); }
+  .dtag.parkinsons { color: var(--paper); border-color: color-mix(in srgb, var(--paper) 40%, transparent); }
+  .dtag.als { color: var(--fda); border-color: color-mix(in srgb, var(--fda) 40%, transparent); }
   .change-list .delta { display: grid; gap: 2px; margin-top: 4px; }
   .change-list .delta .new::before { content: "→ "; color: var(--faint); font-weight: 400; }
   .change-list .old { text-decoration: line-through; color: var(--faint); }
@@ -367,22 +375,22 @@
       <a href="#changes">This week</a>
       <a href="#faq">FAQ</a>
     </nav>
-    <span class="pill">Alzheimer's</span>
+    <span class="pill" title="Diseases covered">Alzheimer's · Parkinson's · ALS</span>
   </div>
 </header>
 <main>
 
   <section class="hero" id="ask">
-    <div class="eyebrow"><span class="live" aria-hidden="true"></span>Alzheimer's drug intelligence · updated weekly</div>
+    <div class="eyebrow"><span class="live" aria-hidden="true"></span>Neurodegenerative drug intelligence · updated weekly</div>
     <h2>Every answer, <em>traced to its source.</em></h2>
-    <p>Ask about any Alzheimer's drug's trials, US and EU approval, or published evidence. Answers come only from public records, and every citation is checked against the database.</p>
+    <p>Ask about drugs for Alzheimer's, Parkinson's, or ALS: their trials, US and EU approval, and published evidence. Answers come only from public records, and every citation is checked against the database.</p>
     <div class="readout" id="stats" aria-label="What the database holds" hidden>
-      <span><b data-stat="trials"></b>Trials</span>
+      <span id="trials-stat"><b data-stat="trials"></b>Trials</span>
       <span><b data-stat="drugs"></b>Drugs</span>
       <span><b data-stat="drugs_with_fda_approval"></b>FDA-approved</span>
       <span><b data-stat="drugs_with_ema_authorisation"></b>EU-authorised</span>
       <span><b data-stat="document_chunks"></b>Passages</span>
-      <span class="quota" title="New questions answered today; repeats of recent questions are free"><b id="quota"></b>Questions today</span>
+      <span class="quota" title="New questions answered today; repeats of recent questions are free"><b id="quota"></b>Asked today</span>
     </div>
     <p class="sources-caption">Sources: <span>ClinicalTrials.gov</span> · <span>Drugs@FDA &amp; FDA labels</span> · <span>EMA</span> · <span>PubMed</span></p>
   </section>
@@ -402,8 +410,8 @@
 
   <div class="examples" id="examples">
     <span>Try:</span>
-    <button type="button" class="example">Is semaglutide approved for Alzheimer's?</button>
-    <button type="button" class="example">What is known about brain swelling with donanemab?</button>
+    <button type="button" class="example">Is tofersen approved for ALS?</button>
+    <button type="button" class="example">Which Parkinson's drugs are in Phase 3 trials?</button>
   </div>
 
   <section id="progress" class="card progress" hidden aria-live="polite">
@@ -474,7 +482,7 @@
 
   <section id="changes" class="card changes" hidden aria-labelledby="changes-title">
     <span class="kicker">Activity · last 7 days</span>
-    <div class="changes-head"><h3 id="changes-title">This week in Alzheimer's drug development</h3><span id="changes-sub"></span></div>
+    <div class="changes-head"><h3 id="changes-title">This week in neurodegenerative drug development</h3><span id="changes-sub"></span></div>
     <div class="change-cols">
       <div class="change-col trial">
         <h4><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>
@@ -507,15 +515,19 @@
     </details>
     <details>
       <summary>How does it avoid making things up?</summary>
-      <p>The language model never sees the database directly: it can only request a few read-only lookups and must answer from what they return. Code, not the model, then checks that every trial ID, FDA application number, and PubMed ID in the answer came from one of those lookups.</p>
+      <p>The language model never sees the database directly: it can only request a few read-only lookups and must answer from what they return. Code, not the model, then checks that every trial ID, FDA application number, EMA product number, and PubMed ID in the answer came from one of those lookups.</p>
     </details>
     <details>
-      <summary>Does "FDA-approved" mean approved for Alzheimer's disease?</summary>
-      <p>Not necessarily. It means approved for at least one use; semaglutide, for example, is approved for diabetes, not Alzheimer's. Whether a use includes Alzheimer's comes only from the drug's label, which answers quote.</p>
+      <summary>Does "FDA-approved" mean approved for Alzheimer's, Parkinson's, or ALS?</summary>
+      <p>Not necessarily. It means approved for at least one use; semaglutide, for example, is approved for diabetes, not Alzheimer's. Whether a use includes a given disease comes only from the drug's label or EU indication text, which answers quote.</p>
     </details>
     <details>
       <summary>What does "no matched FDA approval record" mean?</summary>
       <p>No FDA approval matched the drug's name. That usually means it is not approved, but it is not proof, since only exact names are matched. For Europe, only medicines authorised centrally by the EMA are listed; older drugs approved country by country are not. Approval is never inferred from a drug reaching Phase 3 or 4.</p>
+    </details>
+    <details>
+      <summary>Which diseases are covered?</summary>
+      <p>Alzheimer's disease, Parkinson's disease, and ALS. A trial counts toward a disease when ClinicalTrials.gov's search for that disease returns it, so a trial can count toward more than one.</p>
     </details>
     <details>
       <summary>Can I trust every answer?</summary>
@@ -876,19 +888,27 @@ const pretty = (v) => {
   const words = t.replace(/_/g, " ");
   return words === words.toUpperCase() ? words.charAt(0) + words.slice(1).toLowerCase() : words;
 };
+const DISEASE_NAMES = { alzheimers: "Alzheimer's", parkinsons: "Parkinson's", als: "ALS" };
+function diseaseTags(list) {
+  const box = el("span", "dtags");
+  (list || []).forEach((d) => box.appendChild(el("span", `dtag ${d}`, DISEASE_NAMES[d] || d)));
+  return box;
+}
 fetch("changes?days=7").then((r) => r.ok ? r.json() : null).then((d) => {
   if (!d) return;
   fillList("chg-new", d.new_trials.slice(0, 5).map((t) => {
     const li = el("li");
     li.append(idLink(TRIAL_URL(t.nct_id), t.nct_id), el("span", "title", t.title),
-              el("span", "meta", `Posted ${pretty(t.first_posted)} · ${t.phase}` + (t.drugs.length ? ` · ${t.drugs.slice(0, 2).join(", ")}` : "")));
+              el("span", "meta", `Posted ${pretty(t.first_posted)} · ${t.phase}` + (t.drugs.length ? ` · ${t.drugs.slice(0, 2).join(", ")}` : "")),
+              diseaseTags(t.diseases));
     return li;
   }), "No trials first posted this week.");
   fillList("chg-status", d.trial_changes.slice(0, 5).map((c) => {
     const li = el("li");
     const delta = el("div", "delta");
     delta.append(el("span", "old", pretty(c.old)), el("span", "new", pretty(c.new)));
-    li.append(idLink(TRIAL_URL(c.nct_id), c.nct_id), el("span", "meta", FIELD_LABELS[c.field] || c.field), delta);
+    li.append(idLink(TRIAL_URL(c.nct_id), c.nct_id), el("span", "meta", FIELD_LABELS[c.field] || c.field), delta,
+              diseaseTags(c.diseases));
     return li;
   }), "No status changes this week.");
   fillList("chg-fda", d.latest_fda_approvals.slice(0, 5).map((a) => {
@@ -896,9 +916,9 @@ fetch("changes?days=7").then((r) => r.ok ? r.json() : null).then((d) => {
     const name = el("div");
     name.append(el("span", "brand", a.brand || a.drug), document.createTextNode(a.brand ? ` (${a.drug})` : ""));
     li.append(name, idLink(FDA_URL(a.application_number.replace(/^\D+/, "")), a.application_number),
-              el("span", "meta", `Approved ${pretty(a.approved)}`));
+              el("span", "meta", `Approved ${pretty(a.approved)}`), diseaseTags(a.diseases));
     return li;
-  }), "No Alzheimer's approvals on record.");
+  }), "No approvals for these diseases on record.");
   $("changes-sub").textContent = d.last_refresh
     ? `Updated weekly · last refreshed ${d.last_refresh.finished_at.slice(0, 10)}`
     : `Data retrieved ${d.trials_last_retrieved}`;
@@ -1106,6 +1126,8 @@ const neuro = (function neuralBackground() {
 fetch("health").then((r) => r.json().then((d) => ({ ok: r.ok, d }))).then(({ ok, d }) => {
   if (!ok) { $("health").textContent = d.detail || "The database is not reachable."; return; }
   document.querySelectorAll("[data-stat]").forEach((el) => { el.textContent = (Number(d[el.dataset.stat]) || 0).toLocaleString(); });
+  if (d.trials_by_disease) $("trials-stat").title = Object.entries(d.trials_by_disease)
+    .map(([k, n]) => `${DISEASE_NAMES[k] || k}: ${Number(n).toLocaleString()}`).join(" · ") + " (a trial can count toward more than one)";
   $("stats").hidden = false;
   $("quota").textContent = `${d.questions_today}/${d.daily_question_limit}`;
   $("health").textContent = "";

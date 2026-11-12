@@ -115,6 +115,7 @@ _JUNK_NAMES = {
     "conventional anti-dementia treatment", "best medical treatment",
     # Typed into drug-type interventions in live records; none is a drug.
     "patients", "all subjects", "observational", "alzheimer disease", "alzheimer's disease",
+    "parkinson disease", "parkinson's disease", "als", "amyotrophic lateral sclerosis",
     "cerebrospinal fluid", "blood", "blood samples", "fecal samples", "amyloid pet",
     "apoe", "apoe4", "apoe genotyping", "radiopharmaceuticals",
 }

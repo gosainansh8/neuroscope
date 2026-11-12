@@ -122,7 +122,7 @@ def test_one_failing_drug_is_skipped_and_the_rest_still_load(conn, monkeypatch):
     run_ingestion(conn, [study(f"NCT9700000{i}", interventions=[iv(d, "BIOLOGICAL")])
                          for i, d in enumerate(["Lecanemab"] * 5 + ["Donepezil"] * 5)], "test", "synthetic")
     monkeypatch.setattr(pubmed, "PAUSE_S", 0)
-    monkeypatch.setattr(pubmed, "fetch_pmids", lambda session, term, n: {"lecanemab": ["900000001"],
+    monkeypatch.setattr(pubmed, "fetch_pmids", lambda session, term, n, disease_term=None: {"lecanemab": ["900000001"],
                                                                           "donepezil": ["900000002"]}[term])
 
     def fetch_xml(session, pmids):

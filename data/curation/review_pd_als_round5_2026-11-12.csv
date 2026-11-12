@@ -1,0 +1,20 @@
+action,alias,drug,confidence,reason
+class,Other Parkinson's Disease treatments,,high,Group of treatments not one drug
+class,anti-parkinsonian drugs,,high,Drug class not one drug
+class,anti-Parkinson's drugs,,high,Drug class not one drug
+class,standard antiparkinsonian medication,,high,Drug class not one drug
+class,optimized antiparkinsonian treatment,,high,Drug class not one drug
+class,Pharmacotherapy（antiparkinsonian drugs）,,high,Drug class not one drug
+reject,healthy,,high,Participant description not a drug name
+reject,biomarker identification in parkinson disease,,high,Study procedure not a drug name
+reject,best medical treatment for management of impulse control in Parkinson´s disease according to widely accepted expert consensus paper,,high,Sentence describing usual care not a drug name
+map,phenylbutyrate + ursodoxicoltaurine,phenylbutyrate + taurursodiol,high,Ursodoxicoltaurine is the EU INN of taurursodiol (Albrioza is the EU name of AMX0035)
+map,carbidopa + entacapone + l-dopa,carbidopa + entacapone + levodopa,high,L-dopa is levodopa; same three-drug combination (Stalevo)
+map,containing: carbidopa + entacapone + levodopa,carbidopa + entacapone + levodopa,high,Form-field prefix before the combination
+map,Stalevo,carbidopa + entacapone + levodopa,high,Stalevo is carbidopa/levodopa/entacapone
+map,Sinemet 100,carbidopa + levodopa,high,Sinemet with a dose number
+map,Madopar 250,benserazide + levodopa,high,Madopar with a dose number
+map,Madopar 125,benserazide + levodopa,high,Madopar with a dose number
+map,Caffeine 100,caffeine,high,Caffeine with a dose number
+map,Safinimide 50,safinamide,high,Misspelled safinamide with a dose number
+map,donepezil 5,donepezil,high,Donepezil with a dose number

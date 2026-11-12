@@ -6,11 +6,11 @@ Usage:
 
 Steps, in order:
     schema       apply migrations (db init), so the database matches the code
-    trials       re-fetch every Alzheimer's study from ClinicalTrials.gov; changes go to trial_changes
+    trials       re-fetch every study for each disease (diseases table) from ClinicalTrials.gov; changes go to trial_changes
     fda          download the latest Drugs@FDA export and rebuild the FDA approval rows
     ema          download the EMA medicines list and rebuild the EU authorisation rows
     labels       re-fetch FDA label indications for the approved applications
-    literature   fetch PubMed abstracts for the most-studied drugs (new ones are added, changed ones re-chunked)
+    literature   fetch PubMed abstracts per disease for drugs with 2+ trials in it (new ones added, changed ones re-chunked)
     embeddings   embed passages that have no embedding yet (Vertex AI)
     cache        clear saved answers, so no answer predates the new data
 
@@ -47,15 +47,27 @@ def step_schema(conn: psycopg.Connection) -> dict:
     return init_db(conn)
 
 
+def diseases(conn: psycopg.Connection) -> list[tuple[str, str]]:
+    return conn.execute("SELECT slug, ct_condition FROM diseases ORDER BY sort_order").fetchall()
+
+
 def step_trials(conn: psycopg.Connection) -> dict:
+    """Re-fetch every disease's studies. A study returned by two queries is fetched twice and
+    counted unchanged the second time."""
     from .ctgov import iter_studies
-    from .ingest import DEFAULT_CONDITION, run_ingestion
-    s = run_ingestion(conn, iter_studies(DEFAULT_CONDITION, page_size=200),
-                      f"cond:{DEFAULT_CONDITION} (weekly refresh)", "live_api")
-    changes = dict(conn.execute("SELECT field, COUNT(*) FROM trial_changes WHERE run_id = %s GROUP BY 1",
-                                (s.run_id,)).fetchall())
-    return {"run_id": s.run_id, "fetched": s.fetched, "new": s.new, "changed": s.changed,
-            "unchanged": s.unchanged, "failed": s.failed, "changes_by_field": changes}
+    from .ingest import run_ingestion
+    out = {}
+    for slug, condition in diseases(conn):
+        s = run_ingestion(conn, iter_studies(condition, page_size=200),
+                          f"cond:{condition} (weekly refresh)", "live_api", disease=slug)
+        changes = dict(conn.execute("SELECT field, COUNT(*) FROM trial_changes WHERE run_id = %s GROUP BY 1",
+                                    (s.run_id,)).fetchall())
+        out[slug] = {"run_id": s.run_id, "fetched": s.fetched, "new": s.new, "changed": s.changed,
+                     "unchanged": s.unchanged, "failed": s.failed, "off_topic": s.off_topic,
+                     "changes_by_field": changes}
+    from .ingest import prune_off_topic
+    out["pruned"] = prune_off_topic(conn)      # a trial whose conditions changed away from every disease
+    return out
 
 
 def step_fda(conn: psycopg.Connection) -> dict:
@@ -82,7 +94,9 @@ def step_labels(conn: psycopg.Connection) -> dict:
 def step_literature(conn: psycopg.Connection) -> dict:
     from .pubmed import iter_live, store
     skipped: list[str] = []
-    abstracts = list(iter_live(conn, min_trials=LITERATURE_MIN_TRIALS, per_drug=LITERATURE_PER_DRUG, max_drugs=None, skipped=skipped))
+    abstracts = [a for slug, _ in diseases(conn)
+                 for a in iter_live(conn, min_trials=LITERATURE_MIN_TRIALS, per_drug=LITERATURE_PER_DRUG,
+                                    max_drugs=None, skipped=skipped, disease=slug)]
     if not abstracts and skipped:
         raise RuntimeError(f"PubMed failed for every drug tried ({len(skipped)})")
     return {**store(conn, iter(abstracts)), "drugs_skipped": skipped}

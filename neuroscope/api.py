@@ -54,7 +54,7 @@ from .agent import GeminiModel, answer_question, build_tools
 from .db import connect
 
 # No generated API documentation pages: visitors only need the website.
-app = FastAPI(title="NeuroScope", description="Sourced answers about Alzheimer's drug development.",
+app = FastAPI(title="NeuroScope", description="Sourced answers about Alzheimer's, Parkinson's, and ALS drug development.",
               docs_url=None, redoc_url=None, openapi_url=None)
 log = logging.getLogger("neuroscope.api")
 
@@ -221,9 +221,12 @@ def health(conn: psycopg.Connection = Depends(get_conn)) -> dict:
         "(SELECT MAX(last_retrieved_at)::date::text FROM trials)").fetchone()
     today = conn.execute("SELECT COALESCE((SELECT questions FROM api_usage WHERE day = current_date), 0)"
                          ).fetchone()[0]
+    by_disease = dict(conn.execute(
+        "SELECT g.slug, COUNT(td.nct_id) FROM diseases g LEFT JOIN trial_diseases td ON td.disease = g.slug "
+        "GROUP BY g.slug, g.sort_order ORDER BY g.sort_order").fetchall())
     return {"status": "ok", "trials": trials, "drugs": drugs, "drugs_with_fda_approval": fda,
             "drugs_with_ema_authorisation": ema,
-            "document_chunks": chunks, "chunks_with_embeddings": embedded, "trials_last_retrieved": latest,
+            "trials_by_disease": by_disease, "document_chunks": chunks, "chunks_with_embeddings": embedded, "trials_last_retrieved": latest,
             "questions_today": today, "daily_question_limit": limits.daily}
 
 
@@ -234,22 +237,25 @@ CHANGE_FIELDS = ("overall_status", "phase_label", "has_results", "why_stopped", 
 def changes(days: int = 7, conn: psycopg.Connection = Depends(get_conn)) -> dict:
     """What is new: trials first posted on ClinicalTrials.gov in the window (from each record's own
     first-posted date, so an initial load does not count as "new"), field changes detected by
-    refreshes in the window, the latest FDA approvals whose label indications mention Alzheimer's
-    (an application for an unrelated use of a tracked drug is left out), and the last refresh."""
+    refreshes in the window, the latest FDA approvals whose label indications mention one of the
+    diseases loaded (an application for an unrelated use of a tracked drug is left out), and the last
+    refresh. Each trial and approval carries the diseases it belongs to."""
     days = max(1, min(days, 90))
     new_trials = conn.execute(
         """
         SELECT t.nct_id, t.brief_title, t.phase_label, t.overall_status,
                s.raw #>> '{protocolSection,statusModule,studyFirstPostDateStruct,date}' AS first_posted,
                ARRAY(SELECT DISTINCT d.canonical_name FROM trial_interventions ti JOIN drugs d ON d.id = ti.drug_id
-                     WHERE ti.nct_id = t.nct_id ORDER BY 1)
+                     WHERE ti.nct_id = t.nct_id ORDER BY 1),
+               ARRAY(SELECT td.disease FROM trial_diseases td WHERE td.nct_id = t.nct_id ORDER BY 1)
         FROM trials t JOIN trial_snapshots s ON s.nct_id = t.nct_id AND s.content_hash = t.content_hash
         WHERE (s.raw #>> '{protocolSection,statusModule,studyFirstPostDateStruct,date}') >= to_char(current_date - %s, 'YYYY-MM-DD')
         ORDER BY first_posted DESC, t.nct_id LIMIT 25
         """, (days,)).fetchall()
     field_changes = conn.execute(
         """
-        SELECT c.nct_id, t.brief_title, c.field, c.old_value, c.new_value, c.detected_at::date::text
+        SELECT c.nct_id, t.brief_title, c.field, c.old_value, c.new_value, c.detected_at::date::text,
+               ARRAY(SELECT td.disease FROM trial_diseases td WHERE td.nct_id = c.nct_id ORDER BY 1)
         FROM trial_changes c JOIN trials t ON t.nct_id = c.nct_id
         WHERE c.field = ANY(%s) AND c.detected_at >= now() - make_interval(days => %s)
         ORDER BY c.detected_at DESC, c.nct_id LIMIT 40
@@ -257,23 +263,26 @@ def changes(days: int = 7, conn: psycopg.Connection = Depends(get_conn)) -> dict
     approvals = conn.execute(
         """
         SELECT DISTINCT ON (a.application_number) a.application_number, d.canonical_name, a.original_approval_date::text,
-               p.brand_name, a.sponsor_name
+               p.brand_name, a.sponsor_name,
+               ARRAY(SELECT g.slug FROM diseases g WHERE EXISTS (
+                   SELECT 1 FROM fda_labels l WHERE a.application_number = ANY (l.application_numbers)
+                   AND l.indications_and_usage ~* g.indication_pattern) ORDER BY g.sort_order) AS diseases
         FROM fda_applications a JOIN fda_products p ON p.application_number = a.application_number
         JOIN drugs d ON d.id = p.drug_id
         WHERE a.approval_status = 'approved' AND a.application_type IN ('NDA', 'BLA') AND a.original_approval_date IS NOT NULL
-          AND EXISTS (SELECT 1 FROM fda_labels l WHERE a.application_number = ANY (l.application_numbers)
-                      AND l.indications_mention_alzheimers)
         ORDER BY a.application_number, p.product_number
         """).fetchall()
-    approvals = sorted(approvals, key=lambda r: r[2], reverse=True)[:6]
+    approvals = sorted((r for r in approvals if r[5]), key=lambda r: r[2], reverse=True)[:6]
     last = conn.execute("SELECT finished_at::timestamp(0)::text, status FROM refresh_runs "
                         "WHERE finished_at IS NOT NULL ORDER BY id DESC LIMIT 1").fetchone() \
         if conn.execute("SELECT to_regclass('refresh_runs')").fetchone()[0] else None
     return {
         "days": days,
-        "new_trials": [dict(zip(["nct_id", "title", "phase", "status", "first_posted", "drugs"], r)) for r in new_trials],
-        "trial_changes": [dict(zip(["nct_id", "title", "field", "old", "new", "detected"], r)) for r in field_changes],
-        "latest_fda_approvals": [dict(zip(["application_number", "drug", "approved", "brand", "sponsor"], r))
+        "new_trials": [dict(zip(["nct_id", "title", "phase", "status", "first_posted", "drugs", "diseases"], r))
+                       for r in new_trials],
+        "trial_changes": [dict(zip(["nct_id", "title", "field", "old", "new", "detected", "diseases"], r))
+                          for r in field_changes],
+        "latest_fda_approvals": [dict(zip(["application_number", "drug", "approved", "brand", "sponsor", "diseases"], r))
                                  for r in approvals],
         "last_refresh": {"finished_at": last[0], "status": last[1]} if last else None,
         "trials_last_retrieved": conn.execute("SELECT MAX(last_retrieved_at)::date::text FROM trials").fetchone()[0],

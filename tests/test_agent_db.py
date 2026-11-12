@@ -66,11 +66,11 @@ def test_get_trials_lists_trials_with_the_phase_caveat(conn, tmp_path):
 def test_get_fda_status_separates_three_cases(conn, tmp_path):
     seed(conn, tmp_path)
     lec = tools.get_fda_status(conn, "lecanemab")
-    assert (lec["first_approval_date"], lec["label_indications_mention_alzheimers"]) == ("2023-01-06", True)
+    assert (lec["first_approval_date"], lec["label_indications_mention"]["alzheimers"]) == ("2023-01-06", True)
     assert lec["applications"][0]["application_number"] == "BLA999001"
     assert "treatment of Alzheimer's disease" in lec["label"]["indications_and_usage_text"]
     sem = tools.get_fda_status(conn, "semaglutide")                 # approved, but not for Alzheimer's
-    assert sem["fda_approval_record"] is True and sem["label_indications_mention_alzheimers"] is False
+    assert sem["fda_approval_record"] is True and sem["label_indications_mention"]["alzheimers"] is False
     mas = tools.get_fda_status(conn, "masitinib")                   # completed Phase 3, no FDA record
     assert mas["fda_approval_record"] is False and "not proof" in mas["caveat"]
 

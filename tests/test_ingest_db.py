@@ -7,7 +7,7 @@ All data here is synthetic (fake NCT9xxxxxxx IDs).
 """
 
 from neuroscope.ingest import run_ingestion
-from tests.fixtures import all_studies, mutated
+from tests.fixtures import all_studies, iv, mutated, study
 
 
 def ingest(conn, studies):
@@ -101,3 +101,42 @@ def test_pipeline_view(conn):
         "SELECT n_trials, n_active_trials, highest_phase_any FROM v_drug_pipeline "
         "WHERE canonical_name = 'lecanemab'").fetchone()
     assert row == (2, 2, 3)
+
+
+def test_ingestion_tags_trials_with_the_disease_whose_query_returned_them(conn):
+    from neuroscope import tools
+    both = study("NCT96000001", title="Lecanemab in Parkinson's disease", interventions=[iv("lecanemab")])
+    run_ingestion(conn, [both], "cond:Alzheimer Disease", "synthetic", disease="alzheimers")
+    run_ingestion(conn, [study("NCT96000002", title="Parkinson study", interventions=[iv("lecanemab")]), both],
+                  "cond:Parkinson Disease", "synthetic", disease="parkinsons")
+    tags = conn.execute("SELECT nct_id, disease FROM trial_diseases ORDER BY 1, 2").fetchall()
+    assert tags == [("NCT96000001", "alzheimers"), ("NCT96000001", "parkinsons"), ("NCT96000002", "parkinsons")]
+    # Lookups filter by disease, accept plain names, and refuse unknown ones.
+    assert tools.get_trials(conn, "lecanemab", disease="alzheimers")["summary"]["n_trials"] == 1
+    assert tools.get_trials(conn, "lecanemab", disease="Parkinson's disease")["summary"]["n_trials"] == 2
+    assert tools.get_trials(conn, "lecanemab")["summary"]["n_trials"] == 2
+    assert tools.find_drug(conn, "lecanemab")["trials_by_disease"] == {"alzheimers": 1, "parkinsons": 2}
+    assert tools.resolve_disease(conn, "ALS") == "als"
+    assert tools.resolve_disease(conn, "Lou Gehrig's disease") == "als"
+    import pytest
+    with pytest.raises(ValueError):
+        tools.resolve_disease(conn, "migraine")
+    pd = tools.list_pipeline(conn, min_phase=0, active_only=False, disease="parkinsons")
+    assert pd["disease_filter"] == "parkinsons" and [d["drug"] for d in pd["drugs"]] == ["lecanemab"]
+
+
+def test_off_topic_studies_are_skipped_and_pruned(conn):
+    from neuroscope.ingest import prune_off_topic
+    cancer = study("NCT96000011", title="Pembrolizumab in PD-L1 positive lung cancer", interventions=[iv("pembrolizumab")])
+    cancer["protocolSection"]["conditionsModule"] = {"conditions": ["Non-small Cell Lung Cancer"], "keywords": ["PD-L1"]}
+    pd = study("NCT96000012", title="Opicapone in Parkinson's disease", interventions=[iv("opicapone")])
+    s = run_ingestion(conn, [cancer, pd], "cond:Parkinson Disease", "synthetic", disease="parkinsons")
+    assert (s.new, s.off_topic) == (1, 1)
+    assert [r[0] for r in conn.execute("SELECT nct_id FROM trials ORDER BY 1")] == ["NCT96000012"]
+    # A trial tagged earlier but not about the disease (here: tagged by hand) is pruned with its drugs.
+    run_ingestion(conn, [cancer], "cond:Lung", "synthetic")
+    conn.execute("INSERT INTO trial_diseases (nct_id, disease) VALUES ('NCT96000011', 'parkinsons')")
+    conn.commit()
+    assert prune_off_topic(conn) == {"tags_removed": 1, "trials_deleted": 1}
+    assert [r[0] for r in conn.execute("SELECT nct_id FROM trials ORDER BY 1")] == ["NCT96000012"]
+    assert conn.execute("SELECT COUNT(*) FROM drugs WHERE canonical_name = 'pembrolizumab'").fetchone()[0] == 0

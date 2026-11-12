@@ -5,8 +5,8 @@ Usage:
     python -m neuroscope.pubmed load --min-trials 3 --per-drug 30 --save-raw data/raw/pubmed/ad.xml
     python -m neuroscope.pubmed load --from-xml data/raw/pubmed/ad.xml   # replay offline
 
-For each drug, PubMed is searched for abstracts that name the drug and
-Alzheimer's in the title or abstract. Each abstract becomes one document
+For each drug, PubMed is searched for abstracts that name the drug and the
+disease (Alzheimer's by default; --disease for another) in the title or abstract. Each abstract becomes one document
 (title, journal, date, PMID link) and one or more text chunks.
 
 HOW A DOCUMENT IS LINKED TO A DRUG: a trusted name of the drug (a verified
@@ -45,6 +45,7 @@ TOOL = "neuroscope"
 PAUSE_S = 0.4                  # NCBI allows 3 requests per second without a key
 CHUNK_WORDS = 220
 CHUNK_OVERLAP = 40
+DEFAULT_DISEASE_TERM = "alzheimer*[Title/Abstract]"
 
 _MONTHS = {m: i for i, m in enumerate(
     ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"], start=1)}
@@ -141,8 +142,8 @@ def name_patterns(conn: psycopg.Connection) -> list[tuple[int, str, re.Pattern]]
     return out
 
 
-def fetch_pmids(session, term: str, per_drug: int) -> list[str]:
-    query = f'"{term}"[Title/Abstract] AND alzheimer*[Title/Abstract]'
+def fetch_pmids(session, term: str, per_drug: int, disease_term: str = DEFAULT_DISEASE_TERM) -> list[str]:
+    query = f'"{term}"[Title/Abstract] AND {disease_term}'
     resp = session.get(f"{EUTILS}/esearch.fcgi", timeout=30, params={
         "db": "pubmed", "term": query, "retmax": per_drug, "retmode": "json", "sort": "relevance", "tool": TOOL})
     resp.raise_for_status()
@@ -223,16 +224,28 @@ def relink(conn: psycopg.Connection) -> dict[str, int]:
 
 
 def iter_live(conn: psycopg.Connection, min_trials: int, per_drug: int, max_drugs: int | None,
-              raw_parts: list[str] | None = None, skipped: list[str] | None = None) -> Iterator[Abstract]:
-    """Abstracts for each drug. A drug whose requests still fail after retries is skipped
-    (and named in `skipped`) so one bad response does not lose every other drug."""
-    drugs = [r[0] for r in conn.execute(
-        "SELECT canonical_name FROM v_drug_pipeline WHERE n_trials >= %s AND NOT canonical_name LIKE '%% + %%' "
-        "ORDER BY n_trials DESC, canonical_name", (min_trials,))][:max_drugs]
+              raw_parts: list[str] | None = None, skipped: list[str] | None = None,
+              disease: str | None = None) -> Iterator[Abstract]:
+    """Abstracts for each drug. With `disease`, the drugs with min_trials trials in that disease,
+    searched together with the disease's PubMed term; without, every drug with Alzheimer's.
+    A drug whose requests still fail after retries is skipped (and named in `skipped`) so one
+    bad response does not lose every other drug."""
+    if disease:
+        disease_term = conn.execute("SELECT pubmed_term FROM diseases WHERE slug = %s", (disease,)).fetchone()[0]
+        drugs = [r[0] for r in conn.execute(
+            "SELECT canonical_name FROM v_drug_disease_pipeline WHERE disease = %s AND n_trials >= %s "
+            "AND NOT is_class AND NOT canonical_name LIKE '%% + %%' ORDER BY n_trials DESC, canonical_name",
+            (disease, min_trials))][:max_drugs]
+    else:
+        disease_term = DEFAULT_DISEASE_TERM
+        drugs = [r[0] for r in conn.execute(
+            "SELECT canonical_name FROM v_drug_pipeline WHERE n_trials >= %s AND NOT canonical_name LIKE '%% + %%' "
+            "ORDER BY n_trials DESC, canonical_name", (min_trials,))][:max_drugs]
+    conn.commit()                    # do not hold a read transaction (and its locks) while fetching
     session, seen = _session(("GET", "POST")), set()     # efetch is a read-only POST, safe to retry
     for n, name in enumerate(drugs, start=1):
         try:
-            pmids = [p for p in fetch_pmids(session, search_term(name), per_drug) if p not in seen]
+            pmids = [p for p in fetch_pmids(session, search_term(name), per_drug, disease_term) if p not in seen]
             time.sleep(PAUSE_S)
             if not pmids:
                 log.info("%d/%d %s: no new abstracts", n, len(drugs), name)
@@ -258,6 +271,7 @@ def main(argv: list[str] | None = None) -> int:
     sp.add_argument("--min-trials", type=int, default=5, help="only drugs with at least this many trials")
     sp.add_argument("--per-drug", type=int, default=20, help="abstracts per drug, most relevant first")
     sp.add_argument("--max-drugs", type=int, default=None)
+    sp.add_argument("--disease", default=None, help="a diseases.slug; default: Alzheimer's over all drugs")
     sp.add_argument("--save-raw", metavar="PATH", help="write the fetched PubMed XML here")
     sp.add_argument("--from-xml", metavar="PATH", help="replay a file written by --save-raw")
     sub.add_parser("relink", help="recompute drug links for every stored document")
@@ -275,7 +289,8 @@ def main(argv: list[str] | None = None) -> int:
             abstracts = [a for part in parts for a in parse_articles(part)]
         else:
             raw_parts: list[str] | None = [] if args.save_raw else None
-            abstracts = list(iter_live(conn, args.min_trials, args.per_drug, args.max_drugs, raw_parts))
+            abstracts = list(iter_live(conn, args.min_trials, args.per_drug, args.max_drugs, raw_parts,
+                                       disease=args.disease))
             if args.save_raw:
                 with open(args.save_raw, "w", encoding="utf-8") as fh:
                     fh.write("\n<!--neuroscope-part-->\n".join(raw_parts or []))

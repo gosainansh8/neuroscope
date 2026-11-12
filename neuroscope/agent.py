@@ -44,46 +44,61 @@ DEFAULT_MODEL = "gemini-3.8-flash"
 MAX_STEPS = 8
 REQUEST_TIMEOUT_MS = 45_000               # a stalled request fails (and is retried) instead of hanging
 
-SYSTEM_PROMPT = """You answer questions about Alzheimer's disease drug development using the NeuroScope database.
+SYSTEM_PROMPT = """You answer questions about drug development for Alzheimer's disease, Parkinson's disease, and ALS (amyotrophic lateral sclerosis) using the NeuroScope database.
 
 Rules:
 1. Use only facts returned by the tools in this conversation. Do not use your own memory for any fact about a drug, trial, approval, or paper. If the tools do not answer the question, say what is missing.
 2. Cite the source of every factual claim with its identifier exactly as the tool returned it: trial IDs (NCT...), FDA application numbers (NDA..., BLA..., ANDA...), EMA product numbers (EMEA/H/C/...), and PubMed IDs written as "PMID 12345678". Never write an identifier that a tool did not return.
 3. Approval status comes only from get_fda_status (United States) and get_ema_status (European Union). Never infer approval, or lack of it, from trial phase, trial status, or completion. If there is no FDA record, say "no matched FDA approval record" and that this is not proof the drug is unapproved. If there is no EMA record, say "no centrally authorised EU medicine", not that it is unavailable in Europe. Name the regulator for every approval you mention; when a question asks whether a drug is approved without naming a country, check both.
-4. "FDA-approved" and "EU-authorised" mean approved for at least one use. Say a drug is approved for Alzheimer's disease only if the label or indication text returned by the tool says so, and quote the relevant words.
+4. "FDA-approved" and "EU-authorised" mean approved for at least one use. Say a drug is approved for a disease only if the label or indication text returned by the tool says so, and quote the relevant words. Pass the disease to get_fda_status and get_ema_status so the right label is shown.
 5. Give dates as the tools give them, and say which source date applies when it matters.
 6. Pass on the caveats that come with tool results when they affect the answer.
 7. Be concise and plain. Start with the direct answer, then the supporting facts with their citations.
-8. Earlier questions and answers in this conversation are context for understanding a follow-up (for example, what "it" refers to). They are not evidence: look up again, in this turn, any fact you cite."""
+8. Trials belong to the diseases whose registry searches returned them. When a question is about one disease, pass it as `disease` to get_trials and list_pipeline; without it, counts cover every disease loaded.
+9. Earlier questions and answers in this conversation are context for understanding a follow-up (for example, what "it" refers to). They are not evidence: look up again, in this turn, any fact you cite."""
+
+DISEASE_PARAM = {"type": "string", "enum": ["alzheimers", "parkinsons", "als"],
+                 "description": "limit to one disease; omit for all"}
 
 TOOL_SPECS: list[dict[str, Any]] = [
     {"name": "find_drug",
-     "description": "Resolve a drug name (generic, brand, or code) to its canonical drug and verified names. "
-                    "Call this first when a question names a drug.",
+     "description": "Resolve a drug name (generic, brand, or code) to its canonical drug, verified names, and "
+                    "trial counts by disease. Call this first when a question names a drug.",
      "parameters": {"type": "object", "properties": {"name": {"type": "string"}}, "required": ["name"]}},
     {"name": "get_trials",
-     "description": "Clinical trial counts and the most relevant trials for one drug, from ClinicalTrials.gov.",
+     "description": "Clinical trial counts and the most relevant trials for one drug, from ClinicalTrials.gov, "
+                    "in one disease or all.",
      "parameters": {"type": "object", "properties": {
-         "drug": {"type": "string"}, "limit": {"type": "integer", "description": "trials to list, default 8"}},
+         "drug": {"type": "string"}, "disease": DISEASE_PARAM,
+         "limit": {"type": "integer", "description": "trials to list, default 8"}},
          "required": ["drug"]}},
     {"name": "get_fda_status",
      "description": "US FDA approval records and label indication text for one drug. The only source of "
-                    "approval status.",
-     "parameters": {"type": "object", "properties": {"drug": {"type": "string"}}, "required": ["drug"]}},
+                    "US approval status.",
+     "parameters": {"type": "object", "properties": {
+         "drug": {"type": "string"},
+         "disease": {**DISEASE_PARAM, "description": "show the label that mentions this disease, if any"}},
+         "required": ["drug"]}},
     {"name": "get_ema_status",
      "description": "European Medicines Agency records for one drug: centrally authorised, refused, or "
                     "withdrawn EU medicines with their indication text. The only source of EU approval status.",
-     "parameters": {"type": "object", "properties": {"drug": {"type": "string"}}, "required": ["drug"]}},
+     "parameters": {"type": "object", "properties": {
+         "drug": {"type": "string"},
+         "disease": {**DISEASE_PARAM, "description": "list medicines whose indication mentions this disease first"}},
+         "required": ["drug"]}},
     {"name": "search_literature",
-     "description": "Search stored PubMed abstracts by meaning. Optionally restrict to one drug.",
+     "description": "Search stored PubMed abstracts by meaning and keywords. Optionally restrict to one drug. "
+                    "Put the disease in the query when it matters.",
      "parameters": {"type": "object", "properties": {
          "query": {"type": "string"}, "drug": {"type": "string"},
          "limit": {"type": "integer", "description": "results, default 5"}}, "required": ["query"]}},
     {"name": "list_pipeline",
-     "description": "List drugs by highest trial phase, with whether each has an FDA approval record.",
+     "description": "List drugs by highest trial phase, in one disease or all, with whether each has US and "
+                    "EU approval records.",
      "parameters": {"type": "object", "properties": {
          "min_phase": {"type": "number", "description": "1 to 4, default 3"},
-         "active_only": {"type": "boolean", "description": "count only active trials, default true"},
+         "active_only": {"type": "boolean", "description": "count and rank by active trials only (default true); false ranks by all trials"},
+         "disease": DISEASE_PARAM,
          "limit": {"type": "integer"}}}},
 ]
 
@@ -222,13 +237,14 @@ def _norm(text: str) -> str:
 def build_tools(conn: psycopg.Connection, embedder=None) -> dict[str, Callable[..., dict]]:
     return {
         "find_drug": lambda name: tools.find_drug(conn, name),
-        "get_trials": lambda drug, limit=8: tools.get_trials(conn, drug, min(int(limit), 15)),
-        "get_fda_status": lambda drug: tools.get_fda_status(conn, drug),
-        "get_ema_status": lambda drug: tools.get_ema_status(conn, drug),
+        "get_trials": lambda drug, limit=8, disease=None: tools.get_trials(conn, drug, min(int(limit), 15),
+                                                                            disease or None),
+        "get_fda_status": lambda drug, disease=None: tools.get_fda_status(conn, drug, disease or None),
+        "get_ema_status": lambda drug, disease=None: tools.get_ema_status(conn, drug, disease or None),
         "search_literature": lambda query, drug=None, limit=5: tools.search_literature(
             conn, query, drug or None, min(int(limit), 8), embedder),
-        "list_pipeline": lambda min_phase=3, active_only=True, limit=25: tools.list_pipeline(
-            conn, float(min_phase), bool(active_only), min(int(limit), 40)),
+        "list_pipeline": lambda min_phase=3, active_only=True, limit=25, disease=None: tools.list_pipeline(
+            conn, float(min_phase), bool(active_only), min(int(limit), 40), disease or None),
     }
 
 

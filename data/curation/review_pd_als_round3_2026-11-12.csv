@@ -1,0 +1,51 @@
+action,alias,drug,confidence,reason
+reject,PD-1 antibody,,high,Drug class not a drug name (it linked INCMGA00012/retifanlimab to toripalimab)
+map,Cisplatin /m^,cisplatin,high,Dose unit fragment left in the name
+map,Dynacirc CR,isradipine,medium,DynaCirc CR is controlled-release isradipine; the active drug is isradipine
+map,isradipine CR,isradipine,medium,Controlled-release isradipine; the active drug is isradipine
+map,albumin,human albumin,medium,Albumin given as a treatment in these trials is human albumin
+resolve,NCT00239564,,high,Reviewed: other names list comparators, formulation variants, or several drugs; links left as they are
+resolve,NCT00253084,,high,Reviewed: other names list comparators, formulation variants, or several drugs; links left as they are
+resolve,NCT00331149,,high,Reviewed: other names list comparators, formulation variants, or several drugs; links left as they are
+resolve,NCT00406588,,high,Reviewed: other names list comparators, formulation variants, or several drugs; links left as they are
+resolve,NCT00443872,,high,Reviewed: other names list comparators, formulation variants, or several drugs; links left as they are
+resolve,NCT00605683,,high,Reviewed: other names list comparators, formulation variants, or several drugs; links left as they are
+resolve,NCT00767091,,high,Reviewed: other names list comparators, formulation variants, or several drugs; links left as they are
+resolve,NCT00869791,,high,Reviewed: other names list comparators, formulation variants, or several drugs; links left as they are
+resolve,NCT00877604,,high,Reviewed: other names list comparators, formulation variants, or several drugs; links left as they are
+resolve,NCT00880620,,high,Reviewed: other names list comparators, formulation variants, or several drugs; links left as they are
+resolve,NCT00914134,,high,Reviewed: other names list comparators, formulation variants, or several drugs; links left as they are
+resolve,NCT00974974,,high,Reviewed: other names list comparators, formulation variants, or several drugs; links left as they are
+resolve,NCT01096186,,high,Reviewed: other names list comparators, formulation variants, or several drugs; links left as they are
+resolve,NCT01130493,,high,Reviewed: other names list comparators, formulation variants, or several drugs; links left as they are
+resolve,NCT01351168,,high,Reviewed: other names list comparators, formulation variants, or several drugs; links left as they are
+resolve,NCT01411137,,high,Reviewed: other names list comparators, formulation variants, or several drugs; links left as they are
+resolve,NCT01520727,,high,Reviewed: other names list comparators, formulation variants, or several drugs; links left as they are
+resolve,NCT01561053,,high,Reviewed: other names list comparators, formulation variants, or several drugs; links left as they are
+resolve,NCT02064166,,high,Reviewed: other names list comparators, formulation variants, or several drugs; links left as they are
+resolve,NCT02096601,,high,Reviewed: other names list comparators, formulation variants, or several drugs; links left as they are
+resolve,NCT02103894,,high,Reviewed: other names list comparators, formulation variants, or several drugs; links left as they are
+resolve,NCT02271503,,high,Reviewed: other names list comparators, formulation variants, or several drugs; links left as they are
+resolve,NCT02479802,,high,Reviewed: other names list comparators, formulation variants, or several drugs; links left as they are
+resolve,NCT02578849,,high,Reviewed: other names list comparators, formulation variants, or several drugs; links left as they are
+resolve,NCT02604914,,high,Reviewed: other names list comparators, formulation variants, or several drugs; links left as they are
+resolve,NCT02668497,,high,Reviewed: other names list comparators, formulation variants, or several drugs; links left as they are
+resolve,NCT02680977,,high,Reviewed: other names list comparators, formulation variants, or several drugs; links left as they are
+resolve,NCT02769793,,high,Reviewed: other names list comparators, formulation variants, or several drugs; links left as they are
+resolve,NCT02868580,,high,Reviewed: other names list comparators, formulation variants, or several drugs; links left as they are
+resolve,NCT02994719,,high,Reviewed: other names list comparators, formulation variants, or several drugs; links left as they are
+resolve,NCT03069911,,high,Reviewed: other names list comparators, formulation variants, or several drugs; links left as they are
+resolve,NCT03205956,,high,Reviewed: other names list comparators, formulation variants, or several drugs; links left as they are
+resolve,NCT03292016,,high,Reviewed: other names list comparators, formulation variants, or several drugs; links left as they are
+resolve,NCT03391882,,high,Reviewed: other names list comparators, formulation variants, or several drugs; links left as they are
+resolve,NCT03589066,,high,Reviewed: other names list comparators, formulation variants, or several drugs; links left as they are
+resolve,NCT04052737,,high,Reviewed: other names list comparators, formulation variants, or several drugs; links left as they are
+resolve,NCT04165070,,high,Reviewed: other names list comparators, formulation variants, or several drugs; links left as they are
+resolve,NCT04590612,,high,Reviewed: other names list comparators, formulation variants, or several drugs; links left as they are
+resolve,NCT04821479,,high,Reviewed: other names list comparators, formulation variants, or several drugs; links left as they are
+resolve,NCT05007106,,high,Reviewed: other names list comparators, formulation variants, or several drugs; links left as they are
+resolve,NCT05824728,,high,Reviewed: other names list comparators, formulation variants, or several drugs; links left as they are
+resolve,NCT06010290,,high,Reviewed: other names list comparators, formulation variants, or several drugs; links left as they are
+resolve,NCT06629389,,high,Reviewed: other names list comparators, formulation variants, or several drugs; links left as they are
+resolve,NCT07192926,,high,Reviewed: other names list comparators, formulation variants, or several drugs; links left as they are
+resolve,NCT07287397,,high,Reviewed: other names list comparators, formulation variants, or several drugs; links left as they are
