@@ -161,3 +161,16 @@ def test_hybrid_search_finds_exact_terms_that_meaning_search_misses(conn):
     both = hybrid_search(conn, fake, "lecanemab swelling edema", limit=4)
     assert both[0].title == "Lecanemab safety findings."
     assert hybrid_search(conn, fake, "zebrafish", drug="Belsomra", limit=3)[0].drugs == ["suvorexant"]
+
+
+def test_a_failure_after_output_is_not_retried():
+    waits, calls = [], []
+
+    def broke_midway():
+        calls.append(1)
+        exc = StatusError(503)
+        exc.retryable = False                          # text already reached the reader
+        raise exc
+    with pytest.raises(StatusError):
+        call_with_retry(broke_midway, sleep=waits.append)
+    assert calls == [1] and waits == []

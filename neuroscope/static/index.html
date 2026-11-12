@@ -59,23 +59,34 @@
   .brand h1 { font-size: 1.35rem; letter-spacing: -.01em; margin: 0; }
   .brand .pill { margin-left: auto; font-size: .75rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase;
                  color: var(--accent); background: var(--accent-soft); padding: 4px 10px; border-radius: 999px; }
-  .hero { margin: 36px 0 24px; }
-  .hero h2 { font-size: clamp(1.7rem, 4.6vw, 2.45rem); line-height: 1.15; letter-spacing: -.025em; margin: 0 0 12px; }
-  .hero h2 .grad { background: linear-gradient(90deg, var(--accent), var(--accent-2)); -webkit-background-clip: text;
-                   background-clip: text; color: transparent; }
-  .hero p { color: var(--muted); margin: 0; font-size: 1.05rem; }
-  .sources-line { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
-  .src-tag { display: inline-flex; align-items: center; gap: 6px; font-size: .82rem; font-weight: 600; padding: 4px 10px;
-             border-radius: 999px; }
-  .src-tag::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
-  .src-tag.trial { color: var(--trial); background: var(--trial-soft); }
-  .src-tag.fda { color: var(--fda); background: var(--fda-soft); }
-  .src-tag.paper { color: var(--paper); background: var(--paper-soft); }
-
-  /* Stats: a quiet line, not a feature */
-  .stats { display: flex; flex-wrap: wrap; gap: 4px 0; margin: 14px 0 0; color: var(--faint); font-size: .9rem; }
-  .stats span + span::before { content: "·"; margin: 0 8px; }
-  .stats b { color: var(--muted); font-weight: 600; font-variant-numeric: tabular-nums; }
+  /* Hero: a journal-like title block over a live neuron network */
+  :root { --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Charter, Georgia, serif;
+          --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace; }
+  .hero { position: relative; margin: 44px 0 26px; }
+  .eyebrow { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin: 0 0 18px;
+             font: 600 .8rem/1 var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--accent-2); }
+  .eyebrow .live { width: 7px; height: 7px; border-radius: 50%; background: var(--accent-2);
+                   box-shadow: 0 0 0 0 var(--accent-2); animation: live 2.4s ease-out infinite; }
+  @keyframes live { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent-2) 60%, transparent); }
+                    100% { box-shadow: 0 0 0 10px transparent; } }
+  .hero h2 { font-family: var(--serif); font-weight: 600; font-size: clamp(2.1rem, 5.6vw, 3.3rem); line-height: 1.06;
+             letter-spacing: -.015em; margin: 0 0 16px; }
+  .hero h2 em { font-style: italic; font-weight: 500; color: var(--accent); }
+  .hero p { color: var(--muted); margin: 0; font-size: 1.08rem; max-width: 62ch; }
+  .readout { display: grid; grid-template-columns: repeat(5, 1fr); margin-top: 24px;
+             border-top: 1px solid var(--panel-border); border-bottom: 1px solid var(--panel-border);
+             font: .78rem/1.2 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--faint); }
+  .readout > span { padding: 12px 14px; border-left: 1px solid var(--panel-border); }
+  .readout > span:first-child { border-left: 0; padding-left: 0; }
+  @media (max-width: 620px) { .readout { grid-template-columns: repeat(2, 1fr); }
+                              .readout > span { border-left: 0; padding-left: 0; } }
+  .readout b { display: block; margin-bottom: 5px; font: 600 1.3rem/1 var(--mono); letter-spacing: 0; color: var(--text);
+               font-variant-numeric: tabular-nums; }
+  .hero .sources-caption { max-width: none; margin: 12px 0 0; font: .78rem/1.5 var(--mono); letter-spacing: .06em; text-transform: uppercase;
+                     color: var(--faint); }
+  .sources-caption span { color: var(--muted); }
+  /* The neuron network behind the page, drawn on a canvas by the script at the end. */
+  #neural-bg { position: fixed; inset: 0; width: 100%; height: 100%; z-index: -1; pointer-events: none; opacity: .9; }
 
   /* Ask box */
   .card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--radius);
@@ -104,10 +115,11 @@
 
   /* Examples: two quiet suggestions */
   .examples { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; margin: 10px 4px 0;
-              font-size: .9rem; color: var(--faint); }
-  .example { border: 0; background: none; padding: 0; color: var(--muted); font-size: .9rem; cursor: pointer;
+              font-size: .96rem; color: var(--faint); }
+  .example { border: 0; background: none; padding: 0; color: var(--muted); font-size: .96rem; cursor: pointer;
              text-decoration: underline; text-decoration-color: var(--panel-border); text-underline-offset: 3px; }
   .example:hover { color: var(--accent); text-decoration-color: currentColor; }
+  .readout .quota b { color: var(--accent-2); }
 
   /* Progress */
   .progress { padding: 20px 22px; margin-top: 18px; }
@@ -121,6 +133,27 @@
                       transition: background .3s ease, box-shadow .3s ease; }
   .steps li.on { color: var(--text); }
   .steps li.on::before { background: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
+  /* Loading: a live log of the lookups the model makes, like an instrument readout. */
+  .log-head { display: flex; justify-content: space-between; margin-bottom: 10px; font: 600 .78rem/1 var(--mono);
+              letter-spacing: .14em; text-transform: uppercase; color: var(--accent-2); }
+  .log-head span:last-child { color: var(--faint); letter-spacing: .04em; font-variant-numeric: tabular-nums; }
+  .scope-wrap { position: relative; height: 78px; margin-bottom: 12px; border: 1px solid var(--panel-border); border-radius: 10px;
+                overflow: hidden; background-color: color-mix(in srgb, var(--panel-solid) 70%, black);
+                background-image: linear-gradient(var(--panel-border) 1px, transparent 1px),
+                                  linear-gradient(90deg, var(--panel-border) 1px, transparent 1px);
+                background-size: 26px 19.5px; }
+  #scope { display: block; width: 100%; height: 100%; }
+  .scope-y { position: absolute; left: 8px; font: .7rem/1 var(--mono); color: var(--faint); }
+  .scope-y.top { top: 6px; } .scope-y.rest { bottom: 14px; }
+  .log { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; font: .92rem/1.5 var(--mono); color: var(--muted); }
+  .log li { display: grid; grid-template-columns: 4.2em 1fr auto; gap: 10px; animation: reveal .25s ease-out; }
+  .log .t { color: var(--faint); font-variant-numeric: tabular-nums; }
+  .log .ok { color: var(--ok); }
+  .log .run { color: var(--accent); }
+  .log-cursor { margin-top: 8px; font: .84rem/1 var(--mono); color: var(--faint); }
+  .caret { display: inline-block; width: .5em; height: 1.05em; margin-left: 2px; border-radius: 2px; vertical-align: text-bottom;
+           background: var(--accent); animation: blink 1s steps(2, start) infinite; }
+  @keyframes blink { to { visibility: hidden; } }
   .shimmer { height: 10px; border-radius: 6px; margin-top: 14px;
              background: linear-gradient(90deg, var(--accent-soft), rgba(127, 127, 255, .22), var(--accent-soft));
              background-size: 200% 100%; animation: shimmer 1.4s ease-in-out infinite; }
@@ -166,7 +199,7 @@
             border: 1px solid var(--panel-border); background: var(--panel-solid); color: var(--text);
             transition: border-color .15s ease, transform .15s ease; }
   .source:hover { transform: translateY(-1px); }
-  .source small { font-size: .7rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+  .source small { font-size: .76rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
   .source code { font: 600 .9rem ui-monospace, SFMono-Regular, Menlo, monospace; }
   .source.trial small { color: var(--trial); } .source.trial:hover { border-color: var(--trial); }
   .source.fda small { color: var(--fda); } .source.fda:hover { border-color: var(--fda); }
@@ -176,7 +209,7 @@
   .timeline li { display: grid; grid-template-columns: 26px 1fr; gap: 10px; align-items: start; }
   .timeline .num { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font-size: .78rem;
                    font-weight: 700; color: var(--accent); background: var(--accent-soft); }
-  .timeline .what { font-size: .93rem; }
+  .timeline .what { font-size: 1rem; }
   .timeline .args { display: block; color: var(--faint); font: .8rem ui-monospace, SFMono-Regular, Menlo, monospace;
                     overflow-wrap: anywhere; }
   .timeline .err { color: var(--warn); }
@@ -185,51 +218,85 @@
   details summary::before { content: "▸ "; } details[open] summary::before { content: "▾ "; }
   details[open] summary { margin-bottom: 12px; }
 
-  /* Tabs: sticky links to each part of the page */
-  /* The header (logo, tabs, tag) stays at the top while scrolling. */
-  header.brand { position: sticky; top: 0; z-index: 10; margin: -28px -16px 0; padding: 14px 16px;
-                 background: color-mix(in srgb, var(--bg) 82%, transparent);
-                 backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-                 border-bottom: 1px solid var(--panel-border); }
-  .tabs { display: flex; gap: 2px; margin-left: 14px; min-width: 0; overflow-x: auto; scrollbar-width: none; }
+  /* Top bar: full width, stays at the top, links to each part of the page */
+  header.topbar { position: sticky; top: 0; z-index: 10;
+                  background: color-mix(in srgb, var(--panel-solid) 94%, transparent);
+                  backdrop-filter: blur(14px) saturate(140%); -webkit-backdrop-filter: blur(14px) saturate(140%);
+                  box-shadow: 0 8px 28px rgba(0, 0, 0, .22); }
+  header.topbar::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px;
+                         background: linear-gradient(90deg, transparent, var(--accent) 25%, var(--accent-2) 75%, transparent); }
+  .topbar-inner { max-width: 1180px; margin: 0 auto; padding: 12px 24px; }
+  .tabs { display: flex; gap: 4px; margin-left: 22px; min-width: 0; overflow-x: auto; scrollbar-width: none; }
   .tabs::-webkit-scrollbar { display: none; }
-  .tabs a { flex: none; padding: 6px 12px; border-radius: 999px; font-size: .84rem; font-weight: 550; color: var(--muted);
-            text-decoration: none; transition: color .15s ease, background .15s ease; }
-  .tabs a:hover { color: var(--text); background: var(--accent-soft); }
-  .tabs a[aria-current="true"] { color: var(--accent); background: var(--accent-soft); }
-  #ask, #how, #changes, #faq { scroll-margin-top: 78px; }
-  @media (max-width: 620px) { header.brand .pill { display: none; } .tabs { margin-left: 6px; } .tabs a { padding: 6px 8px; } }
+  .tabs a { flex: none; padding: 7px 14px; border-radius: 999px; font-size: .96rem; font-weight: 600;
+            color: color-mix(in srgb, var(--text) 86%, transparent); text-decoration: none;
+            transition: color .15s ease, background .15s ease, box-shadow .15s ease; }
+  .tabs a:hover { color: var(--text); background: color-mix(in srgb, var(--text) 9%, transparent); }
+  .tabs a[aria-current="true"] { color: var(--accent-text); background: linear-gradient(135deg, var(--accent), var(--accent-2));
+                                 box-shadow: 0 4px 14px rgba(91, 91, 214, .35); }
+  header.topbar .pill { border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent); }
+  #ask, #how, #changes, #faq { scroll-margin-top: 84px; }
+  @media (max-width: 620px) {
+    .topbar-inner { padding: 10px 14px; }
+    header.topbar .pill, .brand h1 { display: none; }
+    .tabs { margin-left: 10px; } .tabs a { padding: 6px 10px; font-size: .85rem; }
+  }
+
+  /* Section headings: a mono label above a serif title, like the hero */
+  .kicker { display: block; margin: 0 0 6px; font: 600 .78rem/1 var(--mono); letter-spacing: .14em; text-transform: uppercase;
+            color: var(--accent-2); }
+  .flow h3, .changes-head h3, .faq h3 { font-family: var(--serif); font-weight: 600; font-size: 1.5rem; letter-spacing: -.01em; }
 
   /* FAQ */
   .faq { margin-top: 30px; padding: 20px; }
   .faq h3 { margin: 0 0 12px; font-size: 1.1rem; letter-spacing: -.01em; }
-  .faq details { border-top: 1px solid var(--panel-border); padding: 12px 2px; }
+  .synapses { position: relative; padding-left: 30px; }
+  .synapses::before { content: ""; position: absolute; left: 9px; top: 6px; bottom: 6px; width: 2px; border-radius: 2px;
+                      background: linear-gradient(180deg, var(--accent), var(--accent-2)); opacity: .35; }
+  .faq details { position: relative; padding: 12px 0; border-top: 1px solid var(--panel-border); }
   .faq details:first-of-type { border-top: 0; }
-  .faq summary { color: var(--text); font-weight: 600; font-size: .95rem; list-style: none; }
+  .faq details::before { content: ""; position: absolute; left: -26px; top: 17px; width: 12px; height: 12px; border-radius: 50%;
+                         background: var(--panel-solid); border: 2px solid var(--accent); transition: background .2s, border-color .2s; }
+  .faq details[open]::before { background: var(--accent-2); border-color: var(--accent-2); animation: fire-node .9s ease-out; }
+  @keyframes fire-node { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent-2) 70%, transparent); }
+                         100% { box-shadow: 0 0 0 16px transparent; } }
+  .faq summary { display: flex; align-items: baseline; gap: 12px; font-family: var(--serif); font-size: 1.18rem; font-weight: 600;
+                 color: var(--text); list-style: none; }
   .faq summary::-webkit-details-marker { display: none; }
-  .faq summary::before { content: "+"; display: inline-block; width: 18px; color: var(--accent); font-weight: 700; }
-  .faq details[open] summary::before { content: "−"; }
+  .faq summary::after { content: "+"; margin-left: auto; font: 600 .95rem/1 var(--mono); color: var(--faint); }
+  .faq details[open] summary::after { content: "−"; color: var(--accent-2); }
   .faq details[open] summary { margin-bottom: 6px; }
-  .faq details p { margin: 0 0 0 18px; color: var(--muted); font-size: .9rem; }
+  .faq details p { margin: 0; color: var(--muted); font-size: 1rem; line-height: 1.6; }
+  .faq details[open] p { animation: reveal .35s ease-out; }
+  @keyframes reveal { from { opacity: 0; transform: translateY(-4px); } }
 
   /* What changed */
   .changes { margin-top: 30px; padding: 20px; }
   .changes-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; margin-bottom: 14px; }
   .changes-head h3 { margin: 0; font-size: 1.1rem; letter-spacing: -.01em; }
-  .changes-head span { color: var(--faint); font-size: .8rem; }
+  .changes-head span { color: var(--faint); font-size: .88rem; }
   .change-cols { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
   @media (max-width: 760px) { .change-cols { grid-template-columns: 1fr; } }
   .change-col { --c: var(--accent); --c-soft: var(--accent-soft); background: var(--panel-solid);
                 border: 1px solid var(--panel-border); border-top: 3px solid var(--c); border-radius: 12px; padding: 14px; }
   .change-col.trial { --c: var(--trial); --c-soft: var(--trial-soft); }
   .change-col.fda { --c: var(--fda); --c-soft: var(--fda-soft); }
-  .change-col h4 { display: flex; align-items: center; gap: 8px; margin: 0 0 12px; font-size: .86rem; }
+  .change-col h4 { display: flex; align-items: center; gap: 8px; margin: 0 0 12px; font-size: .95rem; }
   .change-col h4 svg { color: var(--c); flex: none; }
   .change-col h4 .count { margin-left: auto; min-width: 22px; text-align: center; padding: 1px 7px; border-radius: 999px;
                           font-size: .74rem; color: var(--c); background: var(--c-soft); }
   .change-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
-  .change-list li { padding: 9px 10px; border-radius: 9px; background: var(--c-soft); font-size: .86rem; line-height: 1.4; }
-  .change-list .id { display: inline-block; font: 600 .74rem ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--c);
+  .change-col .trace { display: block; width: 100%; height: 26px; margin: -2px 0 12px; overflow: visible; }
+  .change-col .trace path { fill: none; stroke: var(--c); stroke-width: 1.5; stroke-linejoin: round; stroke-linecap: round;
+                            stroke-dasharray: 1; stroke-dashoffset: 1; animation: trace 1.8s ease-out .2s forwards;
+                            filter: drop-shadow(0 0 3px var(--c)); vector-effect: non-scaling-stroke; }
+  @keyframes trace { to { stroke-dashoffset: 0; } }
+  .change-list li { position: relative; padding: 4px 4px 4px 14px; border-left: 2px solid color-mix(in srgb, var(--c) 45%, transparent);
+                    font-size: .94rem; line-height: 1.45; transition: border-color .15s, background .15s; }
+  .change-list li:hover { border-left-color: var(--c); background: var(--c-soft); }
+  .change-list li::before { content: ""; position: absolute; left: -5px; top: 9px; width: 8px; height: 8px; border-radius: 50%;
+                            background: var(--panel-solid); border: 2px solid var(--c); }
+  .change-list .id { display: inline-block; font: 600 .8rem ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--c);
                      text-decoration: none; }
   .change-list .id:hover { text-decoration: underline; }
   .change-list .title { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
@@ -238,51 +305,55 @@
   .change-list .delta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 4px; }
   .change-list .old { text-decoration: line-through; color: var(--faint); }
   .change-list .new { font-weight: 600; color: var(--text); }
-  .change-list .meta { display: block; margin-top: 3px; color: var(--faint); font-size: .76rem; }
-  .change-list .empty { background: none; padding: 4px 0; color: var(--faint); }
+  .change-list .meta { display: block; margin-top: 3px; color: var(--faint); font: .78rem/1.45 var(--mono); letter-spacing: .02em; }
+  .change-list .empty { border-left: 0; padding: 4px 0; color: var(--faint); }
+  .change-list .empty::before { display: none; }
 
   /* How an answer is found */
   .flow { margin-top: 30px; padding: 20px; }
   .flow h3 { margin: 0 0 4px; font-size: 1.1rem; letter-spacing: -.01em; }
-  .flow > p { margin: 0 0 16px; color: var(--faint); font-size: .8rem; }
+  .flow > p { margin: 0 0 16px; color: var(--faint); font-size: .92rem; }
   .flow-steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(5, 1fr); gap: 22px; }
   .flow-steps li { position: relative; padding: 14px 12px; border-radius: 12px; background: var(--panel-solid);
-                   border: 1px solid var(--panel-border); font-size: .8rem; color: var(--muted); line-height: 1.45; }
-  .flow-steps li::after { content: ""; position: absolute; top: 50%; right: -17px; width: 12px; height: 12px;
-                          border-top: 2px solid var(--faint); border-right: 2px solid var(--faint);
-                          transform: translateY(-50%) rotate(45deg); opacity: .6; }
+                   border: 1px solid var(--panel-border); font-size: .9rem; color: var(--muted); line-height: 1.5; }
+  /* Between steps: an axon with a pulse that travels to the next step, one step after another. */
+  .flow-steps li::after { content: ""; position: absolute; top: 50%; right: -23px; width: 24px; height: 3px;
+                          border-radius: 2px; transform: translateY(-50%);
+                          background: linear-gradient(90deg, var(--panel-border) 0 35%, var(--accent) 45%, var(--accent-2) 55%, var(--panel-border) 65% 100%);
+                          background-size: 300% 100%; background-position: 100% 0;
+                          animation: axon 4s ease-in-out infinite; }
+  .flow-steps li:nth-child(2)::after { animation-delay: .8s; }
+  .flow-steps li:nth-child(3)::after { animation-delay: 1.6s; }
+  .flow-steps li:nth-child(4)::after { animation-delay: 2.4s; }
+  @keyframes axon { 0% { background-position: 100% 0; } 20% { background-position: 0 0; } 100% { background-position: 0 0; } }
+  .flow-steps .nerve { display: block; margin-bottom: 2px; font-size: .74rem; font-weight: 700; letter-spacing: .07em;
+                       text-transform: uppercase; color: var(--c, var(--accent)); opacity: .85; }
   .flow-steps li:last-child::after { display: none; }
   .flow-steps .ic { width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; margin-bottom: 8px;
                     color: var(--c, var(--accent)); background: var(--c-soft, var(--accent-soft)); }
-  .flow-steps b { display: block; color: var(--text); font-size: .86rem; margin-bottom: 3px; }
+  .flow-steps b { display: block; color: var(--text); font-size: .96rem; margin-bottom: 3px; }
   .flow-steps .tools { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
-  .flow-steps .tools span { padding: 1px 7px; border-radius: 999px; font-size: .7rem; color: var(--c); background: var(--c-soft); }
-  .flow-steps .src { display: block; margin-top: 6px; font-size: .72rem; color: var(--faint); }
+  .flow-steps .tools span { padding: 1px 8px; border-radius: 999px; font-size: .78rem; color: var(--c); background: var(--c-soft); }
+  .flow-steps .src { display: block; margin-top: 6px; font-size: .8rem; color: var(--faint); }
   .flow-steps .t { --c: var(--trial); --c-soft: var(--trial-soft); }
   .flow-steps .ok { --c: var(--ok); --c-soft: var(--ok-soft); }
   @media (max-width: 760px) {
     .flow-steps { grid-template-columns: 1fr; gap: 18px; }
-    .flow-steps li::after { top: auto; bottom: -15px; right: 50%; transform: translateX(50%) rotate(135deg); }
+    .flow-steps li::after { top: auto; bottom: -17px; right: 50%; width: 3px; height: 16px; transform: translateX(50%);
+                            background: linear-gradient(180deg, var(--panel-border) 0 35%, var(--accent) 45%, var(--accent-2) 55%, var(--panel-border) 65% 100%);
+                            background-size: 100% 300%; animation-name: axon-v; }
+    @keyframes axon-v { 0% { background-position: 0 100%; } 20% { background-position: 0 0; } 100% { background-position: 0 0; } }
   }
 
-  footer { margin-top: 34px; color: var(--faint); font-size: .84rem; display: grid; gap: 8px; }
-  footer .how { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; margin: 6px 0 10px;
-                padding-top: 22px; border-top: 1px solid var(--panel-border); }
-  footer .how > div { display: grid; grid-template-columns: 30px 1fr; gap: 0 12px; align-items: start; line-height: 1.5; }
-  footer .how .ic { grid-row: span 2; width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center;
-                    color: var(--c); background: var(--c-soft); }
-  footer .how .ic.a { --c: var(--trial); --c-soft: var(--trial-soft); }
-  footer .how .ic.b { --c: var(--ok); --c-soft: var(--ok-soft); }
-  footer .how .ic.c { --c: var(--fda); --c-soft: var(--fda-soft); }
-  footer .how b { display: block; color: var(--text); font-size: .86rem; font-weight: 600; margin-bottom: 1px; }
-  @media (max-width: 620px) { footer .how { grid-template-columns: 1fr; } }
+  footer { margin-top: 34px; color: var(--faint); font-size: .92rem; display: grid; gap: 8px; }
   [hidden] { display: none !important; }
   @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
 </style>
 </head>
 <body>
-<main>
-  <header class="brand">
+<canvas id="neural-bg" aria-hidden="true"></canvas>
+<header class="topbar">
+  <div class="topbar-inner brand">
     <svg width="36" height="36" viewBox="0 0 36 36" aria-hidden="true">
       <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5b5bd6"/><stop offset="1" stop-color="#149e93"/></linearGradient></defs>
       <rect width="36" height="36" rx="10" fill="url(#g)"/>
@@ -296,22 +367,22 @@
       <a href="#faq">FAQ</a>
     </nav>
     <span class="pill">Alzheimer's</span>
-  </header>
+  </div>
+</header>
+<main>
 
   <section class="hero" id="ask">
-    <h2>Drug development answers, <span class="grad">with every source checked.</span></h2>
-    <p>Ask about any Alzheimer's drug's trials, FDA approval, or published evidence. Answers come only from public records, and every citation is verified against the database.</p>
-    <div class="sources-line">
-      <span class="src-tag trial">ClinicalTrials.gov</span>
-      <span class="src-tag fda">FDA records &amp; labels</span>
-      <span class="src-tag paper">PubMed abstracts</span>
+    <div class="eyebrow"><span class="live" aria-hidden="true"></span>Alzheimer's drug intelligence · updated weekly</div>
+    <h2>Every answer, <em>traced to its source.</em></h2>
+    <p>Ask about any Alzheimer's drug's trials, FDA approval, or published evidence. Answers come only from public records, and every citation is checked against the database.</p>
+    <div class="readout" id="stats" aria-label="What the database holds" hidden>
+      <span><b data-stat="trials"></b>Trials</span>
+      <span><b data-stat="drugs"></b>Drugs</span>
+      <span><b data-stat="drugs_with_fda_approval"></b>FDA-approved</span>
+      <span><b data-stat="document_chunks"></b>Passages</span>
+      <span class="quota" title="New questions answered today; repeats of recent questions are free"><b id="quota"></b>Questions today</span>
     </div>
-    <div class="stats" id="stats" aria-label="What the database holds" hidden>
-      <span><b data-stat="trials"></b> trials</span>
-      <span><b data-stat="drugs"></b> drugs</span>
-      <span><b data-stat="drugs_with_fda_approval"></b> with FDA approval</span>
-      <span><b data-stat="document_chunks"></b> abstract passages</span>
-    </div>
+    <p class="sources-caption">Sources: <span>ClinicalTrials.gov</span> · <span>Drugs@FDA &amp; FDA labels</span> · <span>PubMed</span></p>
   </section>
 
   <form id="ask-form" class="card">
@@ -334,16 +405,13 @@
   </div>
 
   <section id="progress" class="card progress" hidden aria-live="polite">
-    <div class="progress-head"><div class="spinner" aria-hidden="true"></div><span>Researching your question… usually 10 to 30 seconds</span></div>
-    <p class="hint" style="margin: 6px 0 0">Typical steps. The lookups actually made are listed with the answer.</p>
-    <ul class="steps" id="steps">
-      <li>Identifying the drug and its known names</li>
-      <li>Checking clinical trial records</li>
-      <li>Reading FDA approvals and label text</li>
-      <li>Searching the published literature</li>
-      <li>Writing the answer and verifying every citation</li>
-    </ul>
-    <div class="shimmer"></div><div class="shimmer"></div>
+    <div class="log-head"><span>Recording · membrane potential</span><span id="log-clock">0.0s</span></div>
+    <div class="scope-wrap" aria-hidden="true">
+      <canvas id="scope"></canvas>
+      <span class="scope-y top">+40 mV</span><span class="scope-y rest">−70 mV</span>
+    </div>
+    <ol class="log" id="steps"></ol>
+    <div class="log-cursor" aria-hidden="true">&gt; <span class="caret"></span></div>
   </section>
 
   <div id="error" class="notice error" hidden role="alert">
@@ -373,57 +441,64 @@
   </article>
 
   <section class="card flow" id="how" aria-labelledby="flow-title">
+    <span class="kicker">Signal path</span>
     <h3 id="flow-title">How an answer is found</h3>
-    <p>The model never sees the database directly. It can only ask for these lookups, and every citation is checked afterwards.</p>
+    <p>Like a signal through the nervous system: a stimulus comes in, is processed, recalls what is stored, and produces a response that is checked. The model never sees the database directly.</p>
     <ol class="flow-steps">
       <li>
         <span class="ic" aria-hidden="true"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.8 7L4 20.5l1.5-4.6A8 8 0 1 1 21 12z"/></svg></span>
-        <b>1. Your question</b>Plus up to three earlier turns, so follow-ups like “its trials” make sense.
+        <span class="nerve">Stimulus</span><b>1. Your question</b>Plus up to three earlier turns, so follow-ups like “its trials” make sense.
       </li>
       <li>
         <span class="ic" aria-hidden="true"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/><circle cx="12" cy="12" r="3.5"/></svg></span>
-        <b>2. Gemini plans</b>Decides which lookups it needs, and can ask again with what it learns.
+        <span class="nerve">Processing</span><b>2. Gemini plans</b>Decides which lookups it needs, and can ask again with what it learns.
       </li>
       <li class="t">
         <span class="ic" aria-hidden="true"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5.5" rx="7.5" ry="2.8"/><path d="M4.5 5.5v13c0 1.5 3.4 2.8 7.5 2.8s7.5-1.3 7.5-2.8v-13M4.5 12c0 1.5 3.4 2.8 7.5 2.8s7.5-1.3 7.5-2.8"/></svg></span>
-        <b>3. Database lookups</b>Read-only, at most 8 rounds.
+        <span class="nerve">Memory recall</span><b>3. Database lookups</b>Read-only, at most 8 rounds.
         <span class="tools"><span>drug names</span><span>trials</span><span>FDA status</span><span>literature</span><span>pipeline</span></span>
         <span class="src">ClinicalTrials.gov · FDA · PubMed, refreshed weekly</span>
       </li>
       <li>
         <span class="ic" aria-hidden="true"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4l10.5-10.5a2.8 2.8 0 0 0-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg></span>
-        <b>4. Answer written</b>Only from what the lookups returned, citing each record by its ID.
+        <span class="nerve">Response</span><b>4. Answer written</b>Only from what the lookups returned, citing each record by its ID.
       </li>
       <li class="ok">
         <span class="ic" aria-hidden="true"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7.5 3v5.5c0 4.6-3.2 8.3-7.5 9.5-4.3-1.2-7.5-4.9-7.5-9.5V6z"/><path d="M8.6 12.2l2.3 2.3 4.6-4.8"/></svg></span>
-        <b>5. Citations checked</b>Code, not the model, confirms every trial, FDA, and PubMed ID came from a lookup.
+        <span class="nerve">Feedback</span><b>5. Citations checked</b>Code, not the model, confirms every trial, FDA, and PubMed ID came from a lookup.
       </li>
     </ol>
   </section>
 
   <section id="changes" class="card changes" hidden aria-labelledby="changes-title">
+    <span class="kicker">Activity · last 7 days</span>
     <div class="changes-head"><h3 id="changes-title">This week in Alzheimer's drug development</h3><span id="changes-sub"></span></div>
     <div class="change-cols">
       <div class="change-col trial">
         <h4><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>
           New trials<span class="count" id="chg-new-n">0</span></h4>
+        <svg class="trace" viewBox="0 0 120 26" preserveAspectRatio="none" aria-hidden="true"><path id="chg-new-trace" pathLength="1"/></svg>
         <ul class="change-list" id="chg-new"></ul>
       </div>
       <div class="change-col">
         <h4><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12a8 8 0 0 1-14 5.3M4 12a8 8 0 0 1 14-5.3"/><path d="M18 3v4h-4M6 21v-4h4"/></svg>
           Status changes<span class="count" id="chg-status-n">0</span></h4>
+        <svg class="trace" viewBox="0 0 120 26" preserveAspectRatio="none" aria-hidden="true"><path id="chg-status-trace" pathLength="1"/></svg>
         <ul class="change-list" id="chg-status"></ul>
       </div>
       <div class="change-col fda">
         <h4><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l2.4 2.2 3.2-.3.7 3.1 2.8 1.6-1.3 2.9 1.3 2.9-2.8 1.6-.7 3.1-3.2-.3L12 21l-2.4-2.2-3.2.3-.7-3.1-2.8-1.6 1.3-2.9-1.3-2.9 2.8-1.6.7-3.1 3.2.3z"/><path d="M8.5 12l2.4 2.4 4.6-4.8"/></svg>
           Latest FDA approvals<span class="count" id="chg-fda-n">0</span></h4>
+        <svg class="trace" viewBox="0 0 120 26" preserveAspectRatio="none" aria-hidden="true"><path id="chg-fda-trace" pathLength="1"/></svg>
         <ul class="change-list" id="chg-fda"></ul>
       </div>
     </div>
   </section>
 
   <section class="card faq" id="faq" aria-labelledby="faq-title">
-    <h3 id="faq-title">FAQ</h3>
+    <span class="kicker">Frequently asked</span>
+    <h3 id="faq-title">Questions, answered.</h3>
+    <div class="synapses">
     <details>
       <summary>Where does the information come from?</summary>
       <p>ClinicalTrials.gov for trials, the FDA's Drugs@FDA database and drug labels for approvals, and PubMed for published abstracts. All three refresh automatically every Monday.</p>
@@ -442,7 +517,7 @@
     </details>
     <details>
       <summary>Can I trust every answer?</summary>
-      <p>Treat answers as a well-sourced starting point. The check confirms each cited record is real, not that it supports the exact sentence, so follow the links for anything important. On 39 test questions with known answers, it got 38 to 39 right with no invented citations.</p>
+      <p>Treat answers as a well-sourced starting point. The check confirms each cited record is real, not that it supports the exact sentence, so follow the links for anything important.</p>
     </details>
     <details>
       <summary>Why is there a daily question limit?</summary>
@@ -456,23 +531,10 @@
       <summary>How was it built?</summary>
       <p>Python and Postgres with vector search, Gemini on Google Cloud for answers and embeddings, and Cloud Run for hosting. The code is on <a href="https://github.com/gosainansh8/neuroscope" target="_blank" rel="noopener">GitHub</a>.</p>
     </details>
+    </div>
   </section>
 
   <footer>
-    <div class="how">
-      <div>
-        <span class="ic a" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5.5" rx="7.5" ry="2.8"/><path d="M4.5 5.5v13c0 1.5 3.4 2.8 7.5 2.8s7.5-1.3 7.5-2.8v-13M4.5 12c0 1.5 3.4 2.8 7.5 2.8s7.5-1.3 7.5-2.8"/></svg></span>
-        <b>Only public records</b><span>The model can't see anything but database lookups over trials, FDA data, and abstracts.</span>
-      </div>
-      <div>
-        <span class="ic b" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7.5 3v5.5c0 4.6-3.2 8.3-7.5 9.5-4.3-1.2-7.5-4.9-7.5-9.5V6z"/><path d="M8.6 12.2l2.3 2.3 4.6-4.8"/></svg></span>
-        <b>Citations verified</b><span>Every trial ID, FDA application, and PubMed ID is checked against what the lookups returned.</span>
-      </div>
-      <div>
-        <span class="ic c" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5.5M12 7.6h.01"/></svg></span>
-        <b>Know the limits</b><span>The check confirms a source is real, not that it supports the sentence. Not medical advice.</span>
-      </div>
-    </div>
     <div id="health">Connecting to the database…</div>
   </footer>
 </main>
@@ -564,17 +626,77 @@ function renderLookups(lookups) {
   });
 }
 
-let stepTimer = null;
-function startProgress() {
-  const steps = [...$("steps").children];
-  steps.forEach((s) => s.classList.remove("on"));
-  let i = 0;
-  steps[0].classList.add("on");
-  stepTimer = setInterval(() => { i = Math.min(i + 1, steps.length - 1); steps[i].classList.add("on"); }, 3200);
-  $("progress").hidden = false;
+// Loading log: one line per database lookup, stamped with the time since the question was sent.
+let logStart = 0, logTimer = null;
+function logReset() {
+  $("steps").textContent = "";
+  logStart = performance.now();
+  scope.start();
+  clearInterval(logTimer);
+  logTimer = setInterval(() => { $("log-clock").textContent = ((performance.now() - logStart) / 1000).toFixed(1) + "s"; }, 100);
+  logLine("Question received", true);
 }
-function stopProgress() { clearInterval(stepTimer); $("progress").hidden = true; }
+function logLine(text, done) {
+  const prev = $("steps").lastElementChild;
+  if (prev) { const st = prev.querySelector(".run"); if (st) { st.className = "ok"; st.textContent = "✓"; } }
+  const li = document.createElement("li");
+  const t = document.createElement("span"); t.className = "t"; t.textContent = ((performance.now() - logStart) / 1000).toFixed(1) + "s";
+  const what = document.createElement("span"); what.textContent = text;
+  const st = document.createElement("span"); st.className = done ? "ok" : "run"; st.textContent = done ? "✓" : "…";
+  li.append(t, what, st);
+  $("steps").appendChild(li);
+}
+function logStop() { clearInterval(logTimer); scope.stop(); }
 
+// The oscilloscope: membrane potential of one neuron, resting near −70 mV. Each lookup queues an
+// action potential: depolarization to threshold, a fast upstroke to about +40 mV, repolarization,
+// and a brief afterhyperpolarization below rest.
+const scope = (function () {
+  const c = $("scope"), g = c.getContext("2d");
+  const calm = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const color = getComputedStyle(document.documentElement).getPropertyValue("--accent-2").trim() || "#3fd1c3";
+  let data = [], queued = 0, t = -1, n = 0, raf = null;
+  function vm() {
+    if (t < 0 && queued > 0) { queued--; t = 0; }
+    let v = -70 + (Math.random() - .5) * 1.4 + Math.sin(n / 11) * .5;
+    if (t >= 0) {
+      if (t < 5) v = -70 + t * 3;                 // depolarize to threshold (about -55)
+      else if (t < 8) v = -55 + (t - 5) * 31;     // upstroke to about +38
+      else if (t < 14) v = 38 - (t - 8) * 19;     // repolarize to about -76
+      else v = -76 + (t - 14) * .45;              // afterhyperpolarization, back to rest
+      if (++t >= 28) t = -1;
+    }
+    n++;
+    return v;
+  }
+  function draw() {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2), W = c.clientWidth, H = c.clientHeight;
+    if (c.width !== W * dpr) { c.width = W * dpr; c.height = H * dpr; }
+    g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    g.clearRect(0, 0, W, H);
+    const max = Math.ceil(W / 1.6);
+    if (data.length > max) data = data.slice(-max);
+    const y = (v) => H - 8 - ((v + 85) / 135) * (H - 16);     // -85 mV at the bottom, +50 at the top
+    g.strokeStyle = color; g.lineWidth = 1.6; g.lineJoin = "round";
+    g.shadowColor = color; g.shadowBlur = 6;
+    g.beginPath();
+    data.forEach((v, i) => { const x = W - (data.length - i) * 1.6; i ? g.lineTo(x, y(v)) : g.moveTo(x, y(v)); });
+    g.stroke();
+    g.shadowBlur = 0;
+  }
+  function loop() { data.push(vm(), vm()); draw(); raf = requestAnimationFrame(loop); }
+  return {
+    start() { data = []; queued = 0; t = -1; cancelAnimationFrame(raf); if (calm) { data = Array(400).fill(-70); draw(); } else loop(); },
+    spike() { queued++; if (calm) { for (let k = 0; k < 28; k++) data.push(vm()); draw(); } },
+    stop() { cancelAnimationFrame(raf); raf = null; },
+  };
+})();
+function liveStep(ev) {
+  const a = ev.arguments || {};
+  const what = a.drug || a.name || a.query;
+  logLine((TOOL_LABELS[ev.tool] || ev.tool) + (what ? ` · ${what}` : ""), false);
+  scope.spike();
+}
 function showError(message) { $("error-text").textContent = message; $("error").hidden = false; }
 
 // Earlier turns of this conversation, sent with a follow-up so "it" can be understood.
@@ -593,55 +715,103 @@ function setHistory(turns) {
   textarea.placeholder = "Ask a follow-up, e.g. What about its side effects?";
 }
 
+// The answer as it is being written: shown with a caret, no sources or verdict yet.
+function showDraft(question, text) {
+  if (!text) { $("result").hidden = true; $("progress").hidden = false; return; }
+  const firstText = $("result").hidden;
+  $("progress").hidden = true;
+  $("result-question").textContent = question;
+  $("answer").innerHTML = renderAnswer(text);
+  const caret = document.createElement("span"); caret.className = "caret";
+  ($("answer").lastElementChild || $("answer")).appendChild(caret);
+  const chip = $("verify-chip"); chip.className = "chip neutral"; chip.textContent = "Writing…";
+  $("cache-chip").hidden = true; $("warn-box").hidden = true; $("sources-section").hidden = true;
+  $("lookups-summary").textContent = "";
+  $("result").hidden = false;
+  if (firstText) $("result").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+// The finished answer: rendered in full, with sources and the citation check.
+function renderFinal(question, data) {
+  const wasHidden = $("result").hidden;
+  $("result-question").textContent = question;
+  $("answer").innerHTML = renderAnswer(data.answer);
+  renderSources(data.cited || {});
+  renderLookups(data.lookups || []);
+  const cited = Object.values(data.cited || {}).flat().length;
+  const bad = Object.values(data.unsupported_citations || {}).flat();
+  const chip = $("verify-chip");
+  const warn = $("warn-box");
+  warn.hidden = true;
+  if (bad.length) {
+    chip.className = "chip warn"; chip.textContent = `${bad.length} unverified citation${bad.length === 1 ? "" : "s"}`;
+    warn.textContent = `These identifiers did not come from any database lookup and should not be trusted: ${bad.join(", ")}`;
+    warn.hidden = false;
+  } else if (cited) {
+    chip.className = "chip ok"; chip.textContent = `✓ All ${cited} citations verified`;
+  } else {
+    chip.className = "chip neutral"; chip.textContent = "No citations in this answer";
+  }
+  $("cache-chip").hidden = !data.cached;
+  setHistory([...history, { question, answer: data.answer.slice(0, 6000) }]);
+  textarea.value = ""; autosize();          // ready for a follow-up, which starts empty
+  $("result").hidden = false;
+  if (wasHidden) $("result").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+// Ask, and read the answer as a stream of events: lookups, pieces of text, then the checked answer.
 async function ask(question) {
   $("result").hidden = true; $("error").hidden = true;
   $("submit").disabled = true;
-  startProgress();
+  logReset();
+  $("progress").hidden = false;
+  neuro.think(true);
+  let draft = "", finished = false;
+  const handle = (ev) => {
+    if (ev.type === "lookup") { draft = ""; showDraft(question, ""); liveStep(ev); neuro.think(true); }
+    else if (ev.type === "text") { draft += ev.delta; showDraft(question, draft); }
+    else if (ev.type === "done") { finished = true; renderFinal(question, ev); }
+    else if (ev.type === "error") { finished = true; $("result").hidden = true; showError(ev.detail); }
+  };
   try {
-    const resp = await fetch("ask", { method: "POST", headers: { "content-type": "application/json" },
-                                      body: JSON.stringify({ question, history }) });
-    const data = await resp.json().catch(() => ({}));
+    const resp = await fetch("ask/stream", { method: "POST", headers: { "content-type": "application/json" },
+                                             body: JSON.stringify({ question, history }) });
     if (!resp.ok) {
+      const data = await resp.json().catch(() => ({}));
       showError(typeof data.detail === "string" ? data.detail
         : resp.status === 422 ? "Please enter a question between 3 and 500 characters."
         : `The request failed (HTTP ${resp.status}).`);
       return;
     }
-    $("result-question").textContent = question;
-    $("answer").innerHTML = renderAnswer(data.answer);
-    renderSources(data.cited || {});
-    renderLookups(data.lookups || []);
-
-    const cited = Object.values(data.cited || {}).flat().length;
-    const bad = Object.values(data.unsupported_citations || {}).flat();
-    const chip = $("verify-chip");
-    const warn = $("warn-box");
-    warn.hidden = true;
-    if (bad.length) {
-      chip.className = "chip warn"; chip.textContent = `${bad.length} unverified citation${bad.length === 1 ? "" : "s"}`;
-      warn.textContent = `These identifiers did not come from any database lookup and should not be trusted: ${bad.join(", ")}`;
-      warn.hidden = false;
-    } else if (cited) {
-      chip.className = "chip ok"; chip.textContent = `✓ All ${cited} citations verified`;
-    } else {
-      chip.className = "chip neutral"; chip.textContent = "No citations in this answer";
+    const reader = resp.body.getReader();
+    const decoder = new TextDecoder();
+    let buf = "";
+    for (;;) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buf += decoder.decode(value, { stream: true });
+      let nl;
+      while ((nl = buf.indexOf("\n")) >= 0) {
+        const line = buf.slice(0, nl).trim();
+        buf = buf.slice(nl + 1);
+        if (line) handle(JSON.parse(line));
+      }
     }
-    $("cache-chip").hidden = !data.cached;
-    setHistory([...history, { question, answer: data.answer.slice(0, 6000) }]);
-    textarea.value = ""; autosize();          // ready for a follow-up, which starts empty
-    $("result").hidden = false;
-    $("result").scrollIntoView({ behavior: "smooth", block: "start" });
+    if (buf.trim()) handle(JSON.parse(buf));
+    if (!finished) { $("result").hidden = true; showError("The answer was cut off. Please try again."); }
   } catch (err) {
     showError("Could not reach the server. Please check your connection and try again.");
   } finally {
-    stopProgress();
+    $("progress").hidden = true;
     $("submit").disabled = false;
+    logStop();
+    neuro.think(false);
   }
 }
 
 const textarea = $("question");
 const autosize = () => { textarea.style.height = "54px"; textarea.style.height = Math.min(Math.max(textarea.scrollHeight, 54), 240) + "px"; };
-textarea.addEventListener("input", autosize);
+textarea.addEventListener("input", () => { autosize(); if (Math.random() < .5) neuro.sparkNear($("ask-form")); });
 $("ask-form").addEventListener("submit", (e) => { e.preventDefault(); const q = textarea.value.trim(); if (q) ask(q); });
 textarea.addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); $("ask-form").requestSubmit(); } });
 $("new-topic").addEventListener("click", () => { setHistory([]); textarea.value = ""; autosize(); textarea.focus(); });
@@ -665,9 +835,22 @@ function el(tag, cls, text) {
 function idLink(href, text) {
   const a = el("a", "id", text); a.href = href; a.target = "_blank"; a.rel = "noopener"; return a;
 }
+function trace(id, n) {
+  const spikes = Math.min(n, 8), steps = 60, base = 15;
+  const at = new Set(Array.from({ length: spikes }, (_, k) => Math.round((k + 1) * steps / (spikes + 1))));
+  let d = `M0 ${base}`;
+  for (let x = 1; x <= steps; x++) {
+    const X = (x * 120 / steps).toFixed(1);
+    d += at.has(x) ? ` L${X} 1 L${(+X + 1).toFixed(1)} 25 L${(+X + 2).toFixed(1)} ${base}`
+                   : ` L${X} ${(base + (Math.sin(x * 1.7) + Math.sin(x * .55)) * 1.1).toFixed(1)}`;
+  }
+  const path = $(id + "-trace");
+  if (path) path.setAttribute("d", d);
+}
 function fillList(id, items, emptyText) {
   const ul = $(id); ul.textContent = "";
   $(id + "-n").textContent = String(items.length);
+  trace(id, items.length);
   if (!items.length) { ul.appendChild(el("li", "empty", emptyText)); return; }
   items.forEach((li) => ul.appendChild(li));
 }
@@ -712,11 +895,201 @@ const spy = new IntersectionObserver((entries) => {
 }, { rootMargin: "-40% 0px -55% 0px" });
 ["ask", "how", "changes", "faq"].forEach((id) => { const el = document.getElementById(id); if (el) spy.observe(el); });
 
+// Neurons behind the page, in the side margins: each has a cell body, tapering branched dendrites,
+// and a curving axon whose terminals reach the next neuron. Firing sends a bright band down the axon
+// (an action potential); when it arrives, the next neuron may fire. Still at rest; neurons fire when
+// the cursor comes near, while typing, and while an answer is being prepared.
+const neuro = (function neuralBackground() {
+  const canvas = document.getElementById("neural-bg");
+  const ctx = canvas.getContext("2d");
+  const calm = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const css = getComputedStyle(document.documentElement);
+  const accent = css.getPropertyValue("--accent").trim() || "#8b8bff";
+  const accent2 = css.getPropertyValue("--accent-2").trim() || "#3fd1c3";
+  const dark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+  const BASE_ALPHA = dark ? .22 : .28;
+  const base = document.createElement("canvas"), bctx = base.getContext("2d");
+  let w = 0, h = 0, dpr = 1, neurons = [], pulses = [], mouse = null, hover = -1, thinking = false, running = false;
+
+  function rng(seed) { return () => (seed = (seed * 16807) % 2147483647) / 2147483647; }
+
+  // A dendrite: a wandering path that splits into thinner branches.
+  function dendrite(x, y, ang, len, depth, width, r, out) {
+    const pts = [[x, y]];
+    let a = ang, cx = x, cy = y;
+    for (let k = 0; k < 7; k++) { a += (r() - .5) * .45; cx += Math.cos(a) * len / 7; cy += Math.sin(a) * len / 7; pts.push([cx, cy]); }
+    out.push({ pts, width });
+    if (depth > 0) {
+      const kids = r() < .65 ? 2 : 1;
+      for (let k = 0; k < kids; k++) {
+        const at = 3 + Math.floor(r() * 4);
+        dendrite(pts[at][0], pts[at][1], a + (k ? 1 : -1) * (.35 + r() * .5), len * (.5 + r() * .2), depth - 1, width * .62, r, out);
+      }
+    }
+  }
+
+  function build() {
+    const r = rng(7);
+    const band = Math.max(150, (w - 900) / 2);           // the margins beside the 880px content column
+    const perSide = Math.max(3, Math.round(h / 230));
+    neurons = [];
+    for (const side of [0, 1]) {
+      for (let k = 0; k < perSide; k++) {
+        const x = side ? w - band * (.25 + r() * .55) : band * (.25 + r() * .55);
+        const y = h * (k + .2 + r() * .6) / perSide;
+        const den = [];
+        const n = 4 + Math.floor(r() * 3);
+        for (let d = 0; d < n; d++) dendrite(x, y, (d / n) * Math.PI * 2 + r() * .6, 45 + r() * 45, 2, 1.8, r, den);
+        neurons.push({ x, y, size: 4.5 + r() * 2.5, den, axon: null, cool: 0, glow: 0 });
+      }
+    }
+    // Each axon curves toward a neighbour on the same side and ends in small terminal branches.
+    neurons.forEach((nr, i) => {
+      const others = neurons.map((o, j) => [j, Math.hypot(o.x - nr.x, o.y - nr.y)]).filter(([j]) => j !== i)
+        .sort((a, b) => a[1] - b[1]);
+      const [ti] = others[Math.floor(r() * Math.min(2, others.length))];
+      const t = neurons[ti];
+      const ang = Math.atan2(t.y - nr.y, t.x - nr.x), dist = Math.hypot(t.x - nr.x, t.y - nr.y);
+      const ex = t.x - Math.cos(ang) * 26, ey = t.y - Math.sin(ang) * 26;
+      const bend = (r() - .5) * dist * .6;
+      const mx = (nr.x + ex) / 2 - Math.sin(ang) * bend, my = (nr.y + ey) / 2 + Math.cos(ang) * bend;
+      const pts = [];
+      for (let k = 0; k <= 60; k++) {
+        const u = k / 60, iu = 1 - u;
+        pts.push([iu * iu * nr.x + 2 * iu * u * mx + u * u * ex + Math.sin(u * 18) * 1.5,
+                  iu * iu * nr.y + 2 * iu * u * my + u * u * ey + Math.cos(u * 15) * 1.5]);
+      }
+      const lens = [0];
+      for (let k = 1; k < pts.length; k++) lens.push(lens[k - 1] + Math.hypot(pts[k][0] - pts[k - 1][0], pts[k][1] - pts[k - 1][1]));
+      const terms = [];
+      for (let k = 0; k < 3; k++) dendrite(ex, ey, ang + (k - 1) * .6, 14 + r() * 8, 0, .9, r, terms);
+      nr.axon = { pts, lens, total: lens[lens.length - 1], terms, target: ti };
+    });
+  }
+
+  function stroke(c, pts, width, from = 0, to = pts.length - 1) {
+    c.lineWidth = width;
+    c.beginPath(); c.moveTo(pts[from][0], pts[from][1]);
+    for (let k = from + 1; k <= to; k++) c.lineTo(pts[k][0], pts[k][1]);
+    c.stroke();
+  }
+
+  function drawNeuron(c, nr, alpha) {
+    c.globalAlpha = alpha; c.strokeStyle = accent; c.lineCap = "round"; c.lineJoin = "round";
+    for (const d of nr.den) {                       // taper: thick near the body, thin at the tips
+      stroke(c, d.pts, d.width, 0, 3); stroke(c, d.pts, d.width * .6, 3, d.pts.length - 1);
+    }
+    stroke(c, nr.axon.pts, .9);
+    for (const tb of nr.axon.terms) stroke(c, tb.pts, .8);
+    const g = c.createRadialGradient(nr.x, nr.y, 0, nr.x, nr.y, nr.size * 1.6);
+    g.addColorStop(0, accent2); g.addColorStop(1, accent);
+    c.fillStyle = g; c.globalAlpha = alpha * 1.6;
+    c.beginPath(); c.arc(nr.x, nr.y, nr.size, 0, Math.PI * 2); c.fill();
+    c.globalAlpha = 1;
+  }
+
+  function layout() {
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    w = canvas.clientWidth; h = canvas.clientHeight;
+    for (const c of [canvas, base]) { c.width = w * dpr; c.height = h * dpr; }
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0); bctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    build();
+    bctx.clearRect(0, 0, w, h);
+    neurons.forEach((nr) => drawNeuron(bctx, nr, BASE_ALPHA));
+    pulses = [];
+    draw();
+  }
+
+  function fire(i, hops = 2) {
+    const nr = neurons[i];
+    if (calm || !nr || performance.now() < nr.cool) return;
+    nr.cool = performance.now() + 1400; nr.glow = 1;
+    pulses.push({ i, d: 0, hops });
+    wake();
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, w, h);
+    ctx.drawImage(base, 0, 0, w, h);
+    if (hover >= 0) drawNeuron(ctx, neurons[hover], .5);
+    for (const nr of neurons) {
+      if (nr.glow > .02) {
+        const g = ctx.createRadialGradient(nr.x, nr.y, 0, nr.x, nr.y, 26);
+        g.addColorStop(0, accent2); g.addColorStop(1, "transparent");
+        ctx.globalAlpha = nr.glow * .55; ctx.fillStyle = g;
+        ctx.beginPath(); ctx.arc(nr.x, nr.y, 26, 0, Math.PI * 2); ctx.fill();
+      }
+    }
+    // Action potentials: a short bright band of the axon, brightest at its front.
+    ctx.strokeStyle = accent2; ctx.lineCap = "round"; ctx.shadowColor = accent2;
+    for (const p of pulses) {
+      const ax = neurons[p.i].axon, lens = ax.lens;
+      const head = lens.findIndex((l) => l >= p.d), tailD = p.d - 46;
+      let tail = lens.findIndex((l) => l >= tailD); if (tail < 0) tail = 0;
+      const end = head < 0 ? lens.length - 1 : head;
+      if (end > tail) {
+        ctx.shadowBlur = 8; ctx.globalAlpha = .35; stroke(ctx, ax.pts, 3.2, tail, end);
+        ctx.globalAlpha = .95; stroke(ctx, ax.pts, 1.6, Math.max(tail, end - 6), end);
+        ctx.shadowBlur = 0;
+      }
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  function step() {
+    for (const p of pulses) {
+      p.d += 4.5;
+      const ax = neurons[p.i].axon;
+      if (p.d - 46 > ax.total) p.done = true;
+      else if (!p.arrived && p.d >= ax.total) {
+        p.arrived = true;
+        if (p.hops > 0 && Math.random() < .8) fire(ax.target, p.hops - 1);
+      }
+    }
+    pulses = pulses.filter((p) => !p.done);
+    for (const nr of neurons) nr.glow *= .94;
+    if (thinking && Math.random() < .05) fire(Math.floor(Math.random() * neurons.length), 3);
+  }
+
+  function loop() {
+    step(); draw();
+    if (pulses.length || thinking || neurons.some((n) => n.glow > .02)) requestAnimationFrame(loop);
+    else { running = false; draw(); }
+  }
+  function wake() { if (!running && !calm) { running = true; requestAnimationFrame(loop); } }
+
+  function nearestNeuron(x, y, within) {
+    let best = -1, bd = within;
+    neurons.forEach((n, i) => { const d = Math.hypot(n.x - x, n.y - y); if (d < bd) { bd = d; best = i; } });
+    return best;
+  }
+
+  window.addEventListener("mousemove", (e) => {
+    mouse = { x: e.clientX, y: e.clientY };
+    const near = nearestNeuron(mouse.x, mouse.y, 130);
+    if (near !== hover) { hover = near; if (!running) draw(); }
+    const close = nearestNeuron(mouse.x, mouse.y, 70);
+    if (close >= 0) fire(close, 2);
+  });
+  document.addEventListener("mouseleave", () => { hover = -1; if (!running) draw(); });
+  window.addEventListener("resize", layout);
+  layout();
+
+  return {
+    sparkNear(el) {
+      const r = el.getBoundingClientRect();
+      fire(nearestNeuron(Math.random() < .5 ? 0 : w, r.top + r.height / 2, Infinity), 1);
+    },
+    think(on) { thinking = on; if (on) wake(); },
+  };
+})();
+
 fetch("health").then((r) => r.json().then((d) => ({ ok: r.ok, d }))).then(({ ok, d }) => {
   if (!ok) { $("health").textContent = d.detail || "The database is not reachable."; return; }
   document.querySelectorAll("[data-stat]").forEach((el) => { el.textContent = (Number(d[el.dataset.stat]) || 0).toLocaleString(); });
   $("stats").hidden = false;
-  $("health").textContent = `${d.questions_today} of ${d.daily_question_limit} new questions used today`;
+  $("quota").textContent = `${d.questions_today}/${d.daily_question_limit}`;
+  $("health").textContent = "";
 }).catch(() => { $("health").textContent = "Could not reach the server."; });
 </script>
 </body>

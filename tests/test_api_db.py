@@ -255,3 +255,73 @@ def test_follow_up_is_answered_with_history_and_never_cached(client, conn):
     assert seen == [[turn], [turn]]
     assert conn.execute("SELECT COUNT(*) FROM api_answer_cache").fetchone()[0] == 0
     assert client.post("/ask", json={"question": "What trials is it in?", "history": [turn] * 4}).status_code == 422
+
+
+# --- Streaming answers ---------------------------------------------------------------
+
+import json  # noqa: E402
+from contextlib import contextmanager  # noqa: E402
+
+
+class StreamingModel:
+    """Looks up trials, then writes its answer in pieces through on_text, as Gemini streams."""
+    model = "scripted-stream"
+
+    def __init__(self, pieces):
+        self.pieces, self.on_text = pieces, None
+
+    def start(self, *args):
+        return ModelTurn([ToolCall("get_trials", {"drug": "lecanemab"})])
+
+    def send_tool_results(self, results):
+        for p in self.pieces:
+            self.on_text(p)
+        return ModelTurn(text="".join(self.pieces))
+
+
+@pytest.fixture()
+def stream_client(client, conn, monkeypatch):
+    @contextmanager
+    def same_conn():
+        yield conn
+    monkeypatch.setattr(api, "stream_connection", same_conn)
+    return client
+
+
+def events(response):
+    return [json.loads(line) for line in response.text.splitlines() if line.strip()]
+
+
+def test_stream_sends_lookups_then_text_then_the_checked_answer(stream_client, conn):
+    model = StreamingModel(["Lecanemab is in ", "NCT95000001", "."])
+    api.app.dependency_overrides[api.get_model] = lambda: model
+    r = stream_client.post("/ask/stream", json={"question": "What trials is lecanemab in?"})
+    assert r.status_code == 200 and r.headers["content-type"].startswith("application/x-ndjson")
+    ev = events(r)
+    assert [e["type"] for e in ev] == ["lookup", "text", "text", "text", "done"]
+    assert ev[0] == {"type": "lookup", "tool": "get_trials", "arguments": {"drug": "lecanemab"}}
+    assert "".join(e["delta"] for e in ev if e["type"] == "text") == "Lecanemab is in NCT95000001."
+    done = ev[-1]
+    assert done["answer"] == "Lecanemab is in NCT95000001." and done["citations_verified"] is True
+    assert done["cited"]["nct"] == ["NCT95000001"] and done["cached"] is False
+    # The same question again is a single "done" event from the cache.
+    again = events(stream_client.post("/ask/stream", json={"question": "What trials is lecanemab in?"}))
+    assert [e["type"] for e in again] == ["done"] and again[0]["cached"] is True
+
+
+def test_stream_reports_model_failure_as_an_error_event(stream_client):
+    class Failing:
+        model, on_text = "failing", None
+
+        def start(self, *args):
+            raise RuntimeError("Vertex AI request failed (504 DEADLINE_EXCEEDED): projects/demo-1/x")
+    api.app.dependency_overrides[api.get_model] = lambda: Failing()
+    ev = events(stream_client.post("/ask/stream", json={"question": "Is lecanemab approved?"}))
+    assert ev == [{"type": "error", "detail": api.MODEL_UNAVAILABLE}]
+
+
+def test_stream_limits_are_ordinary_errors_before_streaming(stream_client, monkeypatch):
+    monkeypatch.setenv("NEUROSCOPE_DAILY_QUESTION_LIMIT", "0")
+    api.app.dependency_overrides[api.get_model] = lambda: StreamingModel(["x"])
+    r = stream_client.post("/ask/stream", json={"question": "A brand new question"})
+    assert r.status_code == 429 and "limit for today" in r.json()["detail"]

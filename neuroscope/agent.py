@@ -237,10 +237,14 @@ MAX_HISTORY_TURNS = 3
 
 
 def answer_question(question: str, model: ChatModel, registry: dict[str, Callable[..., dict]],
-                    max_steps: int = MAX_STEPS, history: list[dict] | None = None) -> AgentResult:
+                    max_steps: int = MAX_STEPS, history: list[dict] | None = None,
+                    on_event: Callable[[dict], None] | None = None) -> AgentResult:
     """Answer one question. `history` holds earlier {"question", "answer"} turns of the same
     conversation (oldest first, at most MAX_HISTORY_TURNS kept) so follow-ups can be understood.
-    Citations are still checked only against lookups made in this turn."""
+    Citations are still checked only against lookups made in this turn.
+
+    `on_event`, if given, is called with {"type": "lookup", "tool", "arguments"} just before each
+    lookup runs, so a caller can show progress as it happens."""
     steps: list[tuple[ToolCall, dict]] = []
     history = [{"question": h["question"], "answer": h["answer"]} for h in (history or [])][-MAX_HISTORY_TURNS:]
     turn = (model.start(SYSTEM_PROMPT, TOOL_SPECS, question, history) if history
@@ -248,7 +252,11 @@ def answer_question(question: str, model: ChatModel, registry: dict[str, Callabl
     for _ in range(max_steps):
         if not turn.tool_calls:
             break
-        results = [(call, run_tool(registry, call)) for call in turn.tool_calls]
+        results = []
+        for call in turn.tool_calls:
+            if on_event:
+                on_event({"type": "lookup", "tool": call.name, "arguments": call.args})
+            results.append((call, run_tool(registry, call)))
         steps += results
         turn = model.send_tool_results(results)
     stopped = bool(turn.tool_calls)
@@ -279,10 +287,49 @@ class GeminiModel:
         self._history: list = []
         self._config = None
         self.input_tokens = self.output_tokens = 0
+        # When set, text is streamed: each piece is passed here as it arrives.
+        self.on_text: Callable[[str], None] | None = None
+
+    def _stream(self) -> ModelTurn:
+        """One model turn, streamed. Text pieces go to on_text as they arrive; tool calls are
+        collected. Every part is kept, in order, for the conversation history."""
+        sent_text = False
+
+        def attempt():
+            nonlocal sent_text
+            parts, calls, usage = [], [], None
+            try:
+                for chunk in self._client.models.generate_content_stream(
+                        model=self.model, contents=self._history, config=self._config):
+                    usage = chunk.usage_metadata or usage
+                    content = chunk.candidates[0].content if chunk.candidates else None
+                    for part in (content.parts if content and content.parts else []):
+                        parts.append(part)
+                        if part.function_call:
+                            calls.append(ToolCall(part.function_call.name, dict(part.function_call.args or {})))
+                        elif part.text and not getattr(part, "thought", False):
+                            sent_text = True
+                            self.on_text(part.text)
+            except Exception as exc:
+                if sent_text:            # the reader has seen text: retrying would repeat it
+                    exc.retryable = False
+                raise
+            return parts, calls, usage
+
+        parts, calls, usage = call_with_retry(attempt)
+        if usage:
+            self.input_tokens += usage.prompt_token_count or 0
+            self.output_tokens += usage.candidates_token_count or 0
+        if parts:
+            self._history.append(self._types.Content(role="model", parts=parts))
+        text = "".join(p.text for p in parts if p.text and not getattr(p, "thought", False))
+        return ModelTurn(calls, None if calls else text)
 
     def _generate(self) -> ModelTurn:
         from google.genai import errors
         try:
+            if self.on_text:
+                return self._stream()
             resp = call_with_retry(lambda: self._client.models.generate_content(
                 model=self.model, contents=self._history, config=self._config))
         except errors.APIError as exc:

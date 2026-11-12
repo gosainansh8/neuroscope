@@ -11,6 +11,9 @@ Endpoints:
     GET  /         a single web page for asking questions (neuroscope/static/index.html)
     GET  /health   is the database reachable, and how much data it holds
     GET  /changes  newly registered trials, trial status changes, latest FDA approvals, last refresh
+    POST /ask/stream  the same as /ask, as newline-delimited JSON events while the answer is built:
+                   {"type": "lookup", ...} per lookup, {"type": "text", "delta"} as the answer is
+                   written, then {"type": "done", ...the /ask response...} or {"type": "error", "detail"}
     POST /ask      {"question": "..."} -> the agent's answer, its lookups, and the citation check
 
 The API has no login. Every question that reaches the model costs money, so
@@ -29,18 +32,21 @@ so, rather than failing obscurely.
 from __future__ import annotations
 
 import hashlib
+import json
 import logging
 import os
+import queue
 import re
 import threading
 import time
 from collections import defaultdict, deque
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Iterator
 
 import psycopg
 from fastapi import Depends, FastAPI, HTTPException, Request
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, StreamingResponse
 from psycopg.types.json import Jsonb
 from pydantic import BaseModel, Field
 
@@ -120,7 +126,8 @@ def reserve_question(conn: psycopg.Connection) -> None:
         raise HTTPException(status_code=429, detail=(
             "This demo has reached its question limit for the month. Example questions that were "
             "asked recently still work. Please come back next month."))
-    row = conn.execute(
+    # The first question of a day creates the row; the limit must apply to that one too.
+    row = None if limits.daily <= 0 else conn.execute(
         "INSERT INTO api_usage (day, questions) VALUES (current_date, 1) "
         "ON CONFLICT (day) DO UPDATE SET questions = api_usage.questions + 1 "
         "WHERE api_usage.questions < %s RETURNING questions", (limits.daily,)).fetchone()
@@ -270,18 +277,45 @@ def changes(days: int = 7, conn: psycopg.Connection = Depends(get_conn)) -> dict
     }
 
 
+def cached_answer(conn: psycopg.Connection, body: Question) -> Answer | None:
+    """A recent saved answer to the same question. Follow-ups depend on earlier turns: never cached."""
+    if body.history:
+        return None
+    row = conn.execute(
+        "SELECT response FROM api_answer_cache WHERE question_key = %s "
+        "AND created_at > now() - make_interval(hours => %s)", (question_key(body.question), CACHE_HOURS)).fetchone()
+    conn.commit()
+    return Answer(**{**row[0], "cached": True}) if row else None
+
+
+def to_answer(result, model) -> Answer:
+    return Answer(
+        answer=result.answer,
+        lookups=[Lookup(tool=c.name, arguments=c.args, error=r.get("error")) for c, r in result.steps],
+        cited=result.cited, unsupported_citations=result.unsupported,
+        citations_verified=not any(result.unsupported.values()),
+        stopped_early=result.stopped_early, model=getattr(model, "model", None),
+        attribution_warnings=result.attribution_warnings)
+
+
+def save_answer(conn: psycopg.Connection, body: Question, answer: Answer) -> None:
+    """Keep complete, first-turn answers whose citations checked out, for repeat questions."""
+    if (answer.citations_verified and not answer.stopped_early and not answer.attribution_warnings
+            and not body.history):
+        conn.execute(
+            "INSERT INTO api_answer_cache (question_key, question, response) VALUES (%s, %s, %s) "
+            "ON CONFLICT (question_key) DO UPDATE SET question = EXCLUDED.question, "
+            "response = EXCLUDED.response, created_at = now()",
+            (question_key(body.question), body.question, Jsonb(answer.model_dump())))
+        conn.commit()
+
+
 @app.post("/ask", response_model=Answer)
 def ask(body: Question, request: Request, conn: psycopg.Connection = Depends(get_conn),
         model=Depends(get_model), embedder=Depends(get_embedder)) -> Answer:
-    key = question_key(body.question)
-    follow_up = bool(body.history)        # a follow-up depends on earlier turns, so it is never cached
-    cached = None if follow_up else conn.execute(
-        "SELECT response FROM api_answer_cache WHERE question_key = %s "
-        "AND created_at > now() - make_interval(hours => %s)", (key, CACHE_HOURS)).fetchone()
-    conn.commit()
+    cached = cached_answer(conn, body)
     if cached:
-        return Answer(**{**cached[0], "cached": True})
-
+        return cached
     check_visitor(client_ip(request))
     reserve_question(conn)
     try:
@@ -290,20 +324,63 @@ def ask(body: Question, request: Request, conn: psycopg.Connection = Depends(get
     except RuntimeError as exc:                      # the model service failed or timed out
         log.error("model request failed: %s", exc)
         raise HTTPException(status_code=502, detail=MODEL_UNAVAILABLE) from exc
-    answer = Answer(
-        answer=result.answer,
-        lookups=[Lookup(tool=c.name, arguments=c.args, error=r.get("error")) for c, r in result.steps],
-        cited=result.cited, unsupported_citations=result.unsupported,
-        citations_verified=not any(result.unsupported.values()),
-        stopped_early=result.stopped_early, model=getattr(model, "model", None),
-        attribution_warnings=result.attribution_warnings)
-    if (answer.citations_verified and not answer.stopped_early and not answer.attribution_warnings
-            and not follow_up):
-        # Only complete answers whose citations checked out are worth repeating.
-        conn.execute(
-            "INSERT INTO api_answer_cache (question_key, question, response) VALUES (%s, %s, %s) "
-            "ON CONFLICT (question_key) DO UPDATE SET question = EXCLUDED.question, "
-            "response = EXCLUDED.response, created_at = now()",
-            (key, body.question, Jsonb(answer.model_dump())))
-        conn.commit()
+    answer = to_answer(result, model)
+    save_answer(conn, body, answer)
     return answer
+
+
+@contextmanager
+def stream_connection():
+    """The streamed answer is built after the request handler returns, so it uses its own
+    connection rather than the request's. Tests replace this."""
+    conn = connect()
+    try:
+        yield conn
+    finally:
+        conn.close()
+
+
+def _ndjson(events) -> StreamingResponse:
+    return StreamingResponse((json.dumps(e, default=str) + "\n" for e in events),
+                             media_type="application/x-ndjson",
+                             headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
+
+
+@app.post("/ask/stream")
+def ask_stream(body: Question, request: Request, conn: psycopg.Connection = Depends(get_conn),
+               model=Depends(get_model), embedder=Depends(get_embedder)) -> StreamingResponse:
+    """Like /ask, but sends lookups and answer text as they happen. Limits are checked before
+    streaming starts, so a refused question is an ordinary JSON error, not a stream."""
+    cached = cached_answer(conn, body)
+    if cached:
+        return _ndjson([{"type": "done", **cached.model_dump()}])
+    check_visitor(client_ip(request))
+    reserve_question(conn)
+
+    events: queue.Queue = queue.Queue()
+
+    def work() -> None:
+        try:
+            with stream_connection() as c:
+                model.on_text = lambda delta: events.put({"type": "text", "delta": delta})
+                result = answer_question(body.question, model, build_tools(c, embedder),
+                                         history=[t.model_dump() for t in body.history], on_event=events.put)
+                answer = to_answer(result, model)
+                save_answer(c, body, answer)
+                events.put({"type": "done", **answer.model_dump()})
+        except RuntimeError as exc:
+            log.error("model request failed: %s", exc)
+            events.put({"type": "error", "detail": MODEL_UNAVAILABLE})
+        except Exception:                          # never leave the page waiting
+            log.exception("streamed answer failed")
+            events.put({"type": "error", "detail": "Something went wrong while answering. Please try again."})
+        finally:
+            events.put(None)
+
+    threading.Thread(target=work, daemon=True).start()
+
+    def drain():
+        while (event := events.get()) is not None:
+            yield event
+
+    return _ndjson(drain())

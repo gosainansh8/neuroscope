@@ -48,7 +48,8 @@ def call_with_retry(fn: Callable[[], T], attempts: int = 3, base_delay_s: float 
     """Call fn, retrying transient failures with a growing wait (2s, then 4s).
 
     An exception with an HTTP status is retried only for RETRY_STATUS. One without a status
-    (a timeout or dropped connection from the HTTP layer) is retried too.
+    (a timeout or dropped connection from the HTTP layer) is retried too. An exception marked
+    `retryable = False` is never retried (for example, a stream that already sent output).
     """
     for attempt in range(1, attempts + 1):
         try:
@@ -56,6 +57,8 @@ def call_with_retry(fn: Callable[[], T], attempts: int = 3, base_delay_s: float 
         except Exception as exc:
             code = getattr(exc, "code", None)
             transient = code in RETRY_STATUS if isinstance(code, int) else True
+            if getattr(exc, "retryable", True) is False:
+                transient = False
             if not transient or attempt == attempts:
                 raise
             sleep(base_delay_s * 2 ** (attempt - 1))

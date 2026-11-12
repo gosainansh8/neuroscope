@@ -266,7 +266,9 @@ curl -s -X POST localhost:8080/ask -H 'content-type: application/json' -d '{"que
 
 `POST /ask` returns the answer, each lookup the model made, the identifiers it cited, any citations no lookup supports, and `citations_verified`. `GET /health` reports what the database holds. If the database is unreachable, both answer 503 with a message saying so; if the model service fails, `/ask` answers 502 with the reason.
 
-`/ask` enforces limits so a public deployment cannot run up model costs: a daily and a monthly cap on questions sent to the model (50 and 500 by default, counted in the database), five questions per visitor per ten minutes, and a 24-hour cache that answers a repeated question without calling the model. A reached limit is HTTP 429 with a plain explanation.
+`POST /ask/stream` takes the same body and streams the answer as newline-delimited JSON while it is written: a `lookup` event before each database lookup, `text` events carrying each new piece of the answer, then one `done` event with the full checked answer (the same fields as `/ask`), or an `error` event. The web page uses it to show the answer word by word and each lookup as it happens; citations are checked once the answer is complete.
+
+Both endpoints enforce limits so a public deployment cannot run up model costs: a daily and a monthly cap on questions sent to the model (50 and 500 by default, counted in the database), five questions per visitor per ten minutes, and a 24-hour cache that answers a repeated question without calling the model. A reached limit is HTTP 429 with a plain explanation.
 
 Deployed on 2026-11-11 and checked live: the page loads, `/health` reports the full dataset, a question was answered with eight verified identifiers, the same question again came from the cache in 0.2 seconds, and a literature question used semantic search with five verified PubMed IDs.
 
