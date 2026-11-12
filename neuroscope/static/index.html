@@ -6,7 +6,7 @@
 <meta name="description" content="Sourced answers about Alzheimer's drug development, from ClinicalTrials.gov, FDA records, and PubMed.">
 <meta name="color-scheme" content="light dark">
 <title>NeuroScope</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%235b5bd6'/%3E%3Ccircle cx='16' cy='16' r='7' fill='none' stroke='white' stroke-width='2.5'/%3E%3Ccircle cx='16' cy='16' r='2.5' fill='white'/%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2036%2036'%3E%3Crect%20width='36'%20height='36'%20rx='10'%20fill='%235b5bd6'/%3E%3Cg%20transform='translate%285%205%29'%20fill='none'%20stroke='white'%20stroke-linecap='round'%20stroke-linejoin='round'%3E%3Cg%20transform='scale%28.8%29'%20stroke-width='2.4'%3E%3Cpath%20d='M11.5%204.6C9.6%203.6%207.3%204.5%206.9%206.5%204.9%206.9%203.7%208.9%204.4%2010.9c-1.4%201.2-1.4%203.6.1%204.8-.3%202.1%201.3%204%203.4%203.9.8%201.5%202.7%201.9%203.6.8z'/%3E%3Cpath%20d='M12.5%204.6c1.9-1%204.2-.1%204.6%201.9%202%20.4%203.2%202.4%202.5%204.4%201.4%201.2%201.4%203.6-.1%204.8.3%202.1-1.3%204-3.4%203.9-.8%201.5-2.7%201.9-3.6.8z'/%3E%3Cpath%20d='M7.3%209.3c1.4.1%202.5.9%202.9%202.2M6.5%2013.7c1.6-.3%203%20.3%203.7%201.6M9.4%206.7c.6.6.9%201.4.8%202.2'/%3E%3Cpath%20d='M16.7%209.3c-1.4.1-2.5.9-2.9%202.2M17.5%2013.7c-1.6-.3-3%20.3-3.7%201.6M14.6%206.7c-.6.6-.9%201.4-.8%202.2'/%3E%3C/g%3E%3Ccircle%20cx='16'%20cy='16'%20r='5'%20fill='rgba%28255%2C255%2C255%2C.25%29'%20stroke-width='2.2'/%3E%3Cpath%20d='M19.6%2019.6%2024%2024'%20stroke-width='3.0'/%3E%3C/g%3E%3C/svg%3E">
 <style>
   :root {
     --bg: #f5f6fb; --bg-glow-1: rgba(91, 91, 214, .14); --bg-glow-2: rgba(20, 160, 150, .10);
@@ -46,6 +46,10 @@
     font: 16px/1.6 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
     -webkit-font-smoothing: antialiased;
   }
+  /* Magnifying-glass cursor on the page; links and buttons keep the hand, text fields the I-beam. */
+  body { cursor: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='28'%20height='28'%20viewBox='0%200%2028%2028'%20fill='none'%20stroke-linecap='round'%3E%3Ccircle%20cx='11'%20cy='11'%20r='7'%20stroke='%231b1f33'%20stroke-width='5'/%3E%3Cpath%20d='M16.2%2016.2%2024%2024'%20stroke='%231b1f33'%20stroke-width='6'/%3E%3Ccircle%20cx='11'%20cy='11'%20r='7'%20fill='rgba%28139%2C139%2C255%2C.18%29'%20stroke='white'%20stroke-width='2.4'/%3E%3Cpath%20d='M16.2%2016.2%2024%2024'%20stroke='white'%20stroke-width='3'/%3E%3C/svg%3E") 11 11, auto; }
+  a, button, summary, .example { cursor: pointer; }
+  textarea { cursor: text; }
   a { color: var(--accent); }
   main { max-width: 880px; margin: 0 auto; padding: 28px 16px 56px; }
 
@@ -55,7 +59,7 @@
   .brand h1 { font-size: 1.35rem; letter-spacing: -.01em; margin: 0; }
   .brand .pill { margin-left: auto; font-size: .75rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase;
                  color: var(--accent); background: var(--accent-soft); padding: 4px 10px; border-radius: 999px; }
-  .hero { margin: 36px 0 22px; }
+  .hero { margin: 36px 0 24px; }
   .hero h2 { font-size: clamp(1.7rem, 4.6vw, 2.45rem); line-height: 1.15; letter-spacing: -.025em; margin: 0 0 12px; }
   .hero h2 .grad { background: linear-gradient(90deg, var(--accent), var(--accent-2)); -webkit-background-clip: text;
                    background-clip: text; color: transparent; }
@@ -68,24 +72,26 @@
   .src-tag.fda { color: var(--fda); background: var(--fda-soft); }
   .src-tag.paper { color: var(--paper); background: var(--paper-soft); }
 
-  /* Stats */
-  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 0 0 22px; }
-  .stat { background: var(--panel); border: 1px solid var(--panel-border); border-radius: 12px; padding: 12px 14px;
-          backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
-  .stat b { display: block; font-size: 1.35rem; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
-  .stat span { color: var(--muted); font-size: .8rem; }
-  @media (max-width: 620px) { .stats { grid-template-columns: repeat(2, 1fr); } }
+  /* Stats: a quiet line, not a feature */
+  .stats { display: flex; flex-wrap: wrap; gap: 4px 0; margin: 14px 0 0; color: var(--faint); font-size: .8rem; }
+  .stats span + span::before { content: "·"; margin: 0 8px; }
+  .stats b { color: var(--muted); font-weight: 600; font-variant-numeric: tabular-nums; }
 
   /* Ask box */
   .card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--radius);
           box-shadow: var(--shadow); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
-  form.card { display: flex; align-items: flex-end; gap: 10px; padding: 10px; }
-  form.card:focus-within { border-color: var(--accent); box-shadow: var(--shadow), 0 0 0 4px var(--accent-soft); }
-  textarea { flex: 1; min-height: 52px; max-height: 220px; padding: 12px; border: 0; outline: none; resize: none;
-             background: transparent; color: var(--text); font: inherit; }
+  /* The question box is the main thing on the page: larger, with a soft gradient edge */
+  form.card { display: flex; align-items: flex-end; gap: 12px; padding: 12px 12px 12px 8px; border-radius: 18px;
+              border: 1.5px solid transparent;
+              background: linear-gradient(var(--panel-solid), var(--panel-solid)) padding-box,
+                          linear-gradient(135deg, rgba(91, 91, 214, .55), rgba(20, 158, 147, .45)) border-box;
+              box-shadow: var(--shadow), 0 10px 40px rgba(91, 91, 214, .14); }
+  form.card:focus-within { box-shadow: var(--shadow), 0 0 0 5px var(--accent-soft), 0 12px 44px rgba(91, 91, 214, .22); }
+  textarea { flex: 1; min-height: 64px; max-height: 240px; padding: 14px 14px; border: 0; outline: none; resize: none;
+             background: transparent; color: var(--text); font: inherit; font-size: 1.08rem; line-height: 1.5; }
   textarea::placeholder { color: var(--faint); }
   button { font: inherit; cursor: pointer; }
-  button.primary { display: inline-flex; align-items: center; gap: 8px; border: 0; border-radius: 10px; padding: 12px 18px;
+  button.primary { display: inline-flex; align-items: center; gap: 8px; border: 0; border-radius: 12px; padding: 14px 22px;
                    font-weight: 650; color: var(--accent-text); background: linear-gradient(135deg, var(--accent), var(--accent-2));
                    box-shadow: 0 6px 16px rgba(91, 91, 214, .3); transition: transform .12s ease, opacity .12s ease; }
   button.primary:hover { transform: translateY(-1px); }
@@ -96,16 +102,12 @@
   .followup b { color: var(--text); font-weight: 600; }
   .followup .icon-btn { margin-left: auto; }
 
-  /* Examples */
-  .examples { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin: 18px 0 8px; }
-  @media (max-width: 620px) { .examples { grid-template-columns: 1fr; } }
-  .example { text-align: left; border: 1px solid var(--panel-border); background: var(--panel); color: var(--text);
-             border-radius: 12px; padding: 12px 14px; transition: border-color .15s ease, transform .15s ease; }
-  .example:hover { border-color: var(--accent); transform: translateY(-1px); }
-  .example small { display: block; font-size: .72rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
-                   margin-bottom: 4px; }
-  .example small.trial { color: var(--trial); } .example small.fda { color: var(--fda); } .example small.paper { color: var(--paper); }
-  .example span { font-size: .93rem; }
+  /* Examples: two quiet suggestions */
+  .examples { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; margin: 10px 4px 0;
+              font-size: .8rem; color: var(--faint); }
+  .example { border: 0; background: none; padding: 0; color: var(--muted); font-size: .8rem; cursor: pointer;
+             text-decoration: underline; text-decoration-color: var(--panel-border); text-underline-offset: 3px; }
+  .example:hover { color: var(--accent); text-decoration-color: currentColor; }
 
   /* Progress */
   .progress { padding: 20px 22px; margin-top: 18px; }
@@ -184,23 +186,68 @@
   details[open] summary { margin-bottom: 12px; }
 
   /* What changed */
-  .changes { margin-top: 26px; padding: 18px 20px; }
-  .changes-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 14px; margin-bottom: 12px; }
-  .changes-head h3 { margin: 0; font-size: 1.05rem; letter-spacing: -.01em; }
-  .changes-head span { color: var(--faint); font-size: .82rem; }
-  .change-cols { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .changes { margin-top: 30px; padding: 20px; }
+  .changes-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; margin-bottom: 14px; }
+  .changes-head h3 { margin: 0; font-size: 1.1rem; letter-spacing: -.01em; }
+  .changes-head span { color: var(--faint); font-size: .8rem; }
+  .change-cols { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
   @media (max-width: 760px) { .change-cols { grid-template-columns: 1fr; } }
-  .change-cols h4 { margin: 0 0 8px; font-size: .74rem; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); }
+  .change-col { --c: var(--accent); --c-soft: var(--accent-soft); background: var(--panel-solid);
+                border: 1px solid var(--panel-border); border-top: 3px solid var(--c); border-radius: 12px; padding: 14px; }
+  .change-col.trial { --c: var(--trial); --c-soft: var(--trial-soft); }
+  .change-col.fda { --c: var(--fda); --c-soft: var(--fda-soft); }
+  .change-col h4 { display: flex; align-items: center; gap: 8px; margin: 0 0 12px; font-size: .86rem; }
+  .change-col h4 svg { color: var(--c); flex: none; }
+  .change-col h4 .count { margin-left: auto; min-width: 22px; text-align: center; padding: 1px 7px; border-radius: 999px;
+                          font-size: .74rem; color: var(--c); background: var(--c-soft); }
   .change-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
-  .change-list li { font-size: .88rem; line-height: 1.4; }
-  .change-list a { font-weight: 600; text-decoration: none; }
-  .change-list .meta { display: block; color: var(--faint); font-size: .78rem; }
-  .change-list .empty { color: var(--faint); }
+  .change-list li { padding: 9px 10px; border-radius: 9px; background: var(--c-soft); font-size: .86rem; line-height: 1.4; }
+  .change-list .id { display: inline-block; font: 600 .74rem ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--c);
+                     text-decoration: none; }
+  .change-list .id:hover { text-decoration: underline; }
+  .change-list .title { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+                        margin-top: 2px; color: var(--text); }
+  .change-list .brand { font-weight: 650; color: var(--text); }
+  .change-list .delta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 4px; }
+  .change-list .old { text-decoration: line-through; color: var(--faint); }
+  .change-list .new { font-weight: 600; color: var(--text); }
+  .change-list .meta { display: block; margin-top: 3px; color: var(--faint); font-size: .76rem; }
+  .change-list .empty { background: none; padding: 4px 0; color: var(--faint); }
+
+  /* How an answer is found */
+  .flow { margin-top: 30px; padding: 20px; }
+  .flow h3 { margin: 0 0 4px; font-size: 1.1rem; letter-spacing: -.01em; }
+  .flow > p { margin: 0 0 16px; color: var(--faint); font-size: .8rem; }
+  .flow-steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(5, 1fr); gap: 22px; }
+  .flow-steps li { position: relative; padding: 14px 12px; border-radius: 12px; background: var(--panel-solid);
+                   border: 1px solid var(--panel-border); font-size: .8rem; color: var(--muted); line-height: 1.45; }
+  .flow-steps li::after { content: ""; position: absolute; top: 50%; right: -17px; width: 12px; height: 12px;
+                          border-top: 2px solid var(--faint); border-right: 2px solid var(--faint);
+                          transform: translateY(-50%) rotate(45deg); opacity: .6; }
+  .flow-steps li:last-child::after { display: none; }
+  .flow-steps .ic { width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; margin-bottom: 8px;
+                    color: var(--c, var(--accent)); background: var(--c-soft, var(--accent-soft)); }
+  .flow-steps b { display: block; color: var(--text); font-size: .86rem; margin-bottom: 3px; }
+  .flow-steps .tools { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+  .flow-steps .tools span { padding: 1px 7px; border-radius: 999px; font-size: .7rem; color: var(--c); background: var(--c-soft); }
+  .flow-steps .src { display: block; margin-top: 6px; font-size: .72rem; color: var(--faint); }
+  .flow-steps .t { --c: var(--trial); --c-soft: var(--trial-soft); }
+  .flow-steps .ok { --c: var(--ok); --c-soft: var(--ok-soft); }
+  @media (max-width: 760px) {
+    .flow-steps { grid-template-columns: 1fr; gap: 18px; }
+    .flow-steps li::after { top: auto; bottom: -15px; right: 50%; transform: translateX(50%) rotate(135deg); }
+  }
 
   footer { margin-top: 34px; color: var(--faint); font-size: .84rem; display: grid; gap: 8px; }
-  footer .how { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 8px; }
-  footer .how div { background: var(--panel); border: 1px solid var(--panel-border); border-radius: 12px; padding: 12px 14px; }
-  footer .how b { display: block; color: var(--text); font-size: .88rem; margin-bottom: 2px; }
+  footer .how { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; margin: 6px 0 10px;
+                padding-top: 22px; border-top: 1px solid var(--panel-border); }
+  footer .how > div { display: grid; grid-template-columns: 30px 1fr; gap: 0 12px; align-items: start; line-height: 1.5; }
+  footer .how .ic { grid-row: span 2; width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center;
+                    color: var(--c); background: var(--c-soft); }
+  footer .how .ic.a { --c: var(--trial); --c-soft: var(--trial-soft); }
+  footer .how .ic.b { --c: var(--ok); --c-soft: var(--ok-soft); }
+  footer .how .ic.c { --c: var(--fda); --c-soft: var(--fda-soft); }
+  footer .how b { display: block; color: var(--text); font-size: .86rem; font-weight: 600; margin-bottom: 1px; }
   @media (max-width: 620px) { footer .how { grid-template-columns: 1fr; } }
   [hidden] { display: none !important; }
   @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
@@ -212,9 +259,7 @@
     <svg width="36" height="36" viewBox="0 0 36 36" aria-hidden="true">
       <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5b5bd6"/><stop offset="1" stop-color="#149e93"/></linearGradient></defs>
       <rect width="36" height="36" rx="10" fill="url(#g)"/>
-      <circle cx="18" cy="18" r="8.5" fill="none" stroke="#fff" stroke-width="2.4"/>
-      <circle cx="18" cy="18" r="3" fill="#fff"/>
-      <path d="M18 5.5v3.5M18 27v3.5M5.5 18h3.5M27 18h3.5" stroke="#fff" stroke-width="2.2" stroke-linecap="round" opacity=".8"/>
+      <g transform="translate(5 5)" fill="none" stroke="#fff" stroke-linecap="round" stroke-linejoin="round"><g transform="scale(.8)" stroke-width="2"><path d="M11.5 4.6C9.6 3.6 7.3 4.5 6.9 6.5 4.9 6.9 3.7 8.9 4.4 10.9c-1.4 1.2-1.4 3.6.1 4.8-.3 2.1 1.3 4 3.4 3.9.8 1.5 2.7 1.9 3.6.8z"/><path d="M12.5 4.6c1.9-1 4.2-.1 4.6 1.9 2 .4 3.2 2.4 2.5 4.4 1.4 1.2 1.4 3.6-.1 4.8.3 2.1-1.3 4-3.4 3.9-.8 1.5-2.7 1.9-3.6.8z"/><path d="M7.3 9.3c1.4.1 2.5.9 2.9 2.2M6.5 13.7c1.6-.3 3 .3 3.7 1.6M9.4 6.7c.6.6.9 1.4.8 2.2"/><path d="M16.7 9.3c-1.4.1-2.5.9-2.9 2.2M17.5 13.7c-1.6-.3-3 .3-3.7 1.6M14.6 6.7c-.6.6-.9 1.4-.8 2.2"/></g><circle cx="16" cy="16" r="5" fill="rgba(255,255,255,.22)" stroke-width="1.8"/><path d="M19.6 19.6 24 24" stroke-width="2.6"/></g>
     </svg>
     <h1>NeuroScope</h1>
     <span class="pill">Alzheimer's</span>
@@ -228,13 +273,12 @@
       <span class="src-tag fda">FDA records &amp; labels</span>
       <span class="src-tag paper">PubMed abstracts</span>
     </div>
-  </section>
-
-  <section class="stats" id="stats" aria-label="What the database holds">
-    <div class="stat"><b data-stat="trials">–</b><span>clinical trials</span></div>
-    <div class="stat"><b data-stat="drugs">–</b><span>drugs tracked</span></div>
-    <div class="stat"><b data-stat="drugs_with_fda_approval">–</b><span>with FDA approval</span></div>
-    <div class="stat"><b data-stat="document_chunks">–</b><span>abstract passages</span></div>
+    <div class="stats" id="stats" aria-label="What the database holds" hidden>
+      <span><b data-stat="trials"></b> trials</span>
+      <span><b data-stat="drugs"></b> drugs</span>
+      <span><b data-stat="drugs_with_fda_approval"></b> with FDA approval</span>
+      <span><b data-stat="document_chunks"></b> abstract passages</span>
+    </div>
   </section>
 
   <form id="ask-form" class="card">
@@ -245,17 +289,15 @@
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
     </button>
   </form>
-  <p class="hint">Press Enter to ask, Shift+Enter for a new line.</p>
   <div id="followup" class="followup" hidden aria-live="polite">
     <span>Follow-ups continue from: <b id="followup-q"></b></span>
     <button type="button" class="icon-btn" id="new-topic">New topic</button>
   </div>
 
   <div class="examples" id="examples">
-    <button type="button" class="example"><small class="fda">Approval</small><span>Is semaglutide approved for Alzheimer's disease?</span></button>
-    <button type="button" class="example"><small class="trial">Trials</small><span>What is the regulatory status of lecanemab, and what trials is it in?</span></button>
-    <button type="button" class="example"><small class="paper">Literature</small><span>What does the literature say about brain swelling with donanemab?</span></button>
-    <button type="button" class="example"><small class="fda">Approval</small><span>Is masitinib FDA approved? It finished a Phase 3 trial.</span></button>
+    <span>Try:</span>
+    <button type="button" class="example">Is semaglutide approved for Alzheimer's disease?</button>
+    <button type="button" class="example">What does the literature say about brain swelling with donanemab?</button>
   </div>
 
   <section id="progress" class="card progress" hidden aria-live="polite">
@@ -297,20 +339,70 @@
     </div>
   </article>
 
+  <section class="card flow" aria-labelledby="flow-title">
+    <h3 id="flow-title">How an answer is found</h3>
+    <p>The model never sees the database directly. It can only ask for these lookups, and every citation is checked afterwards.</p>
+    <ol class="flow-steps">
+      <li>
+        <span class="ic" aria-hidden="true"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.8 7L4 20.5l1.5-4.6A8 8 0 1 1 21 12z"/></svg></span>
+        <b>1. Your question</b>Plus up to three earlier turns, so follow-ups like “its trials” make sense.
+      </li>
+      <li>
+        <span class="ic" aria-hidden="true"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/><circle cx="12" cy="12" r="3.5"/></svg></span>
+        <b>2. Gemini plans</b>Decides which lookups it needs, and can ask again with what it learns.
+      </li>
+      <li class="t">
+        <span class="ic" aria-hidden="true"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5.5" rx="7.5" ry="2.8"/><path d="M4.5 5.5v13c0 1.5 3.4 2.8 7.5 2.8s7.5-1.3 7.5-2.8v-13M4.5 12c0 1.5 3.4 2.8 7.5 2.8s7.5-1.3 7.5-2.8"/></svg></span>
+        <b>3. Database lookups</b>Read-only, at most 8 rounds.
+        <span class="tools"><span>drug names</span><span>trials</span><span>FDA status</span><span>literature</span><span>pipeline</span></span>
+        <span class="src">ClinicalTrials.gov · FDA · PubMed, refreshed weekly</span>
+      </li>
+      <li>
+        <span class="ic" aria-hidden="true"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4l10.5-10.5a2.8 2.8 0 0 0-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg></span>
+        <b>4. Answer written</b>Only from what the lookups returned, citing each record by its ID.
+      </li>
+      <li class="ok">
+        <span class="ic" aria-hidden="true"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7.5 3v5.5c0 4.6-3.2 8.3-7.5 9.5-4.3-1.2-7.5-4.9-7.5-9.5V6z"/><path d="M8.6 12.2l2.3 2.3 4.6-4.8"/></svg></span>
+        <b>5. Citations checked</b>Code, not the model, confirms every trial, FDA, and PubMed ID came from a lookup.
+      </li>
+    </ol>
+  </section>
+
   <section id="changes" class="card changes" hidden aria-labelledby="changes-title">
-    <div class="changes-head"><h3 id="changes-title">What changed</h3><span id="changes-sub"></span></div>
+    <div class="changes-head"><h3 id="changes-title">This week in Alzheimer's drug development</h3><span id="changes-sub"></span></div>
     <div class="change-cols">
-      <div><h4>Newly registered trials</h4><ul class="change-list" id="chg-new"></ul></div>
-      <div><h4>Trial status changes</h4><ul class="change-list" id="chg-status"></ul></div>
-      <div><h4>Latest Alzheimer's FDA approvals</h4><ul class="change-list" id="chg-fda"></ul></div>
+      <div class="change-col trial">
+        <h4><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>
+          New trials<span class="count" id="chg-new-n">0</span></h4>
+        <ul class="change-list" id="chg-new"></ul>
+      </div>
+      <div class="change-col">
+        <h4><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12a8 8 0 0 1-14 5.3M4 12a8 8 0 0 1 14-5.3"/><path d="M18 3v4h-4M6 21v-4h4"/></svg>
+          Status changes<span class="count" id="chg-status-n">0</span></h4>
+        <ul class="change-list" id="chg-status"></ul>
+      </div>
+      <div class="change-col fda">
+        <h4><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l2.4 2.2 3.2-.3.7 3.1 2.8 1.6-1.3 2.9 1.3 2.9-2.8 1.6-.7 3.1-3.2-.3L12 21l-2.4-2.2-3.2.3-.7-3.1-2.8-1.6 1.3-2.9-1.3-2.9 2.8-1.6.7-3.1 3.2.3z"/><path d="M8.5 12l2.4 2.4 4.6-4.8"/></svg>
+          Latest FDA approvals<span class="count" id="chg-fda-n">0</span></h4>
+        <ul class="change-list" id="chg-fda"></ul>
+      </div>
     </div>
   </section>
 
   <footer>
     <div class="how">
-      <div><b>Only public records</b>The model can't see anything but database lookups over trials, FDA data, and abstracts.</div>
-      <div><b>Citations verified</b>Every trial ID, FDA application, and PubMed ID is checked against what the lookups returned.</div>
-      <div><b>Know the limits</b>The check confirms a source is real, not that it supports the sentence. Not medical advice.</div>
+      <div>
+        <span class="ic a" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5.5" rx="7.5" ry="2.8"/><path d="M4.5 5.5v13c0 1.5 3.4 2.8 7.5 2.8s7.5-1.3 7.5-2.8v-13M4.5 12c0 1.5 3.4 2.8 7.5 2.8s7.5-1.3 7.5-2.8"/></svg></span>
+        <b>Only public records</b><span>The model can't see anything but database lookups over trials, FDA data, and abstracts.</span>
+      </div>
+      <div>
+        <span class="ic b" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7.5 3v5.5c0 4.6-3.2 8.3-7.5 9.5-4.3-1.2-7.5-4.9-7.5-9.5V6z"/><path d="M8.6 12.2l2.3 2.3 4.6-4.8"/></svg></span>
+        <b>Citations verified</b><span>Every trial ID, FDA application, and PubMed ID is checked against what the lookups returned.</span>
+      </div>
+      <div>
+        <span class="ic c" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5.5M12 7.6h.01"/></svg></span>
+        <b>Know the limits</b><span>The check confirms a source is real, not that it supports the sentence. Not medical advice.</span>
+      </div>
     </div>
     <div id="health">Connecting to the database…</div>
   </footer>
@@ -486,7 +578,7 @@ textarea.addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftK
 $("new-topic").addEventListener("click", () => { setHistory([]); textarea.value = ""; autosize(); textarea.focus(); });
 $("examples").addEventListener("click", (e) => {
   const btn = e.target.closest(".example");
-  if (btn) { setHistory([]); textarea.value = btn.querySelector("span").textContent; autosize(); $("ask-form").requestSubmit(); }
+  if (btn) { setHistory([]); textarea.value = btn.textContent.trim(); autosize(); $("ask-form").requestSubmit(); }
 });
 $("copy").addEventListener("click", async () => {
   try { await navigator.clipboard.writeText($("answer").innerText); $("copy").textContent = "Copied"; }
@@ -494,26 +586,20 @@ $("copy").addEventListener("click", async () => {
   setTimeout(() => { $("copy").textContent = "Copy"; }, 1600);
 });
 
-function countUp(el, target) {
-  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) { el.textContent = target.toLocaleString(); return; }
-  const start = performance.now(), ms = 900;
-  const tick = (t) => { const p = Math.min((t - start) / ms, 1); el.textContent = Math.round(target * (1 - Math.pow(1 - p, 3))).toLocaleString();
-                        if (p < 1) requestAnimationFrame(tick); };
-  requestAnimationFrame(tick);
+// "What changed": built with DOM methods from /changes (no HTML strings).
+function el(tag, cls, text) {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text != null) e.textContent = text;
+  return e;
 }
-
-// "What changed": built with DOM methods from /changes.
-function changeItem(href, linkText, linkClass, rest, meta) {
-  const li = document.createElement("li");
-  const a = document.createElement("a");
-  a.href = href; a.target = "_blank"; a.rel = "noopener"; a.className = linkClass; a.textContent = linkText;
-  li.append(a, document.createTextNode(rest ? " " + rest : ""));
-  if (meta) { const m = document.createElement("span"); m.className = "meta"; m.textContent = meta; li.appendChild(m); }
-  return li;
+function idLink(href, text) {
+  const a = el("a", "id", text); a.href = href; a.target = "_blank"; a.rel = "noopener"; return a;
 }
 function fillList(id, items, emptyText) {
   const ul = $(id); ul.textContent = "";
-  if (!items.length) { const li = document.createElement("li"); li.className = "empty"; li.textContent = emptyText; ul.appendChild(li); return; }
+  $(id + "-n").textContent = String(items.length);
+  if (!items.length) { ul.appendChild(el("li", "empty", emptyText)); return; }
   items.forEach((li) => ul.appendChild(li));
 }
 const FIELD_LABELS = { overall_status: "Status", phase_label: "Phase", has_results: "Results posted",
@@ -521,26 +607,38 @@ const FIELD_LABELS = { overall_status: "Status", phase_label: "Phase", has_resul
 const pretty = (v) => (v || "none").replace(/_/g, " ").toLowerCase();
 fetch("changes?days=7").then((r) => r.ok ? r.json() : null).then((d) => {
   if (!d) return;
-  fillList("chg-new", d.new_trials.slice(0, 6).map((t) => changeItem(TRIAL_URL(t.nct_id), t.nct_id, "trial",
-    t.title.length > 90 ? t.title.slice(0, 88) + "…" : t.title,
-    `First posted ${t.first_posted} · ${t.phase}` + (t.drugs.length ? ` · ${t.drugs.slice(0, 3).join(", ")}` : ""))),
-    "No trials first posted in the last 7 days.");
-  fillList("chg-status", d.trial_changes.slice(0, 6).map((c) => changeItem(TRIAL_URL(c.nct_id), c.nct_id, "trial",
-    `${FIELD_LABELS[c.field] || c.field}: ${pretty(c.old)} → ${pretty(c.new)}`, `Detected ${c.detected}`)),
-    "No status changes detected in the last 7 days.");
-  fillList("chg-fda", d.latest_fda_approvals.map((a) => changeItem(FDA_URL(a.application_number.replace(/^\D+/, "")),
-    a.drug, "fda", a.brand ? `(${a.brand})` : "", `Approved ${a.approved} · ${a.application_number}`)),
-    "No FDA approvals on record.");
+  fillList("chg-new", d.new_trials.slice(0, 5).map((t) => {
+    const li = el("li");
+    li.append(idLink(TRIAL_URL(t.nct_id), t.nct_id), el("span", "title", t.title),
+              el("span", "meta", `Posted ${t.first_posted} · ${t.phase}` + (t.drugs.length ? ` · ${t.drugs.slice(0, 2).join(", ")}` : "")));
+    return li;
+  }), "No trials first posted this week.");
+  fillList("chg-status", d.trial_changes.slice(0, 5).map((c) => {
+    const li = el("li");
+    const delta = el("div", "delta");
+    delta.append(el("span", "old", pretty(c.old)), document.createTextNode("→"), el("span", "new", pretty(c.new)));
+    li.append(idLink(TRIAL_URL(c.nct_id), c.nct_id), el("span", "meta", FIELD_LABELS[c.field] || c.field), delta);
+    return li;
+  }), "No status changes this week.");
+  fillList("chg-fda", d.latest_fda_approvals.slice(0, 5).map((a) => {
+    const li = el("li");
+    const name = el("div");
+    name.append(el("span", "brand", a.brand || a.drug), document.createTextNode(a.brand ? ` (${a.drug})` : ""));
+    li.append(name, idLink(FDA_URL(a.application_number.replace(/^\D+/, "")), a.application_number),
+              el("span", "meta", `Approved ${a.approved}`));
+    return li;
+  }), "No Alzheimer's approvals on record.");
   $("changes-sub").textContent = d.last_refresh
-    ? `Last refreshed ${d.last_refresh.finished_at} UTC · last 7 days`
-    : `Data retrieved ${d.trials_last_retrieved} · last 7 days`;
+    ? `Updated weekly · last refreshed ${d.last_refresh.finished_at.slice(0, 10)}`
+    : `Data retrieved ${d.trials_last_retrieved}`;
   $("changes").hidden = false;
 }).catch(() => {});
 
 fetch("health").then((r) => r.json().then((d) => ({ ok: r.ok, d }))).then(({ ok, d }) => {
   if (!ok) { $("health").textContent = d.detail || "The database is not reachable."; return; }
-  document.querySelectorAll("[data-stat]").forEach((el) => countUp(el, Number(d[el.dataset.stat]) || 0));
-  $("health").textContent = `Trials last retrieved ${d.trials_last_retrieved} · ${d.questions_today} of ${d.daily_question_limit} new questions used today`;
+  document.querySelectorAll("[data-stat]").forEach((el) => { el.textContent = (Number(d[el.dataset.stat]) || 0).toLocaleString(); });
+  $("stats").hidden = false;
+  $("health").textContent = `${d.questions_today} of ${d.daily_question_limit} new questions used today`;
 }).catch(() => { $("health").textContent = "Could not reach the server."; });
 </script>
 </body>

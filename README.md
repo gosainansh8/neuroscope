@@ -226,7 +226,7 @@ One command re-fetches all Alzheimer's trials (changes go to `trial_changes`), d
 
 A local run on 2026-11-11, one day after the full load, took about 30 seconds for trials and FDA data and found 15 changed trials: 2 status changes, 2 later primary completion dates, and enrollment updates.
 
-The web page's **What changed** panel (`GET /changes`) shows trials first posted on ClinicalTrials.gov in the last 7 days (from each record's own first-posted date, so an initial load does not count as new), status, phase, and completion-date changes found by refreshes, and the latest FDA approvals whose labels mention Alzheimer's.
+The web page's **This week in Alzheimer's drug development** panel (`GET /changes`) shows trials first posted on ClinicalTrials.gov in the last 7 days (from each record's own first-posted date, so an initial load does not count as new), status, phase, and completion-date changes found by refreshes, and the latest FDA approvals whose labels mention Alzheimer's.
 
 ## Evaluation
 
