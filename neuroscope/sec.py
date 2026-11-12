@@ -79,12 +79,51 @@ def html_to_text(raw: str) -> str:
     return "\n".join(line for line in lines if line)
 
 
+_DATELINE = re.compile(r"(?i)newswire|business wire|prnewswire|globe newswire|accesswire|\(nasdaq|\(nyse|, 20\d\d\b"
+                       r"|^(?-i:[A-Z][A-Z .'-]{2,}),")          # a city dateline such as "MALVERN, Pa."
+_NOT_HEADLINE = re.compile(r"(?i)^(exhibit|ex-?99|press release$|for immediate release|https?:|contacts?:?$|"
+                           r"investor|media)|\.(htm|html|txt)$|^[\W\d]+$")
+
+
 def headline(text: str, company: str, form: str, filed: str) -> str:
-    """The first line that reads like a headline, else a plain label."""
-    for line in text.splitlines()[:25]:
-        if 25 <= len(line) <= 250 and not re.match(r"(?i)(exhibit|ex-?99|press release$|for immediate release|https?:)", line):
-            return line
-    return f"{company} {form} filed {filed}"
+    """The release's headline: the first line that reads like one, joined with its continuation when
+    it wraps onto the next line. Falls back to a plain label."""
+    lines = text.splitlines()[:30]
+    for i, line in enumerate(lines):
+        letters = sum(c.isalpha() for c in line)
+        if not (20 <= len(line) <= 250) or _NOT_HEADLINE.search(line) or _DATELINE.search(line) \
+                or letters < 0.6 * len(line):
+            continue
+        title = line
+        nxt = lines[i + 1] if i + 1 < len(lines) else ""
+        if (len(title) < 110 and not title.endswith((".", "!", "?", ":")) and 3 <= len(nxt) <= 90
+                and not nxt.endswith(".") and not re.search(r"\b(today|announced|said)\b", nxt)
+                and not _DATELINE.search(nxt) and not _NOT_HEADLINE.search(nxt)):
+            title = f"{title} {nxt}"
+        return title[:250]
+    return f"{company} press release, {filed}"
+
+
+def retitle(conn: psycopg.Connection, session=None) -> int:
+    """Re-read stored press releases and update their headlines (after improving headline())."""
+    session = session or sec_session()
+    rows = conn.execute("SELECT id, url, split_part(journal, ' (SEC', 1), published_date::text FROM documents "
+                        "WHERE source_type = 'press_release'").fetchall()
+    conn.commit()
+    changed = 0
+    for doc_id, url, company, filed in rows:
+        try:
+            resp = session.get(url, timeout=120)
+            resp.raise_for_status()
+        except requests.RequestException as exc:
+            log.warning("%s: %s", url, exc)
+            continue
+        time.sleep(PAUSE_S)
+        title = headline(html_to_text(resp.text), company, "8-K", filed)
+        changed += conn.execute("UPDATE documents SET title = %s WHERE id = %s AND title IS DISTINCT FROM %s",
+                                (title, doc_id, title)).rowcount
+        conn.commit()
+    return changed
 
 
 def companies(tickers: list[str] | None = None) -> list[tuple[str, str]]:
@@ -249,8 +288,13 @@ def main(argv: list[str] | None = None) -> int:
     sp = sub.add_parser("load")
     sp.add_argument("--tickers", help="comma-separated; default: every company in data/sec_companies.csv")
     sp.add_argument("--years", type=int, default=3, help="press releases from this many years back")
+    sub.add_parser("retitle", help="re-read stored press releases and update their headlines")
     args = p.parse_args(argv)
     logging.basicConfig(level=logging.INFO, format="%(message)s")
+    if args.cmd == "retitle":
+        with connect() as conn:
+            print(f"Updated {retitle(conn)} headlines")
+        return 0
     try:
         with connect() as conn:
             s = load(conn, [t.strip().upper() for t in args.tickers.split(",")] if args.tickers else None, args.years)

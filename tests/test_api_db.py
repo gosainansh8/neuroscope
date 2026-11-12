@@ -340,3 +340,13 @@ def test_report_mode_uses_the_report_prompt_costs_three_and_is_cached_separately
     assert plain["answer"] == "Lecanemab is an antibody." and plain["cached"] is False
     assert client.post("/ask", json={"question": "lecanemab", "mode": "report"}).json()["cached"] is True
     assert client.post("/ask", json={"question": "x y z", "mode": "essay"}).status_code == 422
+
+
+def test_atlas_summarises_each_disease(client, conn):
+    api._atlas_cache.clear()
+    body = client.get("/atlas").json()
+    assert [d["disease"] for d in body["diseases"]] == ["alzheimers", "parkinsons", "als"]
+    ad = body["diseases"][0]
+    assert ad["region"] == "Hippocampus and cortex" and set(ad["active_programs"]) == {"phase1", "phase2", "phase3"}
+    assert {"companies", "top_mechanisms", "top_endpoints", "top_biomarkers", "approved_drugs_fda_label"} <= set(ad)
+    assert client.get("/atlas").json() == body           # served from the hourly cache

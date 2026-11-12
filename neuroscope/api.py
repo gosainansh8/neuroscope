@@ -312,6 +312,91 @@ def changes(days: int = 7, conn: psycopg.Connection = Depends(get_conn)) -> dict
     }
 
 
+ATLAS_REGIONS = {
+    "alzheimers": ("Hippocampus and cortex", "Memory fades first: plaques and tangles begin in the hippocampus and spread "
+                                             "through the cortex."),
+    "parkinsons": ("Substantia nigra", "Dopamine neurons in the midbrain die, so movement slows and stiffens."),
+    "als": ("Motor cortex and spinal cord", "Upper and lower motor neurons degenerate, and muscles lose their signal."),
+}
+_atlas_cache: dict = {}
+
+
+@app.get("/atlas")
+def atlas(conn: psycopg.Connection = Depends(get_conn)) -> dict:
+    """Each disease's pipeline at a glance, for the Atlas tab. Recomputed at most hourly."""
+    from . import tools
+    stamp = int(time.time() // 3600)
+    if _atlas_cache.get("stamp") == stamp:
+        return _atlas_cache["data"]
+    compare = {aspect: tools.compare_diseases(conn, aspect, limit=3, primary_only=aspect == "endpoints")
+               for aspect in ("mechanisms", "endpoints", "biomarkers")}
+    shared = tools.compare_diseases(conn, "mechanisms", limit=15)["in_every_top_list"]
+    out = []
+    for slug, name, pattern in conn.execute(
+            "SELECT slug, name, indication_pattern FROM diseases ORDER BY sort_order").fetchall():
+        trials, active = conn.execute(
+            "SELECT COUNT(*), COUNT(*) FILTER (WHERE t.status_group = 'active') FROM trials t "
+            "JOIN trial_diseases td ON td.nct_id = t.nct_id WHERE td.disease = %s", (slug,)).fetchone()
+        funnel = dict(conn.execute(
+            """
+            SELECT CASE WHEN highest_phase >= 3 THEN 'phase3' WHEN highest_phase >= 2 THEN 'phase2' ELSE 'phase1' END,
+                   COUNT(*)
+            FROM v_program_status WHERE disease = %s AND program_status = 'active' AND NOT fda_approved
+              AND NOT ema_authorised AND highest_phase IS NOT NULL GROUP BY 1
+            """, (slug,)).fetchall())
+        stopped = conn.execute(
+            "SELECT COUNT(*) FROM v_program_status WHERE disease = %s AND program_status = 'discontinued' "
+            "AND last_update >= current_date - 365 AND NOT fda_approved AND NOT ema_authorised", (slug,)).fetchone()[0]
+        approved = conn.execute(
+            """
+            SELECT COUNT(DISTINCT p.drug_id) FROM fda_products p
+            JOIN fda_applications a ON a.application_number = p.application_number AND a.approval_status = 'approved'
+            JOIN fda_labels l ON a.application_number = ANY (l.application_numbers)
+            WHERE l.indications_and_usage ~* %s
+            """, (pattern,)).fetchone()[0]
+        # Companies with programs in this disease, from their SEC filings: the latest press release that
+        # names one of the disease's Phase 2+ or approved drugs.
+        companies = conn.execute(
+            """
+            WITH drugs AS (SELECT drug_id FROM v_program_status WHERE disease = %s
+                           AND (COALESCE(highest_phase, 0) >= 2 OR fda_approved OR ema_authorised)),
+            docs AS (
+                SELECT DISTINCT d.id, split_part(d.journal, ' (SEC', 1) AS company, d.title, d.url, d.external_id,
+                       d.published_date, d.source_type
+                FROM documents d JOIN document_drugs dd ON dd.document_id = d.id JOIN drugs USING (drug_id)
+                WHERE d.source_type IN ('press_release', 'sec_filing'))
+            SELECT company, COUNT(*) AS n,
+                   (ARRAY_AGG(title ORDER BY published_date DESC) FILTER (WHERE source_type = 'press_release'))[1],
+                   (ARRAY_AGG(url ORDER BY published_date DESC) FILTER (WHERE source_type = 'press_release'))[1],
+                   MAX(published_date) FILTER (WHERE source_type = 'press_release')::text,
+                   -- the drugs this company's filings name most often: its own programs come first
+                   (SELECT ARRAY_AGG(name ORDER BY k DESC, name) FROM (
+                        SELECT dr.canonical_name AS name, COUNT(*) AS k FROM docs d2
+                        JOIN document_drugs dd2 ON dd2.document_id = d2.id JOIN drugs USING (drug_id)
+                        JOIN public.drugs dr ON dr.id = dd2.drug_id
+                        WHERE d2.company = docs.company GROUP BY 1 ORDER BY 2 DESC, 1 LIMIT 2) top)
+            FROM docs
+            GROUP BY company ORDER BY MAX(published_date) DESC NULLS LAST, n DESC LIMIT 5
+            """, (slug,)).fetchall()
+        region, story = ATLAS_REGIONS.get(slug, (name, ""))
+        out.append({
+            "disease": slug, "name": name, "region": region, "story": story,
+            "trials": trials, "active_trials": active, "approved_drugs_fda_label": approved,
+            "active_programs": {"phase1": funnel.get("phase1", 0), "phase2": funnel.get("phase2", 0),
+                                "phase3": funnel.get("phase3", 0)},
+            "discontinued_last_year": stopped,
+            "top_mechanisms": [m["mechanism"] for m in compare["mechanisms"]["by_disease"][slug]["top"]],
+            "top_endpoints": [e["term"] for e in compare["endpoints"]["by_disease"][slug]["top"]],
+            "top_biomarkers": [b["term"] for b in compare["biomarkers"]["by_disease"][slug]["top"]],
+            "companies": [{"company": c, "filings": n, "latest_headline": t, "latest_url": u, "latest_date": dt,
+                           "drugs": dr} for c, n, t, u, dt, dr in companies],
+        })
+    data = {"diseases": out, "shared_mechanisms": shared}
+    conn.commit()
+    _atlas_cache.update(stamp=stamp, data=data)
+    return data
+
+
 def cached_answer(conn: psycopg.Connection, body: Question) -> Answer | None:
     """A recent saved answer to the same question. Follow-ups depend on earlier turns: never cached."""
     if body.history:

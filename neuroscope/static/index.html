@@ -197,15 +197,32 @@
   .icon-btn { border: 1px solid var(--panel-border); background: transparent; color: var(--muted); border-radius: 8px;
               padding: 4px 10px; font-size: .8rem; }
   .icon-btn:hover { color: var(--text); border-color: var(--accent); }
-  .answer { padding: 8px 22px 18px; }
-  .answer h3 { font-size: 1.02rem; margin: 20px 0 6px; letter-spacing: -.01em; }
+  .answer { padding: 10px 22px 18px; line-height: 1.6; }
+  .answer h3 { font-size: 1.02rem; margin: 22px 0 6px; letter-spacing: -.01em; }
+  .answer h3:first-child { margin-top: 8px; }
   .answer p { margin: 10px 0; }
-  .answer ul { margin: 8px 0; padding-left: 22px; }
-  .answer li { margin: 4px 0; }
+  .answer > p.lead { margin: 6px 0 14px; font-size: 1.08rem; color: var(--text); }
+  .verdict { display: inline-flex; align-items: center; gap: 5px; margin-right: 8px; padding: 2px 10px 2px 8px;
+             border-radius: 999px; font: 700 .8rem/1.6 var(--mono); letter-spacing: .06em; text-transform: uppercase;
+             vertical-align: 2px; }
+  .verdict.yes { color: var(--ok); background: color-mix(in srgb, var(--ok) 14%, transparent); }
+  .verdict.no { color: var(--warn); background: var(--warn-soft); }
+  .verdict svg { flex: none; }
+  .answer ul { list-style: none; margin: 8px 0; padding: 0; display: grid; gap: 8px; }
+  .answer li { position: relative; padding: 9px 12px 9px 30px; border-radius: 10px; background: var(--panel);
+               border: 1px solid var(--panel-border); }
+  .answer li::before { content: ""; position: absolute; left: 13px; top: 1.05em; width: 7px; height: 7px; border-radius: 50%;
+                       background: linear-gradient(135deg, var(--accent), var(--accent-2)); }
+  .answer li strong:first-child { color: var(--text); }
   .answer blockquote { margin: 12px 0; padding: 10px 14px; background: var(--quote); border-left: 3px solid var(--accent);
-                       border-radius: 0 8px 8px 0; }
-  .answer a { text-decoration: none; border-bottom: 1px dashed currentColor; font-weight: 550; }
-  .answer a.trial { color: var(--trial); } .answer a.fda { color: var(--fda); } .answer a.paper { color: var(--paper); }
+                       border-radius: 0 10px 10px 0; font-style: italic; color: var(--muted); }
+  .answer a { display: inline-block; padding: 0 7px; margin: 1px 0; border-radius: 6px; text-decoration: none;
+              font: 600 .8em/1.55 var(--mono); letter-spacing: .01em; vertical-align: 1px; white-space: nowrap; }
+  .answer a:hover { filter: brightness(1.15); text-decoration: underline; }
+  .answer a.trial { color: var(--trial); background: var(--trial-soft); }
+  .answer a.fda { color: var(--fda); background: var(--fda-soft); }
+  .answer a.paper { color: var(--paper); background: var(--paper-soft); }
+  .answer a.sec { color: var(--accent-2); background: color-mix(in srgb, var(--accent-2) 13%, transparent); }
   .warn-box { margin: 0 22px 16px; padding: 12px 14px; border-radius: 10px; background: var(--warn-soft); color: var(--warn);
               font-size: .92rem; }
 
@@ -254,7 +271,7 @@
                                  box-shadow: 0 4px 14px rgba(91, 91, 214, .35); }
   header.topbar .pill { border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent); }
   @media (max-width: 900px) { header.topbar .pill { display: none; } }
-  #ask, #how, #changes, #faq { scroll-margin-top: 84px; }
+  #ask, #how, #changes, #atlas, #faq { scroll-margin-top: 84px; }
   @media (max-width: 620px) {
     .topbar-inner { padding: 10px 14px; }
     header.topbar .pill, .brand h1 { display: none; }
@@ -266,6 +283,66 @@
             color: var(--accent-2); }
   .flow h3, .changes-head h3, .faq h3 { font-family: var(--serif); font-weight: 600; font-size: 1.5rem; letter-spacing: -.01em; }
 
+  /* Atlas: a brain map with one region per disease */
+  .atlas { margin-top: 30px; padding: 20px; }
+  .atlas-grid { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 18px; align-items: start; }
+  @media (max-width: 760px) { .atlas-grid { grid-template-columns: 1fr; } }
+  .atlas-brain { position: sticky; top: 84px; border-radius: 14px; padding: 10px; background: var(--panel-solid);
+                 border: 1px solid var(--panel-border); }
+  .atlas-brain svg { display: block; width: 100%; height: auto; }
+  .b-cortex { fill: url(#brain-fill); stroke: color-mix(in srgb, var(--accent) 55%, transparent); stroke-width: 1.6; }
+  .b-cereb, .b-stem { fill: color-mix(in srgb, var(--accent) 6%, transparent); stroke: color-mix(in srgb, var(--accent) 40%, transparent); stroke-width: 1.4; }
+  .b-sulci path { fill: none; stroke: color-mix(in srgb, var(--accent) 28%, transparent); stroke-width: 1.2; stroke-linecap: round; }
+  .b-tract { fill: none; stroke: var(--fda); stroke-width: 1.4; stroke-dasharray: 3 5; opacity: .35; transition: opacity .2s; }
+  .atlas[data-sel="als"] .b-tract { opacity: .9; animation: tract 1.2s linear infinite; }
+  @keyframes tract { to { stroke-dashoffset: -16; } }
+  .node { cursor: pointer; outline: none; }
+  .node.alzheimers { color: var(--trial); } .node.parkinsons { color: var(--paper); } .node.als { color: var(--fda); }
+  .node .dot { fill: currentColor; stroke: var(--panel-solid); stroke-width: 2; }
+  .node .ring { fill: currentColor; opacity: .25; transform-box: fill-box; transform-origin: center;
+                animation: pulse 2.4s ease-out infinite; }
+  .node.on .ring { opacity: .45; animation-duration: 1.2s; }
+  .node:focus-visible .dot { stroke: var(--text); }
+  @keyframes pulse { 0% { transform: scale(.8); opacity: .5; } 100% { transform: scale(2.6); opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) { .node .ring, .atlas[data-sel="als"] .b-tract { animation: none; } }
+  .atlas-legend { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-top: 8px; }
+  .atlas-legend button { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px;
+                         border: 1px solid var(--panel-border); background: none; color: var(--muted); font: 600 .82rem/1.3 inherit; cursor: pointer; }
+  .atlas-legend button i { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+  .atlas-legend button.alzheimers i { color: var(--trial); } .atlas-legend button.parkinsons i { color: var(--paper); }
+  .atlas-legend button.als i { color: var(--fda); }
+  .atlas-legend button.on { color: var(--text); border-color: var(--accent); background: var(--accent-soft); }
+  .atlas-panel { --c: var(--trial); min-width: 0; border-radius: 14px; padding: 16px 18px; background: var(--panel-solid);
+                 border: 1px solid var(--panel-border); border-top: 3px solid var(--c); min-height: 100%; }
+  .atlas-panel.parkinsons { --c: var(--paper); } .atlas-panel.als { --c: var(--fda); }
+  .atlas-panel .region { font: 600 .76rem/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--c); }
+  .atlas-panel h4 { margin: 6px 0 4px; font-family: var(--serif); font-size: 1.35rem; font-weight: 600; }
+  .atlas-panel .story { margin: 0 0 14px; color: var(--muted); }
+  .atlas-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-bottom: 14px; }
+  @media (max-width: 520px) { .atlas-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .atlas-stats span { padding: 8px 10px; border-radius: 10px; background: var(--panel); border: 1px solid var(--panel-border);
+                      font: .72rem/1.3 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--faint); }
+  .atlas-stats b { display: block; margin-bottom: 2px; font: 600 1.15rem/1.1 var(--mono); letter-spacing: 0; color: var(--text); }
+  .atlas-h { margin: 14px 0 6px; font: 600 .74rem/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--faint); }
+  .funnel { display: grid; gap: 5px; }
+  .funnel div { display: grid; grid-template-columns: 62px minmax(0, 1fr) 34px; align-items: center; gap: 8px; font-size: .86rem; color: var(--muted); }
+  .funnel .bar { height: 10px; border-radius: 999px; background: var(--panel); overflow: hidden; }
+  .funnel .bar i { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--c), color-mix(in srgb, var(--c) 55%, var(--accent-2)));
+                   transform-origin: left; animation: grow .6s ease-out; }
+  @keyframes grow { from { transform: scaleX(0); } }
+  .funnel b { text-align: right; font: 600 .86rem var(--mono); color: var(--text); }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chips span { padding: 3px 9px; border-radius: 999px; font-size: .82rem; color: var(--text);
+                background: color-mix(in srgb, var(--c) 12%, transparent); border: 1px solid color-mix(in srgb, var(--c) 30%, transparent); }
+  .companies { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; grid-template-columns: minmax(0, 1fr); }
+  .companies li { min-width: 0; padding: 9px 12px; border-radius: 10px; background: var(--panel); border: 1px solid var(--panel-border); }
+  .companies .co { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; font-weight: 600; }
+  .companies .co small { flex: none; max-width: 55%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .companies .co small { font: .74rem var(--mono); color: var(--faint); font-weight: 400; }
+  .companies a { display: block; margin-top: 3px; color: var(--muted); font-size: .88rem; text-decoration: none;
+                 white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .companies a:hover { color: var(--accent-2); }
+  .atlas-note { margin: 14px 0 0; color: var(--faint); font-size: .86rem; }
   /* FAQ */
   .faq { margin-top: 30px; padding: 20px; }
   .faq h3 { margin: 0 0 12px; font-size: 1.1rem; letter-spacing: -.01em; }
@@ -400,6 +477,7 @@
       <a href="#ask">Ask</a>
       <a href="#how">How it works</a>
       <a href="#changes">This week</a>
+      <a href="#atlas">Atlas</a>
       <a href="#faq">FAQ</a>
     </nav>
     <span class="pill" title="Diseases covered">Alzheimer's · Parkinson's · ALS</span>
@@ -538,6 +616,44 @@
     </div>
   </section>
 
+  <section id="atlas" class="card atlas" hidden aria-labelledby="atlas-title">
+    <span class="kicker">Atlas · where each disease strikes</span>
+    <div class="changes-head"><h3 id="atlas-title">Three diseases, three circuits.</h3><span>Choose a region to see its pipeline and the companies working on it</span></div>
+    <div class="atlas-grid">
+      <div class="atlas-brain">
+        <svg viewBox="40 20 330 305" role="group" aria-label="Brain map">
+          <defs>
+            <radialGradient id="brain-fill" cx="45%" cy="40%" r="70%">
+              <stop offset="0%" stop-color="var(--accent)" stop-opacity=".16"/>
+              <stop offset="100%" stop-color="var(--accent)" stop-opacity=".03"/>
+            </radialGradient>
+          </defs>
+          <path class="b-cortex" d="M60,170 C50,110 90,50 165,38 C230,28 300,45 335,95 C360,130 352,175 325,195 C310,205 290,205 275,200 C265,215 245,222 225,220 C205,232 170,236 140,228 C105,222 70,205 60,170 Z"/>
+          <path class="b-cereb" d="M262,207 C268,190 300,186 324,198 C342,210 336,240 310,246 C286,250 266,238 262,222 Z"/>
+          <path class="b-stem" d="M214,214 C224,222 232,236 234,260 L236,325 L222,325 L222,262 C220,242 214,228 206,220 Z"/>
+          <g class="b-sulci">
+            <path d="M200,36 C204,62 210,92 214,124"/><path d="M168,40 C172,66 176,90 178,112"/>
+            <path d="M118,176 C150,164 190,160 236,166"/><path d="M90,120 C110,112 130,114 146,124"/>
+            <path d="M250,52 C246,80 250,104 262,124"/><path d="M296,80 C288,104 290,128 300,150"/>
+            <path d="M120,70 C134,82 142,98 144,116"/><path d="M276,206 C292,200 310,204 322,214"/>
+            <path d="M270,222 C290,216 308,220 320,230"/>
+          </g>
+          <path class="b-tract" d="M188,54 C196,110 214,170 229,300"/>
+          <g class="node alzheimers" data-d="alzheimers" tabindex="0" role="button" aria-label="Alzheimer's disease: hippocampus">
+            <circle class="ring" cx="192" cy="186" r="9"/><circle class="dot" cx="192" cy="186" r="6"/></g>
+          <g class="node parkinsons" data-d="parkinsons" tabindex="0" role="button" aria-label="Parkinson's disease: substantia nigra">
+            <circle class="ring" cx="222" cy="214" r="9"/><circle class="dot" cx="222" cy="214" r="6"/></g>
+          <g class="node als" data-d="als" tabindex="0" role="button" aria-label="ALS: motor cortex and spinal cord">
+            <circle class="ring" cx="188" cy="54" r="9"/><circle class="dot" cx="188" cy="54" r="6"/>
+            <circle class="ring" cx="229" cy="300" r="9"/><circle class="dot" cx="229" cy="300" r="6"/></g>
+        </svg>
+        <div class="atlas-legend" id="atlas-legend"></div>
+      </div>
+      <div class="atlas-panel" id="atlas-panel" aria-live="polite"></div>
+    </div>
+    <p class="atlas-note" id="atlas-note"></p>
+  </section>
+
   <section class="card faq" id="faq" aria-labelledby="faq-title">
     <span class="kicker">Frequently asked</span>
     <h3 id="faq-title">Questions, answered.</h3>
@@ -611,6 +727,16 @@ function renderAnswer(text) {
     else { closeList(); out.push(`<p>${inline(line)}</p>`); }
   }
   closeList();
+  // The first paragraph is the direct answer: shown larger, with a Yes/No badge when it opens with one.
+  const i = out.findIndex((x) => x.startsWith("<p>"));
+  if (i === 0) {
+    out[0] = out[0].replace(/^<p>(?:<strong>)?(Yes|No)\b([,.:;]?)(?:<\/strong>)?\s*/i, (m, word) => {
+      const yes = word.toLowerCase() === "yes";
+      const icon = yes ? '<path d="M5 12l5 5L20 7"/>' : '<path d="M6 6l12 12M18 6L6 18"/>';
+      return `<p><span class="verdict ${yes ? "yes" : "no"}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" ` +
+             `stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${icon}</svg>${yes ? "Yes" : "No"}</span>`;
+    }).replace(/(<\/span>)([a-z])/, (m, tag, c) => tag + c.toUpperCase()).replace(/^<p>/, '<p class="lead">');
+  }
   return out.join("");
 }
 
@@ -977,12 +1103,76 @@ fetch("changes?days=7").then((r) => r.ok ? r.json() : null).then((d) => {
 
 // Mark the tab for the section currently in view.
 const tabLinks = [...document.querySelectorAll(".tabs a")];
+
+// Atlas: the brain map. Each region opens its disease's pipeline and the companies filing about it.
+const ATLAS_ORDER = ["alzheimers", "parkinsons", "als"];
+fetch("atlas").then((r) => r.ok ? r.json() : null).then((d) => {
+  if (!d || !d.diseases) return;
+  const byId = Object.fromEntries(d.diseases.map((x) => [x.disease, x]));
+  const legend = $("atlas-legend");
+  ATLAS_ORDER.filter((k) => byId[k]).forEach((k) => {
+    const b = el("button", k); b.type = "button"; b.dataset.d = k;
+    b.append(el("i"), document.createTextNode(DISEASE_NAMES[k] || k));
+    legend.appendChild(b);
+  });
+  const fmt = (n) => Number(n || 0).toLocaleString();
+  function show(k) {
+    const x = byId[k]; if (!x) return;
+    $("atlas").dataset.sel = k;
+    document.querySelectorAll(".atlas .node, .atlas-legend button").forEach((n) => n.classList.toggle("on", n.dataset.d === k));
+    const p = $("atlas-panel"); p.className = `atlas-panel ${k}`; p.textContent = "";
+    p.append(el("div", "region", x.region), el("h4", null, x.name), el("p", "story", x.story));
+    const stats = el("div", "atlas-stats");
+    [["Trials", x.trials], ["Active trials", x.active_trials], ["Approved (FDA label)", x.approved_drugs_fda_label],
+     ["Stopped, 12 mo", x.discontinued_last_year]].forEach(([label, n]) => {
+      const sp = el("span"); sp.append(el("b", null, fmt(n)), document.createTextNode(label)); stats.appendChild(sp);
+    });
+    p.append(stats, el("div", "atlas-h", "Active programs by phase (not yet approved)"));
+    const f = el("div", "funnel"); const ap = x.active_programs; const max = Math.max(1, ap.phase1, ap.phase2, ap.phase3);
+    [["Phase 1", ap.phase1], ["Phase 2", ap.phase2], ["Phase 3", ap.phase3]].forEach(([label, n]) => {
+      const row = el("div"); const bar = el("span", "bar"); const fill = el("i"); fill.style.width = `${(100 * n / max).toFixed(1)}%`;
+      bar.appendChild(fill); row.append(el("span", null, label), bar, el("b", null, fmt(n))); f.appendChild(row);
+    });
+    p.appendChild(f);
+    [["Most common mechanisms", x.top_mechanisms], ["Primary endpoints", x.top_endpoints], ["Biomarkers measured", x.top_biomarkers]]
+      .forEach(([label, items]) => {
+        if (!items || !items.length) return;
+        const c = el("div", "chips"); items.forEach((t) => c.appendChild(el("span", null, t)));
+        p.append(el("div", "atlas-h", label), c);
+      });
+    if ((x.companies || []).length) {
+      p.appendChild(el("div", "atlas-h", "Companies working here · latest SEC press release"));
+      const ul = el("ul", "companies");
+      x.companies.forEach((c) => {
+        const li = el("li"); const head = el("div", "co");
+        head.append(el("span", null, c.company), el("small", null, `${fmt(c.filings)} filing${c.filings === 1 ? "" : "s"}` +
+          ((c.drugs || []).length ? ` · ${c.drugs.join(", ")}` : "")));
+        li.appendChild(head);
+        if (c.latest_url) {
+          const a = document.createElement("a"); a.href = c.latest_url; a.target = "_blank"; a.rel = "noopener";
+          a.textContent = `${pretty(c.latest_date)} · ${c.latest_headline || "Press release"}`; li.appendChild(a);
+        }
+        ul.appendChild(li);
+      });
+      p.appendChild(ul);
+    }
+  }
+  document.querySelectorAll(".atlas .node, .atlas-legend button").forEach((n) => {
+    n.addEventListener("click", () => show(n.dataset.d));
+    n.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); show(n.dataset.d); } });
+  });
+  if ((d.shared_mechanisms || []).length)
+    $("atlas-note").textContent = `Mechanisms common to all three pipelines: ${d.shared_mechanisms.join(" · ")}. ` +
+      "Counts come from trial registrations, approvals from FDA labels, and company items from SEC filings.";
+  show("alzheimers");
+  $("atlas").hidden = false;
+});
 const spy = new IntersectionObserver((entries) => {
   entries.forEach((en) => {
     if (en.isIntersecting) tabLinks.forEach((a) => a.setAttribute("aria-current", String(a.hash === "#" + en.target.id)));
   });
 }, { rootMargin: "-40% 0px -55% 0px" });
-["ask", "how", "changes", "faq"].forEach((id) => { const el = document.getElementById(id); if (el) spy.observe(el); });
+["ask", "how", "changes", "atlas", "faq"].forEach((id) => { const el = document.getElementById(id); if (el) spy.observe(el); });
 
 // Neurons behind the page, in the side margins: each has a cell body, tapering branched dendrites,
 // and a curving axon whose terminals reach the next neuron. Firing sends a bright band down the axon
