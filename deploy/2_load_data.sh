@@ -6,6 +6,19 @@
 # refresh), because copying would roll it back. Pass --force to copy anyway.
 set -euo pipefail
 cd "$(dirname "$0")/.." && source deploy/config.sh
+
+# Check the local database first: a copy that starts without it can leave the cloud half-empty.
+if ! docker info >/dev/null 2>&1; then
+    echo "Docker is not running. Start Docker Desktop, then: docker compose up -d" >&2; exit 1
+fi
+if ! docker compose exec -T db pg_isready -U postgres >/dev/null 2>&1; then
+    echo "The local database is not running. Start it with: docker compose up -d" >&2; exit 1
+fi
+LOCAL_TRIALS="$(docker compose exec -T db psql -U postgres -d neuroscope -At -c "SELECT count(*) FROM trials")"
+if [ "${LOCAL_TRIALS:-0}" -lt 1 ]; then
+    echo "The local database has no trials; refusing to replace the cloud copy with it." >&2; exit 1
+fi
+
 source deploy/_proxy.sh
 TARGET="$CLOUD_URL_DOCKER"
 
@@ -26,7 +39,7 @@ docker compose exec -T db sh -c \
     "pg_dump -U postgres --no-owner --no-privileges neuroscope | psql -q -v ON_ERROR_STOP=1 '$TARGET'" >/dev/null
 
 echo "Row counts, local vs cloud:"
-COUNTS="SELECT 'trials', count(*) FROM trials UNION ALL SELECT 'drugs', count(*) FROM drugs UNION ALL SELECT 'interventions', count(*) FROM trial_interventions UNION ALL SELECT 'fda_applications', count(*) FROM fda_applications UNION ALL SELECT 'fda_labels', count(*) FROM fda_labels UNION ALL SELECT 'ema_medicines', count(*) FROM ema_medicines UNION ALL SELECT 'documents', count(*) FROM documents UNION ALL SELECT 'chunks_with_embeddings', count(*) FROM chunks WHERE embedding IS NOT NULL ORDER BY 1"
+COUNTS="SELECT 'trials', count(*) FROM trials UNION ALL SELECT 'drugs', count(*) FROM drugs UNION ALL SELECT 'interventions', count(*) FROM trial_interventions UNION ALL SELECT 'fda_applications', count(*) FROM fda_applications UNION ALL SELECT 'fda_labels', count(*) FROM fda_labels UNION ALL SELECT 'ema_medicines', count(*) FROM ema_medicines UNION ALL SELECT 'drug_mechanisms', count(*) FROM drug_mechanisms UNION ALL SELECT 'outcome_terms', count(*) FROM trial_outcome_terms UNION ALL SELECT 'documents', count(*) FROM documents UNION ALL SELECT 'chunks_with_embeddings', count(*) FROM chunks WHERE embedding IS NOT NULL ORDER BY 1"
 LOCAL="$(docker compose exec -T db psql -U postgres -d neuroscope -At -c "$COUNTS")"
 CLOUD="$(docker compose exec -T db psql -At "$TARGET" -c "$COUNTS")"
 paste <(echo "$LOCAL") <(echo "$CLOUD" | cut -d'|' -f2) | column -t

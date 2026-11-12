@@ -64,7 +64,7 @@ To go back to private, re-run `deploy/3_deploy_service.sh` without `--public`.
 
 ## Weekly refresh
 
-`deploy/4_schedule_refresh.sh` creates a Cloud Run job that runs `python -m neuroscope.refresh` against the cloud database, and a Cloud Scheduler trigger for every Monday at 06:00 UTC. Each run re-fetches trials, the FDA export, FDA labels, and PubMed abstracts, embeds new passages, and clears saved answers. Steps run independently; each run is recorded in `refresh_runs` (see `deploy/cloud.sh python -m neuroscope.report`). Cost: a few minutes of compute a week and cents of embeddings; Cloud Scheduler's first 3 jobs are free.
+`deploy/4_schedule_refresh.sh` creates a Cloud Run job that runs `python -m neuroscope.refresh` against the cloud database, and a Cloud Scheduler trigger for every Monday at 06:00 UTC. Each run re-fetches trials for every disease, the FDA export, FDA labels, the EMA list, PubMed abstracts, and new SEC filings, re-reads outcome terms and ChEMBL mechanisms, embeds new passages, and clears saved answers. The SEC step needs `SEC_USER_AGENT` (a contact the SEC asks automated clients for); the script passes the value from your `.env`, so source it before running. Without it, that one step is recorded as failed and the others still run. Steps run independently; each run is recorded in `refresh_runs` (see `deploy/cloud.sh python -m neuroscope.report`). Cost: a few minutes of compute a week and cents of embeddings; Cloud Scheduler's first 3 jobs are free.
 
 Once the refresh runs, **the cloud database is the newest copy**. New trial names land in its review queue:
 

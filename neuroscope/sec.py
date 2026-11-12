@@ -216,7 +216,14 @@ def load(conn: psycopg.Connection, tickers: list[str] | None = None, years: int 
             log.warning("%s: submissions failed: %s", ticker, exc)
             continue
         time.sleep(PAUSE_S)
+        known = {r[0] for r in conn.execute(
+            "SELECT external_id FROM documents WHERE source_type IN ('press_release', 'sec_filing') "
+            "AND external_id = ANY(%s)", ([f["accessionNumber"] for f in todo],))}
+        conn.commit()
         for f in todo:
+            if f["accessionNumber"] in known:           # stored on an earlier run: nothing to fetch
+                summary["unchanged"] += 1
+                continue
             try:
                 url = document_url(session, cik, f)
                 time.sleep(PAUSE_S)
