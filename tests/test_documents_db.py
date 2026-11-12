@@ -111,3 +111,32 @@ def test_keyword_search_ranks_and_filters_by_drug(conn):
     assert search(conn, "zebrafish") == []
     with pytest.raises(ValueError):
         search(conn, "cognitive decline", drug="notadrug")
+
+
+def test_one_failing_drug_is_skipped_and_the_rest_still_load(conn, monkeypatch):
+    # Live case: PubMed answered one efetch with "502 Bad Gateway" and the whole step failed.
+    import requests
+    from neuroscope import pubmed
+    from neuroscope.ingest import run_ingestion
+    from tests.fixtures import iv, study
+    run_ingestion(conn, [study(f"NCT9700000{i}", interventions=[iv(d, "BIOLOGICAL")])
+                         for i, d in enumerate(["Lecanemab"] * 5 + ["Donepezil"] * 5)], "test", "synthetic")
+    monkeypatch.setattr(pubmed, "PAUSE_S", 0)
+    monkeypatch.setattr(pubmed, "fetch_pmids", lambda session, term, n: {"lecanemab": ["900000001"],
+                                                                          "donepezil": ["900000002"]}[term])
+
+    def fetch_xml(session, pmids):
+        if pmids == ["900000001"]:
+            raise requests.HTTPError("502 Server Error: Bad Gateway")
+        return article_set(DONEPEZIL)
+    monkeypatch.setattr(pubmed, "fetch_xml", fetch_xml)
+    skipped = []
+    got = list(pubmed.iter_live(conn, min_trials=5, per_drug=20, max_drugs=None, skipped=skipped))
+    assert [a.pmid for a in got] == ["900000002"] and skipped == ["lecanemab"]
+
+
+def test_pubmed_session_retries_its_read_only_post():
+    from neuroscope.ctgov import _session
+    adapter = _session(("GET", "POST")).get_adapter("https://eutils.ncbi.nlm.nih.gov")
+    assert "POST" in adapter.max_retries.allowed_methods and 502 in adapter.max_retries.status_forcelist
+    assert "POST" not in _session().get_adapter("https://clinicaltrials.gov").max_retries.allowed_methods

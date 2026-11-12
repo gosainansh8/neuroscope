@@ -71,7 +71,11 @@ def step_labels(conn: psycopg.Connection) -> dict:
 
 def step_literature(conn: psycopg.Connection) -> dict:
     from .pubmed import iter_live, store
-    return store(conn, iter(list(iter_live(conn, min_trials=5, per_drug=20, max_drugs=None))))
+    skipped: list[str] = []
+    abstracts = list(iter_live(conn, min_trials=5, per_drug=20, max_drugs=None, skipped=skipped))
+    if not abstracts and skipped:
+        raise RuntimeError(f"PubMed failed for every drug tried ({len(skipped)})")
+    return {**store(conn, iter(abstracts)), "drugs_skipped": skipped}
 
 
 def step_embeddings(conn: psycopg.Connection) -> dict:

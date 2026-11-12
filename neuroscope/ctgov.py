@@ -30,13 +30,15 @@ USER_AGENT = "NeuroScope/0.1 (research project; https://github.com/gosainansh8)"
 # Fetching
 # ---------------------------------------------------------------------------
 
-def _session() -> requests.Session:
+def _session(retry_methods: tuple[str, ...] = ("GET",)) -> requests.Session:
+    """A session that retries busy or failing servers. Pass ("GET", "POST") only for POSTs
+    that are safe to repeat, such as PubMed's read-only efetch."""
     s = requests.Session()
     retry = Retry(
         total=5,
         backoff_factor=1.0,             # 1s, 2s, 4s, 8s, 16s
         status_forcelist=(429, 500, 502, 503, 504),
-        allowed_methods=("GET",),
+        allowed_methods=retry_methods,
         respect_retry_after_header=True,
     )
     s.mount("https://", HTTPAdapter(max_retries=retry))

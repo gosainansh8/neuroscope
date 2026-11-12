@@ -32,6 +32,7 @@ from datetime import date
 from typing import Iterator
 
 import psycopg
+import requests
 
 from .ctgov import _session
 from .db import connect
@@ -202,20 +203,29 @@ def store(conn: psycopg.Connection, abstracts: Iterator[Abstract]) -> dict[str, 
 
 
 def iter_live(conn: psycopg.Connection, min_trials: int, per_drug: int, max_drugs: int | None,
-              raw_parts: list[str] | None = None) -> Iterator[Abstract]:
+              raw_parts: list[str] | None = None, skipped: list[str] | None = None) -> Iterator[Abstract]:
+    """Abstracts for each drug. A drug whose requests still fail after retries is skipped
+    (and named in `skipped`) so one bad response does not lose every other drug."""
     drugs = [r[0] for r in conn.execute(
         "SELECT canonical_name FROM v_drug_pipeline WHERE n_trials >= %s AND NOT canonical_name LIKE '%% + %%' "
         "ORDER BY n_trials DESC, canonical_name", (min_trials,))][:max_drugs]
-    session, seen = _session(), set()
+    session, seen = _session(("GET", "POST")), set()     # efetch is a read-only POST, safe to retry
     for n, name in enumerate(drugs, start=1):
-        pmids = [p for p in fetch_pmids(session, search_term(name), per_drug) if p not in seen]
-        time.sleep(PAUSE_S)
+        try:
+            pmids = [p for p in fetch_pmids(session, search_term(name), per_drug) if p not in seen]
+            time.sleep(PAUSE_S)
+            if not pmids:
+                log.info("%d/%d %s: no new abstracts", n, len(drugs), name)
+                continue
+            xml_text = fetch_xml(session, pmids)
+            time.sleep(PAUSE_S)
+        except requests.RequestException as exc:
+            log.warning("%d/%d %s: skipped after retries: %s", n, len(drugs), name, exc)
+            if skipped is not None:
+                skipped.append(name)
+            continue
         seen.update(pmids)
         log.info("%d/%d %s: %d new abstracts", n, len(drugs), name, len(pmids))
-        if not pmids:
-            continue
-        xml_text = fetch_xml(session, pmids)
-        time.sleep(PAUSE_S)
         if raw_parts is not None:
             raw_parts.append(xml_text)
         yield from parse_articles(xml_text)
