@@ -453,3 +453,36 @@ def test_rejected_name_never_names_or_creates_a_drug(conn):
     assert links(conn, "NCT91000131") == [("anti-Abeta", None, "no_usable_name")]
     assert conn.execute("SELECT COUNT(*) FROM drugs WHERE canonical_name ILIKE 'anti-abeta'").fetchone()[0] == 0
     assert alias_owner(conn, "antiabeta") == (None, "rejected")
+
+
+# --- Round-5 cleanup behavior ------------------------------------------------------
+
+def test_brand_maps_to_combination_but_combination_never_to_single(conn, tmp_path):
+    # Live case: "Namzaric" (donepezil + memantine) had been learned as an alias of donepezil alone.
+    ingest(conn, [study("NCT91000140", interventions=[iv("Namzaric")])])
+    map_alias(conn, "Namzaric", "donepezil + memantine", note="Namzaric is donepezil plus memantine")
+    reresolve(conn)
+    assert links(conn, "NCT91000140") == [("Namzaric", "donepezil + memantine", "matched")]
+    assert alias_owner(conn, "namzaric") == ("donepezil + memantine", "verified")
+    with pytest.raises(ValueError, match="combination name can only map to a combination"):
+        map_alias(conn, "Donepezil + Memantine", "donepezil")
+
+
+def test_class_action_marks_a_drug_after_reresolve_and_excludes_it(conn, tmp_path):
+    from neuroscope import tools
+    ingest(conn, [
+        study("NCT91000141", phases=["PHASE3"], status="RECRUITING", interventions=[iv("Cholinesterase inhibitors")]),
+        study("NCT91000142", phases=["PHASE3"], status="RECRUITING", interventions=[iv("Lecanemab", "BIOLOGICAL")]),
+    ])
+    path = _corrections_file(tmp_path, "class,cholinesterase inhibitors,,high,drug class\n")
+    r = apply_file(conn, path)
+    assert r["classes_marked"] == 1
+    assert conn.execute("SELECT is_class FROM drugs WHERE canonical_name = 'cholinesterase inhibitors'"
+                        ).fetchone()[0] is True
+    pipeline = [d["drug"] for d in tools.list_pipeline(conn, min_phase=3)["drugs"]]
+    assert "lecanemab" in pipeline and "cholinesterase inhibitors" not in pipeline
+    found = tools.find_drug(conn, "cholinesterase inhibitors")
+    assert found["is_class"] is True and "drug class" in found["note"]
+    assert conn.execute("SELECT action FROM alias_corrections WHERE action = 'mark_class'").fetchone() == ("mark_class",)
+    with pytest.raises(ValueError, match="no drug named"):
+        apply_file(conn, _corrections_file(tmp_path, "class,no such class,,high,x\n"))

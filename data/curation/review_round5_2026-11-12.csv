@@ -1,0 +1,72 @@
+action,alias,drug,confidence,reason
+map,ACI-24.060 at A in Study Part,ACI-24.060,high,Dose arm label after the drug code
+map,ACI-24.060 at A in Study Part 1a,ACI-24.060,high,Dose arm label after the drug code
+map,ACI-24.060 at B in Study Part,ACI-24.060,high,Dose arm label after the drug code
+map,ACI-24.060 at B in Study Part 1a,ACI-24.060,high,Dose arm label after the drug code
+map,ACI-24.060 at C in Study Part,ACI-24.060,high,Dose arm label after the drug code
+map,ACI-24.060 at C in Study Part 1a,ACI-24.060,high,Dose arm label after the drug code
+map,ACI-24.060 with an additional adjuvant at D in Study Part 1b,ACI-24.060,medium,Same vaccine with an added adjuvant; the drug identity is ACI-24.060
+map,ACI-24.060 with an additional adjuvant at E in Study Part 1b,ACI-24.060,medium,Same vaccine with an added adjuvant; the drug identity is ACI-24.060
+map,[18F]AV-45 PET amyloid binding imaging,[18F]florbetapir,high,AV-45 is florbetapir; the rest describes the scan
+map,etanercept given by perispinal administration,etanercept,high,Route description after the drug name
+map,AN-1792 also known as AIP-001,AN-1792,high,Drug code with a note naming its other code
+map,AIP-001,AN-1792,medium,Other code given by the sponsor in the same intervention name
+map,Biological: Preprocessed thawed donor FMT,fecal microbiota transplant,high,FMT is fecal microbiota transplant
+map,CellREADY drug product of 100 millions,CellREADY,high,Product name with a cell-count dose
+map,cellready drug product of millions,CellREADY,high,Product name with a cell-count dose
+map,CERE-110: Adeno-Associated Virus Delivery of NGF,CERE-110,high,Drug code with a description of the gene therapy
+map,CERE-110: Adeno-Associated Virus Surgery,CERE-110,high,Drug code with a description of its surgical delivery
+map,donepezil tds version a,donepezil,high,Donepezil transdermal system; dosage forms are not part of drug identity
+map,donepezil tds version b,donepezil,high,Donepezil transdermal system; dosage forms are not part of drug identity
+map,donepezil tds version d,donepezil,high,Donepezil transdermal system; dosage forms are not part of drug identity
+map,donepezil tds version e,donepezil,high,Donepezil transdermal system; dosage forms are not part of drug identity
+map,dosage mscs-exos administrated for nasal drip,MSCs-Exos,high,Same exosome product at two dose levels
+map,mild dosage mscs-exos administrated for nasal drip,MSCs-Exos,high,Same exosome product at two dose levels
+map,general anesthesia with isoflurane,isoflurane,high,Procedure description naming the drug
+map,total anesthesia with propofol,propofol,high,Procedure description naming the drug
+map,Spinal anesthesia : bupivacaine 10,bupivacaine,high,Procedure description naming the drug and a dose
+map,nilotinib a day by mouth,nilotinib,high,Schedule and route after the drug name
+map,normal saline along with standard treatment,saline,high,Saline as the comparator arm
+map,TH9507 human growth hormone releasing hormone,tesamorelin,high,TH9507 is the development code of tesamorelin
+map,TH9507,tesamorelin,high,TH9507 is the development code of tesamorelin
+map,ADEL-Y01 - healty participants,ADEL-Y01,high,Population label after the drug code
+map,recombinant novel coronavirus vaccine for inhalation,recombinant novel coronavirus vaccine,medium,Inhaled form of the same Ad5 vaccine; route is not part of drug identity
+map,Recombinant COVID-19 Vaccine for Inhalation,recombinant novel coronavirus vaccine,medium,Inhaled form of the same Ad5 vaccine (two trials were waiting on this name)
+map,Lovostatin,lovastatin,high,Misspelling of lovastatin
+map,Zunveyl,benzgalantamine,high,Zunveyl is the brand name of benzgalantamine; lets its FDA record match
+map,Benzgalantamine,benzgalantamine,high,Nonproprietary name of Zunveyl
+map,Namzaric,donepezil + memantine,high,Namzaric is donepezil plus memantine; it had been learned as donepezil alone
+map,BCG,bcg vaccine,high,BCG is the Bacillus Calmette-Guerin vaccine (two trials were waiting on this name)
+map,Bacillus Calmette-Guerin,bcg vaccine,high,Full name of the BCG vaccine
+map,Angiotensin II receptor blocker and calcium channel blocker,angiotensin ii receptor blockers + calcium channel blockers,high,Singular form of the same class combination (one trial was waiting)
+reject,Bacillus of Calmette and Guerin,,high,The word "and" made this one vaccine look like a combination; the trial links through its parenthetical BCG
+reject,a positon emission tomography exam,,high,Procedure not a drug
+reject,apolipoprotein e genetic test,,high,Genetic test not a drug
+reject,detection of cytof in peripheral pbmc,,high,Laboratory test not a drug
+reject,Genetic: whole genome sequencing,,high,Genetic test not a drug
+reject,profile of csf biomarkers of ad,,high,Laboratory test not a drug
+reject,sample collection of exfoliated buccal mucosa,,high,Sample collection not a drug
+reject,study of cerebrospinal fluid,,high,Procedure not a drug
+reject,venous blood sample of,,high,Sample collection not a drug
+reject,amyloid PET； . T807 PET,,high,Two scans in one garbled name; neither is a single drug
+class,cholinesterase inhibitors,,high,Drug class
+class,cholinesterase inhibitor,,high,Drug class
+class,acetylcholinesterase inhibitors,,high,Drug class
+class,achei,,high,Abbreviation of acetylcholinesterase inhibitor; drug class
+class,ssri,,high,Selective serotonin reuptake inhibitors; drug class
+class,GLP-1 Receptor Agonists,,high,Drug class
+class,DPP-4 Inhibitors,,high,Drug class
+class,beta blockers,,high,Drug class
+class,cholinergic antagonist,,high,Drug class
+class,probiotic,,high,Product category not a single drug
+class,nutritional supplement,,high,Product category not a single drug
+class,booster vaccine,,high,Category not a single drug
+class,angiotensin ii receptor blockers + calcium channel blockers,,high,Combination of two drug classes
+class,ache inhibitor + nmda receptor antagonist combination therapy,,high,Combination of two drug classes
+class,cholesterol-lowering medicine other than statin,,high,Drug class
+class,Monoclonal Antibodies Directed Against Amyloid for the Treatment of Alzheimer's Disease,,high,Drug class
+class,recognized pharmacological treatments for ad,,high,Category of treatments not a single drug
+class,Standard of Care medication for early Alzheimer's Disease,,high,Category of treatments not a single drug
+resolve,NCT00257712,,high,TH9507 arm correctly linked to tesamorelin; the GHRH description is the same drug
+resolve,NCT02580305,,high,Donepezil arm; the otherName Namzaric is the combination product used elsewhere in the study
+resolve,NCT04052737,,high,Saline comparator arm; Vehicle is a description, not another drug

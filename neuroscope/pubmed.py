@@ -127,7 +127,8 @@ def name_patterns(conn: psycopg.Connection) -> list[tuple[int, str, re.Pattern]]
     from .resolver import _own_key
     rows = conn.execute(
         "SELECT a.alias_key, a.alias_display, a.review_status, d.id, d.canonical_name FROM drug_aliases a "
-        "JOIN drugs d ON d.id = a.drug_id WHERE a.review_status <> 'rejected' AND NOT d.is_combination").fetchall()
+        "JOIN drugs d ON d.id = a.drug_id WHERE a.review_status <> 'rejected' AND NOT d.is_combination "
+        "AND NOT d.is_class").fetchall()                  # a class name in a paper is not about one drug
     out = []
     for key, display, status, drug_id, canonical in rows:
         if status != "verified" and key != _own_key(canonical):
@@ -190,16 +191,30 @@ def store(conn: psycopg.Connection, abstracts: Iterator[Abstract]) -> dict[str, 
                                  "VALUES (%s, %s, %s, %s)", (doc_id, i, chunk, len(chunk.split())))
                     summary["chunks"] += 1
             # Links are recomputed every time so they follow alias corrections.
-            conn.execute("DELETE FROM document_drugs WHERE document_id = %s", (doc_id,))
-            haystack = f"{ab.title}\n{ab.text}"
-            linked: set[int] = set()
-            for drug_id, name, pattern in patterns:
-                if drug_id not in linked and pattern.search(haystack):
-                    linked.add(drug_id)
-                    conn.execute("INSERT INTO document_drugs (document_id, drug_id, matched_name) "
-                                 "VALUES (%s, %s, %s)", (doc_id, drug_id, name))
-            summary["drug_links"] += len(linked)
+            summary["drug_links"] += _link(conn, doc_id, f"{ab.title}\n{ab.text}", patterns)
     return summary
+
+
+def _link(conn: psycopg.Connection, doc_id: int, haystack: str, patterns) -> int:
+    conn.execute("DELETE FROM document_drugs WHERE document_id = %s", (doc_id,))
+    linked: set[int] = set()
+    for drug_id, name, pattern in patterns:
+        if drug_id not in linked and pattern.search(haystack):
+            linked.add(drug_id)
+            conn.execute("INSERT INTO document_drugs (document_id, drug_id, matched_name) VALUES (%s, %s, %s)",
+                         (doc_id, drug_id, name))
+    return len(linked)
+
+
+def relink(conn: psycopg.Connection) -> dict[str, int]:
+    """Recompute every stored document's drug links from its stored text, after alias corrections."""
+    patterns = name_patterns(conn)
+    docs = conn.execute(
+        "SELECT d.id, d.title || E'\n' || COALESCE(string_agg(c.text, E'\n' ORDER BY c.chunk_index), '') "
+        "FROM documents d LEFT JOIN chunks c ON c.document_id = d.id GROUP BY d.id").fetchall()
+    with conn.transaction():
+        links = sum(_link(conn, doc_id, text, patterns) for doc_id, text in docs)
+    return {"documents": len(docs), "drug_links": links}
 
 
 def iter_live(conn: psycopg.Connection, min_trials: int, per_drug: int, max_drugs: int | None,
@@ -240,8 +255,14 @@ def main(argv: list[str] | None = None) -> int:
     sp.add_argument("--max-drugs", type=int, default=None)
     sp.add_argument("--save-raw", metavar="PATH", help="write the fetched PubMed XML here")
     sp.add_argument("--from-xml", metavar="PATH", help="replay a file written by --save-raw")
+    sub.add_parser("relink", help="recompute drug links for every stored document")
     args = p.parse_args(argv)
     logging.basicConfig(level=logging.INFO, format="%(message)s")
+    if args.cmd == "relink":
+        with connect() as conn:
+            r = relink(conn)
+        print(f"Relinked {r['documents']} documents: {r['drug_links']} drug links")
+        return 0
     with connect() as conn:
         if args.from_xml:
             with open(args.from_xml, encoding="utf-8") as fh:

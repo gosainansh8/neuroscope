@@ -21,6 +21,10 @@ CREATE TABLE IF NOT EXISTS drugs (
     is_combination  BOOLEAN NOT NULL DEFAULT FALSE,  -- e.g. 'donepezil + memantine'
     created_at      TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+-- A drug class registered as an intervention ("cholinesterase inhibitors"), marked by a human
+-- (`curate apply`, action `class`). Kept here rather than in a migration because the views
+-- below use it, and this file runs before db/migrations/.
+ALTER TABLE drugs ADD COLUMN IF NOT EXISTS is_class BOOLEAN NOT NULL DEFAULT FALSE;
 
 -- review_status:
 --   verified   = curated (seed) or confirmed by a human; trusted
@@ -300,7 +304,8 @@ SELECT
     COUNT(DISTINCT t.nct_id)               AS n_trials,
     COUNT(DISTINCT t.nct_id) FILTER (WHERE t.status_group = 'active') AS n_active_trials,
     ARRAY_AGG(DISTINCT s.name) FILTER (WHERE s.name IS NOT NULL) AS lead_sponsors,
-    MAX(t.last_update_posted)              AS latest_source_update
+    MAX(t.last_update_posted)              AS latest_source_update,
+    d.is_class                             -- a drug class, not a single drug
 FROM drugs d
 JOIN trial_interventions ti ON ti.drug_id = d.id
 JOIN trials t ON t.nct_id = ti.nct_id

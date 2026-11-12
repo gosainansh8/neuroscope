@@ -140,3 +140,18 @@ def test_pubmed_session_retries_its_read_only_post():
     adapter = _session(("GET", "POST")).get_adapter("https://eutils.ncbi.nlm.nih.gov")
     assert "POST" in adapter.max_retries.allowed_methods and 502 in adapter.max_retries.status_forcelist
     assert "POST" not in _session().get_adapter("https://clinicaltrials.gov").max_retries.allowed_methods
+
+
+def test_relink_follows_corrections_and_skips_drug_classes(conn):
+    from neuroscope.curate import map_alias
+    from neuroscope.ingest import run_ingestion
+    from neuroscope.pubmed import relink
+    from tests.fixtures import iv, study
+    run_ingestion(conn, [study("NCT97000101", interventions=[iv("Cholinesterase inhibitors")])], "test", "synthetic")
+    paper = article("900000031", "Cholinesterase inhibitors and Zunveyl.", [(None, "Zunveyl was compared with cholinesterase inhibitors.")])
+    store(conn, parse_articles(article_set(paper)))
+    assert links(conn, "900000031") == [("cholinesterase inhibitors", "Cholinesterase inhibitors")]
+    conn.execute("UPDATE drugs SET is_class = TRUE WHERE canonical_name = 'cholinesterase inhibitors'")
+    map_alias(conn, "Zunveyl", "benzgalantamine", note="brand of benzgalantamine")
+    assert relink(conn) == {"documents": 1, "drug_links": 1}
+    assert links(conn, "900000031") == [("benzgalantamine", "Zunveyl")]

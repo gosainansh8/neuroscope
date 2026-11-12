@@ -80,11 +80,16 @@ def reject_alias(conn: psycopg.Connection, name: str, note: str | None = None) -
 
 
 def map_alias(conn: psycopg.Connection, name: str, drug_name: str, note: str | None = None) -> int:
-    """Point `name` at `drug_name` as a verified manual alias. Creates the drug if needed."""
+    """Point `name` at `drug_name` as a verified manual alias. Creates the drug if needed.
+
+    A single name may map to a combination drug (a brand such as Namzaric), as seeded brands
+    like KarXT do. A combination name never maps to a single drug.
+    """
     key, is_combo = _key_for(name)
     target_comps = split_combination(drug_name)
-    if bool(target_comps) != is_combo:
-        raise ValueError("a combination name can only map to a combination drug, and vice versa")
+    if is_combo and not target_comps:
+        raise ValueError("a combination name can only map to a combination drug")
+    is_combo = bool(target_comps)
     canonical = combination_display(target_comps) if target_comps else drug_name.strip()
     with conn.transaction():
         row = conn.execute("SELECT id FROM drugs WHERE canonical_name = %s", (canonical,)).fetchone()
@@ -113,6 +118,20 @@ def map_alias(conn: psycopg.Connection, name: str, drug_name: str, note: str | N
         )
         _audit(conn, "map", key, old[0] if old else None, drug_id, note)
     return drug_id
+
+
+def mark_class(conn: psycopg.Connection, name: str, note: str | None = None) -> int:
+    """Mark the drug with this trusted name (verified alias or canonical name) as a drug class."""
+    key, _ = _key_for(name)
+    row = conn.execute(
+        "SELECT d.id FROM drug_aliases a JOIN drugs d ON d.id = a.drug_id WHERE a.alias_key = %s "
+        "AND a.review_status <> 'rejected'", (key,)).fetchone() \
+        or conn.execute("SELECT id FROM drugs WHERE lower(canonical_name) = lower(%s)", (name.strip(),)).fetchone()
+    if not row:
+        raise ValueError(f"no drug named {name!r}")
+    conn.execute("UPDATE drugs SET is_class = TRUE WHERE id = %s", (row[0],))
+    _audit(conn, "mark_class", key, row[0], row[0], note)
+    return row[0]
 
 
 def resolve_conflict(conn: psycopg.Connection, conflict_id: int, note: str | None = None) -> None:
@@ -169,6 +188,8 @@ def apply_file(conn: psycopg.Connection, path: str, dry_run: bool = False) -> di
       reject   alias is never a drug name (reject_alias)
       resolve  alias holds an NCT ID: after re-resolving, mark that trial's open
                conflicts as reviewed. The links stay as the resolver left them.
+      class    alias names a drug that is a class ("SSRI"); marked after re-resolving,
+               so it can name a drug the corrections above created.
     Every row is logged in alias_corrections like a hand-typed command. With
     dry_run, everything is rolled back after the before/after counts are taken.
     """
@@ -186,7 +207,7 @@ def apply_file(conn: psycopg.Connection, path: str, dry_run: bool = False) -> di
                     map_alias(conn, alias, (row.get("drug") or "").strip(), note)
                 elif action == "reject":
                     reject_alias(conn, alias, note)
-                elif action != "resolve":
+                elif action not in ("resolve", "class"):
                     raise ValueError(f"unknown action {action!r}")
             except ValueError as exc:
                 raise ValueError(f"{path} line {n}: {exc}") from exc
@@ -202,6 +223,15 @@ def apply_file(conn: psycopg.Connection, path: str, dry_run: bool = False) -> di
                 resolve_conflict(conn, conflict_id, f"{nct}: {note}")
             n_resolved += len(ids)
         result["conflicts_resolved"] = n_resolved
+        n_classes = 0
+        for n, row in enumerate(rows, start=2):
+            if (row.get("action") or "").strip() == "class":
+                try:
+                    mark_class(conn, row["alias"].strip(), (row.get("reason") or "").strip() or None)
+                except ValueError as exc:
+                    raise ValueError(f"{path} line {n}: {exc}") from exc
+                n_classes += 1
+        result["classes_marked"] = n_classes
         result["open_conflicts"] = conn.execute(
             "SELECT COUNT(*) FROM drug_alias_conflicts WHERE NOT resolved").fetchone()[0]
         after = dict(conn.execute(METHOD_COUNTS_SQL).fetchall())
@@ -285,7 +315,8 @@ def main(argv: list[str] | None = None) -> int:
                   f"{r['relinked']} interventions relinked, {r['orphan_drugs_deleted']} orphan drugs removed")
             for m in sorted(set(r["before"]) | set(r["after"])):
                 print(f"  {m:15} {r['before'].get(m, 0):5} -> {r['after'].get(m, 0):5}")
-            print(f"  conflicts marked reviewed: {r['conflicts_resolved']}; still open: {r['open_conflicts']}")
+            print(f"  conflicts marked reviewed: {r['conflicts_resolved']}; still open: {r['open_conflicts']}; "
+                  f"classes marked: {r['classes_marked']}")
     return 0
 
 

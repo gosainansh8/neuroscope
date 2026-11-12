@@ -25,11 +25,11 @@ QUERIES = {
     """,
     "Top 20 drugs by number of trials": """
         SELECT canonical_name, n_trials, n_active_trials, highest_phase_any, highest_phase_active
-        FROM v_drug_pipeline ORDER BY n_trials DESC, canonical_name LIMIT 20
+        FROM v_drug_pipeline WHERE NOT is_class ORDER BY n_trials DESC, canonical_name LIMIT 20
     """,
     "Drugs with an active Phase 3 trial": """
         SELECT canonical_name, n_active_trials, lead_sponsors
-        FROM v_drug_pipeline WHERE highest_phase_active >= 3
+        FROM v_drug_pipeline WHERE highest_phase_active >= 3 AND NOT is_class
         ORDER BY canonical_name
     """,
     "FDA labels whose indications mention Alzheimer's (text match; read the label)": """
@@ -45,7 +45,7 @@ QUERIES = {
     """,
     "Drugs with an active Phase 3 trial and no FDA approval record": """
         SELECT v.canonical_name, v.n_active_trials FROM v_drug_pipeline v
-        WHERE v.highest_phase_active >= 3
+        WHERE v.highest_phase_active >= 3 AND NOT v.is_class
           AND NOT EXISTS (SELECT 1 FROM v_drug_fda_approval f WHERE f.drug_id = v.drug_id)
         ORDER BY v.n_active_trials DESC, v.canonical_name LIMIT 25
     """,

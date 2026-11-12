@@ -39,13 +39,17 @@ def find_drug(conn: psycopg.Connection, name: str) -> dict:
     if not hit:
         return _unknown(conn, name)
     drug_id, canonical = hit
-    mechanism, modality, is_combo = conn.execute(
-        "SELECT mechanism, modality, is_combination FROM drugs WHERE id = %s", (drug_id,)).fetchone()
+    mechanism, modality, is_combo, is_class = conn.execute(
+        "SELECT mechanism, modality, is_combination, is_class FROM drugs WHERE id = %s", (drug_id,)).fetchone()
     names = [r[0] for r in conn.execute(
         "SELECT alias_display FROM drug_aliases WHERE drug_id = %s AND review_status = 'verified' ORDER BY 1",
         (drug_id,))]
-    return {"found": True, "canonical_name": canonical, "verified_names": names, "mechanism": mechanism,
-            "modality": modality, "is_combination": is_combo}
+    out = {"found": True, "canonical_name": canonical, "verified_names": names, "mechanism": mechanism,
+           "modality": modality, "is_combination": is_combo, "is_class": is_class}
+    if is_class:
+        out["note"] = ("This is a drug class registered as a trial intervention, not a single drug. "
+                       "It has no FDA record of its own; ask about the specific drugs in it.")
+    return out
 
 
 def get_trials(conn: psycopg.Connection, drug: str, limit: int = 8) -> dict:
@@ -150,11 +154,11 @@ def list_pipeline(conn: psycopg.Connection, min_phase: float = 3, active_only: b
         SELECT v.canonical_name, v.n_trials, v.n_active_trials, v.highest_phase_any, v.highest_phase_active,
                f.first_approval_date::text, f.indications_mention_alzheimers
         FROM v_drug_pipeline v LEFT JOIN v_drug_fda_approval f ON f.drug_id = v.drug_id
-        WHERE v.{column} >= %s ORDER BY v.n_active_trials DESC, v.n_trials DESC, v.canonical_name LIMIT %s
+        WHERE v.{column} >= %s AND NOT v.is_class ORDER BY v.n_active_trials DESC, v.n_trials DESC, v.canonical_name LIMIT %s
         """, (min_phase, limit)).fetchall()
     keys = ["drug", "n_trials", "n_active_trials", "highest_phase_any", "highest_phase_active",
             "fda_first_approval_date", "fda_label_mentions_alzheimers"]
     return {"min_phase": min_phase, "active_only": active_only, "count": len(rows),
             "drugs": [dict(zip(keys, [float(v) if hasattr(v, "is_finite") else v for v in r])) for r in rows],
             "caveat": "Phases are trial phases. fda_first_approval_date is approval for any use; null means "
-                      "no matched FDA record. Some rows are drug classes or comparators, not single drugs."}
+                      "no matched FDA record. Drug classes are excluded; some rows may still be comparators."}
