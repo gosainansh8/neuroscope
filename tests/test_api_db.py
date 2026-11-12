@@ -187,3 +187,49 @@ def test_visitor_window_expires():
     with pytest.raises(HTTPException):
         api.check_visitor("192.0.2.1", now=5.0)
     api.check_visitor("192.0.2.1", now=700.0)          # the earlier questions have aged out
+
+
+# --- What changed ---------------------------------------------------------------
+
+def test_changes_lists_new_registrations_status_changes_and_latest_approvals(conn, tmp_path):
+    import copy
+    from datetime import date, timedelta
+    from neuroscope.fda import load
+    from neuroscope.ingest import run_ingestion
+    from tests.fixtures import iv, study
+    from tests.test_fda_db import app as fda_app, export
+
+    def registered(nct, first_posted, status="RECRUITING"):
+        raw = study(nct, status=status, interventions=[iv("Lecanemab", "BIOLOGICAL")])
+        raw["protocolSection"]["statusModule"]["studyFirstPostDateStruct"] = {"date": first_posted}
+        return raw
+
+    recent = (date.today() - timedelta(days=2)).isoformat()
+    old_trial = registered("NCT96000001", "2019-05-01")
+    run_ingestion(conn, [registered("NCT96000002", recent), old_trial], "first load", "synthetic")
+    changed = copy.deepcopy(old_trial)
+    changed["protocolSection"]["statusModule"]["overallStatus"] = "COMPLETED"
+    run_ingestion(conn, [changed], "refresh", "synthetic")
+    from neuroscope.fda import load_labels
+    from tests.test_fda_db import label
+    load(conn, export(tmp_path, [fda_app("BLA999001", ["LECANEMAB-IRMB"], brand="LEQEMBI"),
+                                 fda_app("NDA999002", ["DONEPEZIL HYDROCHLORIDE"], brand="ARICEPT", orig=("AP", "19961125")),
+                                 fda_app("NDA999003", ["SEMAGLUTIDE"], brand="NEWBRAND", orig=("AP", "20260101"))]))
+    load_labels(conn, iter([
+        label("s1", ["BLA999001"], "LEQEMBI is indicated for the treatment of Alzheimer's disease."),
+        label("s2", ["NDA999002"], "ARICEPT is indicated for dementia of the Alzheimer's type."),
+        label("s3", ["NDA999003"], "NEWBRAND is indicated for type 2 diabetes mellitus.")]))
+    conn.commit()
+    api.app.dependency_overrides[api.get_conn] = lambda: conn
+    try:
+        body = TestClient(api.app).get("/changes?days=7").json()
+    finally:
+        api.app.dependency_overrides.clear()
+    # Only the trial first posted in the window is new; the initial load does not make the old one "new".
+    assert [(t["nct_id"], t["first_posted"], t["drugs"]) for t in body["new_trials"]] == [("NCT96000002", recent, ["lecanemab"])]
+    assert [(c["nct_id"], c["field"], c["old"], c["new"]) for c in body["trial_changes"]] == [
+        ("NCT96000001", "overall_status", "RECRUITING", "COMPLETED")]
+    # The newest approval (a diabetes product) is left out: its label does not mention Alzheimer's.
+    assert [(a["drug"], a["approved"]) for a in body["latest_fda_approvals"]] == [("lecanemab", "2023-01-06"),
+                                                                                  ("donepezil", "1996-11-25")]
+    assert body["days"] == 7 and body["last_refresh"] is None

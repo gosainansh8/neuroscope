@@ -32,7 +32,7 @@ Upgrading an existing database: pull, then run `python -m neuroscope.db init` ag
 
 ```bash
 # 1. Tests. REQUIRE_DB_TESTS=1 turns a missing database into an error instead of silent skips.
-REQUIRE_DB_TESTS=1 pytest -rs                 # expect: 233 passed, 0 skipped
+REQUIRE_DB_TESTS=1 pytest -rs                 # expect: 238 passed, 0 skipped
 
 # 2. Live check: 25 Alzheimer's studies in pages of 10, then re-fetch the same
 #    25 by NCT ID and confirm nothing duplicated. Writes live_review.md.
@@ -205,6 +205,19 @@ Checked live on 2026-11-11 with `gemini-3.8-flash`:
 
 Settings: `NEUROSCOPE_AGENT_MODEL` (default `gemini-3.8-flash`) and `NEUROSCOPE_AGENT_LOCATION` (default `global`; Gemini is not served from `us-central1` for this project, while embeddings are). A question costs roughly 2,000 to 9,000 input tokens. Requests time out after 60 seconds.
 
+## Keeping the data current
+
+```bash
+python -m neuroscope.refresh                         # every source, in order
+python -m neuroscope.refresh --steps trials,fda      # some of them
+```
+
+One command re-fetches all Alzheimer's trials (changes go to `trial_changes`), downloads the latest Drugs@FDA export, re-fetches FDA labels, fetches PubMed abstracts for the most-studied drugs, embeds new passages, and clears the saved answers so none predates the new data. Each step runs on its own, so one unreachable source does not stop the rest, and every run is recorded in `refresh_runs`. `deploy/4_schedule_refresh.sh` runs it every Monday on Google Cloud.
+
+A local run on 2026-11-11, one day after the full load, took about 30 seconds for trials and FDA data and found 15 changed trials: 2 status changes, 2 later primary completion dates, and enrollment updates.
+
+The web page's **What changed** panel (`GET /changes`) shows trials first posted on ClinicalTrials.gov in the last 7 days (from each record's own first-posted date, so an initial load does not count as new), status, phase, and completion-date changes found by refreshes, and the latest FDA approvals whose labels mention Alzheimer's.
+
 ## Evaluation
 
 ```bash
@@ -278,12 +291,13 @@ neuroscope/search.py     keyword and semantic search over chunks
 neuroscope/tools.py      read-only lookups the agent can call
 neuroscope/agent.py      the agent loop, Gemini adapter, citation and attribution checks
 neuroscope/evaluate.py   scores the agent against evals/cases.json
+neuroscope/refresh.py    brings every source up to date in one run
 neuroscope/api.py        HTTP API around the agent, and the web page (static/index.html)
 Dockerfile, deploy/      container and Google Cloud deployment scripts
 neuroscope/live_check.py live two-run verification
 neuroscope/review.py     per-trial Markdown review
 neuroscope/report.py     database summary
-tests/                   233 tests; all fixtures synthetic (fake NCT9xxxxxxx IDs), names from live records
+tests/                   238 tests; all fixtures synthetic (fake NCT9xxxxxxx IDs), names from live records
 ```
 
 ## Known limitations

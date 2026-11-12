@@ -84,6 +84,12 @@ QUERIES = {
         FROM trial_changes WHERE field <> 'new_trial'
         ORDER BY detected_at DESC LIMIT 15
     """,
+    "Recent refresh runs (python -m neuroscope.refresh)": """
+        SELECT id, started_at::timestamp(0), status,
+               (SELECT string_agg((s->>'step') || CASE WHEN (s->>'ok')::boolean THEN '' ELSE ' FAILED' END, ', ')
+                FROM jsonb_array_elements(steps) s)
+        FROM refresh_runs ORDER BY id DESC LIMIT 5
+    """,
     "Recent ingestion runs": """
         SELECT id, query, status, n_fetched, n_new, n_changed, n_unchanged, n_failed, started_at::timestamp(0)
         FROM ingestion_runs ORDER BY id DESC LIMIT 5

@@ -10,6 +10,7 @@ Run locally:
 Endpoints:
     GET  /         a single web page for asking questions (neuroscope/static/index.html)
     GET  /health   is the database reachable, and how much data it holds
+    GET  /changes  newly registered trials, trial status changes, latest FDA approvals, last refresh
     POST /ask      {"question": "..."} -> the agent's answer, its lookups, and the citation check
 
 The API has no login. Every question that reaches the model costs money, so
@@ -207,6 +208,59 @@ def health(conn: psycopg.Connection = Depends(get_conn)) -> dict:
     return {"status": "ok", "trials": trials, "drugs": drugs, "drugs_with_fda_approval": fda,
             "document_chunks": chunks, "chunks_with_embeddings": embedded, "trials_last_retrieved": latest,
             "questions_today": today, "daily_question_limit": limits.daily}
+
+
+CHANGE_FIELDS = ("overall_status", "phase_label", "has_results", "why_stopped", "primary_completion_date")
+
+
+@app.get("/changes")
+def changes(days: int = 7, conn: psycopg.Connection = Depends(get_conn)) -> dict:
+    """What is new: trials first posted on ClinicalTrials.gov in the window (from each record's own
+    first-posted date, so an initial load does not count as "new"), field changes detected by
+    refreshes in the window, the latest FDA approvals whose label indications mention Alzheimer's
+    (an application for an unrelated use of a tracked drug is left out), and the last refresh."""
+    days = max(1, min(days, 90))
+    new_trials = conn.execute(
+        """
+        SELECT t.nct_id, t.brief_title, t.phase_label, t.overall_status,
+               s.raw #>> '{protocolSection,statusModule,studyFirstPostDateStruct,date}' AS first_posted,
+               ARRAY(SELECT DISTINCT d.canonical_name FROM trial_interventions ti JOIN drugs d ON d.id = ti.drug_id
+                     WHERE ti.nct_id = t.nct_id ORDER BY 1)
+        FROM trials t JOIN trial_snapshots s ON s.nct_id = t.nct_id AND s.content_hash = t.content_hash
+        WHERE (s.raw #>> '{protocolSection,statusModule,studyFirstPostDateStruct,date}') >= to_char(current_date - %s, 'YYYY-MM-DD')
+        ORDER BY first_posted DESC, t.nct_id LIMIT 25
+        """, (days,)).fetchall()
+    field_changes = conn.execute(
+        """
+        SELECT c.nct_id, t.brief_title, c.field, c.old_value, c.new_value, c.detected_at::date::text
+        FROM trial_changes c JOIN trials t ON t.nct_id = c.nct_id
+        WHERE c.field = ANY(%s) AND c.detected_at >= now() - make_interval(days => %s)
+        ORDER BY c.detected_at DESC, c.nct_id LIMIT 40
+        """, (list(CHANGE_FIELDS), days)).fetchall()
+    approvals = conn.execute(
+        """
+        SELECT DISTINCT ON (a.application_number) a.application_number, d.canonical_name, a.original_approval_date::text,
+               p.brand_name, a.sponsor_name
+        FROM fda_applications a JOIN fda_products p ON p.application_number = a.application_number
+        JOIN drugs d ON d.id = p.drug_id
+        WHERE a.approval_status = 'approved' AND a.application_type IN ('NDA', 'BLA') AND a.original_approval_date IS NOT NULL
+          AND EXISTS (SELECT 1 FROM fda_labels l WHERE a.application_number = ANY (l.application_numbers)
+                      AND l.indications_mention_alzheimers)
+        ORDER BY a.application_number, p.product_number
+        """).fetchall()
+    approvals = sorted(approvals, key=lambda r: r[2], reverse=True)[:6]
+    last = conn.execute("SELECT finished_at::timestamp(0)::text, status FROM refresh_runs "
+                        "WHERE finished_at IS NOT NULL ORDER BY id DESC LIMIT 1").fetchone() \
+        if conn.execute("SELECT to_regclass('refresh_runs')").fetchone()[0] else None
+    return {
+        "days": days,
+        "new_trials": [dict(zip(["nct_id", "title", "phase", "status", "first_posted", "drugs"], r)) for r in new_trials],
+        "trial_changes": [dict(zip(["nct_id", "title", "field", "old", "new", "detected"], r)) for r in field_changes],
+        "latest_fda_approvals": [dict(zip(["application_number", "drug", "approved", "brand", "sponsor"], r))
+                                 for r in approvals],
+        "last_refresh": {"finished_at": last[0], "status": last[1]} if last else None,
+        "trials_last_retrieved": conn.execute("SELECT MAX(last_retrieved_at)::date::text FROM trials").fetchone()[0],
+    }
 
 
 @app.post("/ask", response_model=Answer)

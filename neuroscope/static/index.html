@@ -179,6 +179,20 @@
   details summary::before { content: "▸ "; } details[open] summary::before { content: "▾ "; }
   details[open] summary { margin-bottom: 12px; }
 
+  /* What changed */
+  .changes { margin-top: 26px; padding: 18px 20px; }
+  .changes-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 14px; margin-bottom: 12px; }
+  .changes-head h3 { margin: 0; font-size: 1.05rem; letter-spacing: -.01em; }
+  .changes-head span { color: var(--faint); font-size: .82rem; }
+  .change-cols { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  @media (max-width: 760px) { .change-cols { grid-template-columns: 1fr; } }
+  .change-cols h4 { margin: 0 0 8px; font-size: .74rem; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); }
+  .change-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+  .change-list li { font-size: .88rem; line-height: 1.4; }
+  .change-list a { font-weight: 600; text-decoration: none; }
+  .change-list .meta { display: block; color: var(--faint); font-size: .78rem; }
+  .change-list .empty { color: var(--faint); }
+
   footer { margin-top: 34px; color: var(--faint); font-size: .84rem; display: grid; gap: 8px; }
   footer .how { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 8px; }
   footer .how div { background: var(--panel); border: 1px solid var(--panel-border); border-radius: 12px; padding: 12px 14px; }
@@ -274,6 +288,15 @@
       </details>
     </div>
   </article>
+
+  <section id="changes" class="card changes" hidden aria-labelledby="changes-title">
+    <div class="changes-head"><h3 id="changes-title">What changed</h3><span id="changes-sub"></span></div>
+    <div class="change-cols">
+      <div><h4>Newly registered trials</h4><ul class="change-list" id="chg-new"></ul></div>
+      <div><h4>Trial status changes</h4><ul class="change-list" id="chg-status"></ul></div>
+      <div><h4>Latest Alzheimer's FDA approvals</h4><ul class="change-list" id="chg-fda"></ul></div>
+    </div>
+  </section>
 
   <footer>
     <div class="how">
@@ -451,6 +474,41 @@ function countUp(el, target) {
                         if (p < 1) requestAnimationFrame(tick); };
   requestAnimationFrame(tick);
 }
+
+// "What changed": built with DOM methods from /changes.
+function changeItem(href, linkText, linkClass, rest, meta) {
+  const li = document.createElement("li");
+  const a = document.createElement("a");
+  a.href = href; a.target = "_blank"; a.rel = "noopener"; a.className = linkClass; a.textContent = linkText;
+  li.append(a, document.createTextNode(rest ? " " + rest : ""));
+  if (meta) { const m = document.createElement("span"); m.className = "meta"; m.textContent = meta; li.appendChild(m); }
+  return li;
+}
+function fillList(id, items, emptyText) {
+  const ul = $(id); ul.textContent = "";
+  if (!items.length) { const li = document.createElement("li"); li.className = "empty"; li.textContent = emptyText; ul.appendChild(li); return; }
+  items.forEach((li) => ul.appendChild(li));
+}
+const FIELD_LABELS = { overall_status: "Status", phase_label: "Phase", has_results: "Results posted",
+                       why_stopped: "Reason stopped", primary_completion_date: "Primary completion" };
+const pretty = (v) => (v || "none").replace(/_/g, " ").toLowerCase();
+fetch("changes?days=7").then((r) => r.ok ? r.json() : null).then((d) => {
+  if (!d) return;
+  fillList("chg-new", d.new_trials.slice(0, 6).map((t) => changeItem(TRIAL_URL(t.nct_id), t.nct_id, "trial",
+    t.title.length > 90 ? t.title.slice(0, 88) + "…" : t.title,
+    `First posted ${t.first_posted} · ${t.phase}` + (t.drugs.length ? ` · ${t.drugs.slice(0, 3).join(", ")}` : ""))),
+    "No trials first posted in the last 7 days.");
+  fillList("chg-status", d.trial_changes.slice(0, 6).map((c) => changeItem(TRIAL_URL(c.nct_id), c.nct_id, "trial",
+    `${FIELD_LABELS[c.field] || c.field}: ${pretty(c.old)} → ${pretty(c.new)}`, `Detected ${c.detected}`)),
+    "No status changes detected in the last 7 days.");
+  fillList("chg-fda", d.latest_fda_approvals.map((a) => changeItem(FDA_URL(a.application_number.replace(/^\D+/, "")),
+    a.drug, "fda", a.brand ? `(${a.brand})` : "", `Approved ${a.approved} · ${a.application_number}`)),
+    "No FDA approvals on record.");
+  $("changes-sub").textContent = d.last_refresh
+    ? `Last refreshed ${d.last_refresh.finished_at} UTC · last 7 days`
+    : `Data retrieved ${d.trials_last_retrieved} · last 7 days`;
+  $("changes").hidden = false;
+}).catch(() => {});
 
 fetch("health").then((r) => r.json().then((d) => ({ ok: r.ok, d }))).then(({ ok, d }) => {
   if (!ok) { $("health").textContent = d.detail || "The database is not reachable."; return; }
