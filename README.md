@@ -31,16 +31,18 @@ Each trial is tagged with every disease whose registry search returned it, provi
 
 ## Results
 
-Scored by code (no model judges) on questions whose answers come from the database. The case file is `evals/cases.json` and full reports are in `evals/results/`:
+58 questions whose answers come from the database, scored by code rather than by a model ([cases](evals/cases.json), [reports](evals/results/)). Run on 2026-11-13 with `gemini-3.8-flash`:
 
-53 cases cover US and EU approval, drugs approved only for other uses, trials, literature, the pipeline, Parkinson's, ALS, and questions the data cannot answer.
+| Area | Passed |
+|---|---|
+| US and EU approval, including drugs approved only for other uses or with no record | 26 of 26 |
+| Parkinson's and ALS | 9 of 9 |
+| Literature, company filings, and cross-disease comparisons | 8 of 8 |
+| Trials, program status, and the pipeline | 10 of 11 |
+| Judgment calls and questions the data cannot answer | 2 of 4 |
+| **Total** | **55 of 58** |
 
-| Run (2026-11-12, `gemini-3.8-flash`) | Passed | Invented citations |
-|---|---|---|
-| Full run | 45 of 53 | 0 |
-| The 8 failures, re-run after fixes | 8 of 8 | 0 |
-
-Of the 8 failures, 3 were correct answers that didn't open with a clear "yes" or "no", 2 hit the lookup limit, 2 were Vertex AI timeouts, and 1 case was out of date. Fixes: yes/no questions now start with "Yes" or "No", and an agent that runs out of lookups answers from what it already has.
+**No invented citations** in any answer, and a median answer time of 13 seconds. Of the three misses, two were out-of-date cases (the SEC filings now include a Leqembi price, and one expected phrase was too narrow) and one was a Vertex AI timeout; all three pass on a re-run after the cases were updated.
 
 ## Run it locally
 
@@ -52,7 +54,7 @@ python3.11 -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev,api,vertex]"
 cp .env.example .env && set -a && source .env && set +a
 python -m neuroscope.db init
-REQUIRE_DB_TESTS=1 pytest                             # 276 tests, no network needed
+REQUIRE_DB_TESTS=1 pytest                             # 278 tests, no network needed
 
 python -m neuroscope.ingest --disease alzheimers      # also: parkinsons, als
 python -m neuroscope.fda load && python -m neuroscope.fda labels && python -m neuroscope.ema load

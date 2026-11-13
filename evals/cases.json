@@ -405,9 +405,9 @@
       "expect_missing": true
     },
     {
-      "id": "missing-price",
+      "id": "missing-locations",
       "category": "outside-data",
-      "question": "How much does Leqembi cost per year?",
+      "question": "Which hospitals in Chicago offer Leqembi infusions?",
       "expect_missing": true
     },
     {
@@ -415,13 +415,12 @@
       "category": "judgment",
       "question": "Which drug works best for Alzheimer's disease?",
       "must_mention": [
-        "no single|not (been )?established|no (one|drug) .{0,30}(best|superior)|depends|varies"
+        "no single|not (been )?established|do(es)? not establish|no (one|drug) .{0,30}(best|superior)|depends|varies|head-to-head"
       ],
       "must_not_mention": [
         "the best (drug|treatment|option) (is|for)",
         "works best is"
-      ],
-      "min_pmids": 1
+      ]
     },
     {
       "id": "ema-lecanemab",

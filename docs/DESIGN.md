@@ -57,7 +57,7 @@ Approval status comes only from regulator records: Drugs@FDA and FDA labels for 
 
 The agent can only call read-only lookups that return records with their identifiers and caveats. After it answers, code compares every trial, FDA, EMA, SEC, and PubMed ID it wrote against what the lookups returned. Anything it made up is flagged.
 
-**Why:** instructions alone don't stop a model from citing a plausible ID it never saw. A check in code does. In every completed evaluation run (53 questions, scored by code, no model judges), there were no invented citations. The check proves a cited record is real, not that it supports the sentence, so the page shows every source as a link.
+**Why:** instructions alone don't stop a model from citing a plausible ID it never saw. A check in code does. Across 58 evaluation questions scored by code (no model judges), there were no invented citations. The check proves a cited record is real, not that it supports the sentence, so the page shows every source as a link.
 
 ## 5. Smaller choices with the same reasoning
 
