@@ -92,13 +92,13 @@
   .card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--radius);
           box-shadow: var(--shadow); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
   /* The question box is the main thing on the page: larger, with a soft gradient edge */
-  form.card { display: flex; align-items: center; gap: 12px; padding: 10px 10px 10px 8px; border-radius: 18px;
+  form.card { display: flex; flex-direction: column; gap: 4px; padding: 8px 10px 10px 8px; border-radius: 18px;
               border: 1.5px solid transparent;
               background: linear-gradient(var(--panel-solid), var(--panel-solid)) padding-box,
                           linear-gradient(135deg, rgba(91, 91, 214, .55), rgba(20, 158, 147, .45)) border-box;
               box-shadow: var(--shadow), 0 10px 40px rgba(91, 91, 214, .14); }
   form.card:focus-within { box-shadow: var(--shadow), 0 0 0 5px var(--accent-soft), 0 12px 44px rgba(91, 91, 214, .22); }
-  textarea { flex: 1; height: 54px; min-height: 54px; max-height: 240px; padding: 14px 14px; border: 0; outline: none; resize: none;
+  textarea { width: 100%; height: 54px; min-height: 54px; max-height: 240px; padding: 14px 14px; border: 0; outline: none; resize: none;
              background: transparent; color: var(--text); font: inherit; font-size: 1.08rem; line-height: 1.5; }
   textarea::placeholder { color: var(--faint); }
   button { font: inherit; cursor: pointer; }
@@ -126,16 +126,20 @@
   @media (max-width: 620px) { .followup .fu-label { display: none; } }
 
   /* Examples: two quiet suggestions */
-  .mode { margin-left: auto; display: inline-flex; padding: 3px; gap: 2px; border-radius: 999px;
-          border: 1px solid var(--panel-border); background: var(--panel); }
-  .mode-btn { border: 0; background: none; padding: 4px 12px; border-radius: 999px; font: 600 .82rem/1.2 inherit;
-              color: var(--muted); cursor: pointer; }
-  .mode-btn.on, .agent-btn.on { color: #fff; background: linear-gradient(135deg, var(--accent), var(--accent-2)); }
-  .switches { margin-left: auto; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
-  .switches .mode { margin-left: 0; }
-  .agent-btn { border: 0; background: none; padding: 4px 12px; border-radius: 999px; font: 600 .82rem/1.2 inherit;
-               color: var(--muted); cursor: pointer; }
-  .agent-btn:disabled, .mode-btn:disabled { opacity: .4; cursor: not-allowed; }
+  .toolbar { display: flex; align-items: center; gap: 8px; padding: 0 0 0 6px; }
+  .toolbar #submit { margin-left: auto; }
+  .seg { display: inline-flex; gap: 2px; padding: 3px; border-radius: 10px; background: var(--panel);
+         border: 1px solid var(--panel-border); }
+  .seg button { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border: 0; border-radius: 7px;
+                background: none; color: var(--faint); font: 600 .8rem/1.2 inherit; cursor: pointer;
+                transition: background .15s, color .15s; }
+  .seg button svg { opacity: .8; }
+  .seg button:hover:not(:disabled) { color: var(--text); }
+  .seg button.on { color: var(--text); background: var(--accent-soft);
+                   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 40%, transparent); }
+  .seg button.on svg { color: var(--accent-2); opacity: 1; }
+  .seg button:disabled { opacity: .35; cursor: not-allowed; }
+  @media (max-width: 560px) { .seg button { padding: 5px 7px; } .seg button svg { display: none; } }
   .metrics-line { display: block; margin-top: 3px; font: .76rem/1.4 var(--mono); color: var(--faint); letter-spacing: .02em; }
   .examples { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; margin: 10px 4px 0;
               font-size: .96rem; color: var(--faint); }
@@ -509,10 +513,20 @@
   <form id="ask-form" class="card">
     <textarea id="question" name="question" maxlength="500" rows="1" required aria-label="Your question"
               placeholder="e.g. Is lecanemab approved, and what trials is it in?"></textarea>
-    <button class="primary" id="submit" type="submit">
-      <span>Ask</span>
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-    </button>
+    <div class="toolbar">
+      <div class="seg" role="group" aria-label="What to write">
+        <button type="button" class="mode-btn on" data-mode="answer" aria-pressed="true" title="A short answer to a question"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.8 7L4 20l1.1-4.6A8 8 0 1 1 21 12z"/></svg>Answer</button>
+        <button type="button" class="mode-btn" data-mode="report" aria-pressed="false" title="A sectioned report with citations (counts as 3 questions)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></svg>Report</button>
+      </div>
+      <div class="seg" role="group" aria-label="Which agent answers">
+        <button type="button" class="agent-btn on" data-agent="single" aria-pressed="true" title="One Gemini agent with nine lookups (fast)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>One agent</button>
+        <button type="button" class="agent-btn" data-agent="team" aria-pressed="false" title="An ADK agent team: a coordinator, three specialists, and a critic (slower; counts as 3 questions)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><circle cx="17" cy="9" r="2.6"/><path d="M3 20a6 6 0 0 1 12 0M14 20a5 5 0 0 1 7.5-4.3"/></svg>Agent team</button>
+      </div>
+      <button class="primary" id="submit" type="submit">
+        <span>Ask</span>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </button>
+    </div>
   </form>
   <div id="followup" class="followup" hidden aria-live="polite">
     <svg class="fu-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4v7a4 4 0 0 0 4 4h12"/><path d="M15 10l5 5-5 5"/></svg>
@@ -527,16 +541,6 @@
     <span>Try:</span>
     <button type="button" class="example">Is tofersen approved for ALS?</button>
     <button type="button" class="example">Which Parkinson's drugs are in Phase 3 trials?</button>
-    <div class="switches">
-    <div class="mode" role="group" aria-label="What to write">
-      <button type="button" class="mode-btn on" data-mode="answer" aria-pressed="true" title="A short answer to a question">Answer</button>
-      <button type="button" class="mode-btn" data-mode="report" aria-pressed="false" title="A sectioned report with citations (counts as 3 questions)">Report</button>
-    </div>
-    <div class="mode agent-mode" role="group" aria-label="Which agent answers">
-      <button type="button" class="agent-btn on" data-agent="single" aria-pressed="true" title="One Gemini agent with nine lookups (fast)">One agent</button>
-      <button type="button" class="agent-btn" data-agent="team" aria-pressed="false" title="An ADK agent team: a coordinator, three specialists, and a critic (slower; counts as 3 questions)">Agent team</button>
-    </div>
-    </div>
   </div>
 
   <section id="progress" class="card progress" hidden aria-live="polite">
@@ -685,6 +689,14 @@
     <details>
       <summary>What is the difference between Answer and Report?</summary>
       <p>Answer replies to one question. Report writes a sectioned briefing on a topic (a drug, a pipeline, a comparison) with the same citation check; it makes more lookups, so it counts as three of the 50 daily questions.</p>
+    </details>
+    <details>
+      <summary>What is the agent team?</summary>
+      <p>An alternative to the single agent, built with Google's Agent Development Kit: a coordinator asks three specialists (regulatory, clinical, evidence) for what it needs, writes a draft, and a critic checks every sentence against the records the specialists found before the answer is shown. It makes more model calls, so it is slower and counts as three questions; the single agent stays the default. The line under each answer shows the model calls, time, and estimated cost.</p>
+    </details>
+    <details>
+      <summary>What does "program discontinued" mean?</summary>
+      <p>It is read from the trial registry: a drug has no active trial left in that disease, and its most recently updated trial was terminated, withdrawn, or suspended. The sponsor's stated reason is quoted when it gives one. It is not a company announcement: a company can end a program without stopping a trial, or continue it in a trial not yet registered.</p>
     </details>
     <details>
       <summary>Is this medical advice?</summary>
@@ -1030,7 +1042,7 @@ function setAgent(next) {
   if (next === "team") { setMode("answer"); setHistory([]); reportBtn.disabled = true; }
   else reportBtn.disabled = false;
 }
-$("examples").addEventListener("click", (e) => {
+document.addEventListener("click", (e) => {
   const ab = e.target.closest(".agent-btn");
   if (ab) { setAgent(ab.dataset.agent); textarea.focus(); return; }
   const m = e.target.closest(".mode-btn");
