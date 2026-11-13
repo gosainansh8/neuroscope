@@ -99,7 +99,8 @@ def score(case: dict, result) -> dict:
     return checks
 
 
-def run(cases: list[dict], model_factory=GeminiModel, embedder=None, pause_s: float = 1.0) -> list[dict]:
+def run(cases: list[dict], model_factory=GeminiModel, embedder=None, pause_s: float = 1.0,
+        agent: str = "single") -> list[dict]:
     rows = []
     with connect() as conn:
         tools = build_tools(conn, embedder)
@@ -107,7 +108,12 @@ def run(cases: list[dict], model_factory=GeminiModel, embedder=None, pause_s: fl
             model = model_factory()
             started = time.monotonic()
             try:
-                result = answer_question(case["question"], model, tools)
+                if agent == "team":
+                    from .team import answer_question_team
+                    result = answer_question_team(case["question"], tools)
+                    model = result
+                else:
+                    result = answer_question(case["question"], model, tools)
                 error = None
             except RuntimeError as exc:
                 result, error = None, str(exc)
@@ -125,11 +131,32 @@ def run(cases: list[dict], model_factory=GeminiModel, embedder=None, pause_s: fl
                 "attribution_warnings": result.attribution_warnings if result else [],
                 "seconds": seconds,
                 "input_tokens": getattr(model, "input_tokens", None), "output_tokens": getattr(model, "output_tokens", None),
+                "metrics": (result.metrics if result else
+                            (model.usage.summary(seconds) if hasattr(model, "usage") else {})),
             })
             print(f"[{n}/{len(cases)}] {'PASS' if passed else 'FAIL'} {case['id']} ({seconds}s)"
                   + "".join(f"\n      - {k}: {d}" for k, (ok, d) in checks.items() if not ok), flush=True)
             time.sleep(pause_s)
     return rows
+
+
+def _median(values: list[float]) -> float | None:
+    values = sorted(v for v in values if v is not None)
+    if not values:
+        return None
+    mid = len(values) // 2
+    return values[mid] if len(values) % 2 else (values[mid - 1] + values[mid]) / 2
+
+
+def performance(rows: list[dict]) -> dict:
+    """Median seconds and tokens/s, mean and total estimated cost, model calls per answer."""
+    m = [r.get("metrics") or {} for r in rows]
+    costs = [x.get("cost_usd") for x in m if x.get("cost_usd") is not None]
+    return {"median_seconds": _median([r["seconds"] for r in rows]),
+            "median_tokens_per_second": _median([x.get("tokens_per_second") for x in m]),
+            "mean_cost_usd": round(sum(costs) / len(costs), 5) if costs else None,
+            "total_cost_usd": round(sum(costs), 4) if costs else None,
+            "mean_model_calls": round(sum(x.get("model_calls", 0) for x in m) / len(m), 1) if m else None}
 
 
 def summarize(rows: list[dict], model_name: str) -> str:
@@ -149,6 +176,9 @@ def summarize(rows: list[dict], model_name: str) -> str:
         f"{sum(c['passed'] for c in checks)} of {len(checks)} individual checks passed.",
         f"Answers with an unsupported (invented) citation: {unsupported}. Attribution warnings: {attribution}.",
         f"Tokens: {tokens_in:,} input, {tokens_out:,} output.",
+        "Median answer time {median_seconds} s; median {median_tokens_per_second} generated tokens/s; "
+        "{mean_model_calls} model calls and ${mean_cost_usd} per answer on average (${total_cost_usd} in all, "
+        "estimated from token counts).".format(**performance(rows)),
         "",
         "| Category | Passed |",
         "|---|---|",
@@ -173,6 +203,8 @@ def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--only", help="run cases by id, comma-separated")
     p.add_argument("--category")
+    p.add_argument("--agent", choices=["single", "team"], default="single",
+                   help="single: one agent (the site default); team: the ADK multi-agent version")
     p.add_argument("--keyword-search", action="store_true", help="literature by keyword instead of embeddings")
     args = p.parse_args(argv)
     cases = json.loads(CASES.read_text(encoding="utf-8"))["cases"]
@@ -190,16 +222,19 @@ def main(argv: list[str] | None = None) -> int:
             from .embed import VertexEmbedder
             embedder = VertexEmbedder()
         model_name = GeminiModel().model
-        rows = run(cases, embedder=embedder)
+        rows = run(cases, embedder=embedder, agent=args.agent)
     except RuntimeError as exc:
         print(exc)
         return 2
     RESULTS.mkdir(parents=True, exist_ok=True)
     stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
-    (RESULTS / f"{stamp}.json").write_text(json.dumps({"model": model_name, "rows": rows}, indent=1), encoding="utf-8")
-    summary = summarize(rows, model_name)
+    suffix = "" if args.agent == "single" else f"-{args.agent}"
+    (RESULTS / f"{stamp}{suffix}.json").write_text(json.dumps(
+        {"model": model_name, "agent": args.agent, "performance": performance(rows), "rows": rows}, indent=1),
+        encoding="utf-8")
+    summary = summarize(rows, model_name + ("" if args.agent == "single" else f", {args.agent} agent"))
     if not (args.only or args.category):
-        (RESULTS / "latest.md").write_text(summary, encoding="utf-8")
+        (RESULTS / f"latest{suffix}.md").write_text(summary, encoding="utf-8")
     print("\n" + summary)
     return 0 if all(r["passed"] for r in rows) else 1
 

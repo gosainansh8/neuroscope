@@ -50,10 +50,12 @@ from fastapi.responses import HTMLResponse, StreamingResponse
 from psycopg.types.json import Jsonb
 from pydantic import BaseModel, Field
 
+from . import tracing
 from .agent import GeminiModel, answer_question, build_tools, source_links
 from .db import connect
 
 # No generated API documentation pages: visitors only need the website.
+tracing.setup()
 app = FastAPI(title="NeuroScope", description="Sourced answers about Alzheimer's, Parkinson's, and ALS drug development.",
               docs_url=None, redoc_url=None, openapi_url=None)
 log = logging.getLogger("neuroscope.api")
@@ -117,6 +119,13 @@ def check_visitor(ip: str, now: float | None = None) -> None:
 
 
 REPORT_COST = 3      # a report makes several times the model calls of an answer
+TEAM_COST = 3        # so does the agent team
+
+
+def question_cost(body) -> int:
+    if body.agent == "team":
+        return TEAM_COST
+    return REPORT_COST if body.mode == "report" else 1
 
 
 def reserve_question(conn: psycopg.Connection, weight: int = 1) -> None:
@@ -142,8 +151,9 @@ def reserve_question(conn: psycopg.Connection, weight: int = 1) -> None:
             "asked recently still work. Please come back tomorrow."))
 
 
-def question_key(question: str, mode: str = "answer") -> str:
-    normalized = re.sub(r"\s+", " ", question.strip().lower()) + ("" if mode == "answer" else f"\nmode:{mode}")
+def question_key(question: str, mode: str = "answer", agent: str = "single") -> str:
+    normalized = (re.sub(r"\s+", " ", question.strip().lower()) + ("" if mode == "answer" else f"\nmode:{mode}")
+                  + ("" if agent == "single" else f"\nagent:{agent}"))
     return hashlib.sha256(normalized.encode("utf-8")).hexdigest()
 
 DATABASE_DOWN = ("The database is not reachable. If it was stopped to save cost, start it with "
@@ -160,6 +170,7 @@ class Question(BaseModel):
     question: str = Field(min_length=3, max_length=500)
     history: list[Turn] = Field(default_factory=list, max_length=3)
     mode: Literal["answer", "report"] = "answer"     # a report is sectioned, longer, and costs REPORT_COST
+    agent: Literal["single", "team"] = "single"      # team: the ADK agent team (team.py), costs TEAM_COST
 
 
 class Lookup(BaseModel):
@@ -179,6 +190,7 @@ class Answer(BaseModel):
     cached: bool = False                 # served from a recent identical question; no model call
     attribution_warnings: list[dict] = []    # a cited record that belongs to a different drug than the sentence names
     source_links: dict[str, str] = {}        # identifier -> public URL, where the page cannot build it (SEC filings)
+    metrics: dict = {}                       # model calls, tokens, seconds, tokens/s, estimated cost (metrics.py)
 
 
 def get_conn() -> Iterator[psycopg.Connection]:
@@ -397,13 +409,23 @@ def atlas(conn: psycopg.Connection = Depends(get_conn)) -> dict:
     return data
 
 
+def run_agent(body, model, registry, on_event=None):
+    """The single agent (default) or the ADK agent team. The team writes answers, not reports, and
+    takes no follow-up history."""
+    if body.agent == "team":
+        from .team import answer_question_team
+        return answer_question_team(body.question, registry, on_event=on_event)
+    return answer_question(body.question, model, registry, history=[t.model_dump() for t in body.history],
+                           on_event=on_event, mode=body.mode)
+
+
 def cached_answer(conn: psycopg.Connection, body: Question) -> Answer | None:
     """A recent saved answer to the same question. Follow-ups depend on earlier turns: never cached."""
     if body.history:
         return None
     row = conn.execute(
         "SELECT response FROM api_answer_cache WHERE question_key = %s "
-        "AND created_at > now() - make_interval(hours => %s)", (question_key(body.question, body.mode), CACHE_HOURS)).fetchone()
+        "AND created_at > now() - make_interval(hours => %s)", (question_key(body.question, body.mode, body.agent), CACHE_HOURS)).fetchone()
     conn.commit()
     return Answer(**{**row[0], "cached": True}) if row else None
 
@@ -417,7 +439,8 @@ def to_answer(result, model) -> Answer:
         stopped_early=result.stopped_early, model=getattr(model, "model", None),
         attribution_warnings=result.attribution_warnings,
         source_links={k: v for k, v in source_links(result.steps).items()
-                      if k in result.cited.get("sec_filing", [])})
+                      if k in result.cited.get("sec_filing", [])},
+        metrics=getattr(result, "metrics", {}) or {})
 
 
 def save_answer(conn: psycopg.Connection, body: Question, answer: Answer) -> None:
@@ -428,7 +451,7 @@ def save_answer(conn: psycopg.Connection, body: Question, answer: Answer) -> Non
             "INSERT INTO api_answer_cache (question_key, question, response) VALUES (%s, %s, %s) "
             "ON CONFLICT (question_key) DO UPDATE SET question = EXCLUDED.question, "
             "response = EXCLUDED.response, created_at = now()",
-            (question_key(body.question, body.mode), body.question, Jsonb(answer.model_dump())))
+            (question_key(body.question, body.mode, body.agent), body.question, Jsonb(answer.model_dump())))
         conn.commit()
 
 
@@ -439,10 +462,9 @@ def ask(body: Question, request: Request, conn: psycopg.Connection = Depends(get
     if cached:
         return cached
     check_visitor(client_ip(request))
-    reserve_question(conn, REPORT_COST if body.mode == "report" else 1)
+    reserve_question(conn, question_cost(body))
     try:
-        result = answer_question(body.question, model, build_tools(conn, embedder),
-                                 history=[t.model_dump() for t in body.history], mode=body.mode)
+        result = run_agent(body, model, build_tools(conn, embedder))
     except RuntimeError as exc:                      # the model service failed or timed out
         log.error("model request failed: %s", exc)
         raise HTTPException(status_code=502, detail=MODEL_UNAVAILABLE) from exc
@@ -477,7 +499,7 @@ def ask_stream(body: Question, request: Request, conn: psycopg.Connection = Depe
     if cached:
         return _ndjson([{"type": "done", **cached.model_dump()}])
     check_visitor(client_ip(request))
-    reserve_question(conn, REPORT_COST if body.mode == "report" else 1)
+    reserve_question(conn, question_cost(body))
 
     events: queue.Queue = queue.Queue()
 
@@ -485,9 +507,7 @@ def ask_stream(body: Question, request: Request, conn: psycopg.Connection = Depe
         try:
             with stream_connection() as c:
                 model.on_text = lambda delta: events.put({"type": "text", "delta": delta})
-                result = answer_question(body.question, model, build_tools(c, embedder),
-                                         history=[t.model_dump() for t in body.history], on_event=events.put,
-                                         mode=body.mode)
+                result = run_agent(body, model, build_tools(c, embedder), on_event=events.put)
                 answer = to_answer(result, model)
                 save_answer(c, body, answer)
                 events.put({"type": "done", **answer.model_dump()})

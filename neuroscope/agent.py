@@ -30,6 +30,7 @@ from __future__ import annotations
 import argparse
 import queue
 import threading
+import time
 import json
 import os
 import re
@@ -41,7 +42,9 @@ import psycopg
 
 from . import tools
 from .db import connect
+from . import tracing
 from .embed import call_with_retry
+from .metrics import ModelCall, Usage
 
 DEFAULT_MODEL = "gemini-3.8-flash"
 MAX_STEPS = 8
@@ -203,6 +206,7 @@ class AgentResult:
     unsupported: dict[str, list[str]]      # identifiers in the answer that no tool returned
     stopped_early: bool = False
     attribution_warnings: list[dict] = field(default_factory=list)   # citations next to the wrong drug
+    metrics: dict = field(default_factory=dict)   # model calls, tokens, seconds, tokens/s, cost (metrics.py)
 
 
 def identifiers(text: str) -> dict[str, set[str]]:
@@ -345,13 +349,17 @@ def build_tools(conn: psycopg.Connection, embedder=None) -> dict[str, Callable[.
 
 def run_tool(registry: dict[str, Callable[..., dict]], call: ToolCall) -> dict:
     """Run one tool. Bad names or arguments come back as an error the model can read."""
-    fn = registry.get(call.name)
-    if fn is None:
-        return {"error": f"unknown tool {call.name!r}"}
-    try:
-        return fn(**call.args)
-    except (TypeError, ValueError) as exc:
-        return {"error": f"{call.name} could not run: {exc}"}
+    with tracing.span(f"tool.{call.name}", arguments=json.dumps(call.args, default=str)[:500]) as set_attrs:
+        fn = registry.get(call.name)
+        if fn is None:
+            result = {"error": f"unknown tool {call.name!r}"}
+        else:
+            try:
+                result = fn(**call.args)
+            except (TypeError, ValueError) as exc:
+                result = {"error": f"{call.name} could not run: {exc}"}
+        set_attrs(error=result.get("error"), result_chars=len(json.dumps(result, default=str)))
+        return result
 
 
 MAX_HISTORY_TURNS = 3
@@ -368,6 +376,23 @@ def answer_question(question: str, model: ChatModel, registry: dict[str, Callabl
 
     `on_event`, if given, is called with {"type": "lookup", "tool", "arguments"} just before each
     lookup runs, so a caller can show progress as it happens."""
+    started = time.monotonic()
+    with tracing.span("answer", mode=mode, agent="single", question_chars=len(question)) as set_attrs:
+        result = _answer(question, model, registry, max_steps, history, on_event, mode)
+        result.metrics = finish_metrics(model, started)
+        set_attrs(**{k: v for k, v in result.metrics.items() if v is not None},
+                  lookups=len(result.steps), citations_verified=not any(result.unsupported.values()))
+    return result
+
+
+def finish_metrics(model, started: float) -> dict:
+    """The answer's metrics, from the model's recorded calls (a stand-in model has none)."""
+    usage = getattr(model, "usage", None)
+    return (usage.summary(time.monotonic() - started) if isinstance(usage, Usage)
+            else Usage().summary(time.monotonic() - started))
+
+
+def _answer(question, model, registry, max_steps, history, on_event, mode) -> AgentResult:
     steps: list[tuple[ToolCall, dict]] = []
     history = [{"question": h["question"], "answer": h["answer"]} for h in (history or [])][-MAX_HISTORY_TURNS:]
     if mode not in ("answer", "report"):
@@ -419,6 +444,7 @@ class GeminiModel:
         self._history: list = []
         self._config = None
         self.input_tokens = self.output_tokens = 0
+        self.usage = Usage()                # every call's tokens and timing, for metrics
         # When set, text is streamed: each piece is passed here as it arrives.
         self.on_text: Callable[[str], None] | None = None
 
@@ -448,10 +474,21 @@ class GeminiModel:
                 raise
             return parts, calls, usage
 
-        parts, calls, usage = call_with_retry(attempt)
-        if usage:
-            self.input_tokens += usage.prompt_token_count or 0
-            self.output_tokens += usage.candidates_token_count or 0
+        t0 = time.monotonic()
+        self.last_first_piece, self.last_hedged = None, False
+        with tracing.span("model.call", model=self.model) as set_attrs:
+            parts, calls, usage = call_with_retry(attempt)
+            record = ModelCall(seconds=time.monotonic() - t0, first_piece_seconds=self.last_first_piece,
+                               input_tokens=(usage.prompt_token_count or 0) if usage else 0,
+                               output_tokens=(usage.candidates_token_count or 0) if usage else 0,
+                               thinking_tokens=(getattr(usage, "thoughts_token_count", 0) or 0) if usage else 0,
+                               hedged=self.last_hedged)
+            set_attrs(seconds=round(record.seconds, 3), first_piece_seconds=record.first_piece_seconds,
+                      input_tokens=record.input_tokens, output_tokens=record.output_tokens,
+                      thinking_tokens=record.thinking_tokens, hedged=record.hedged, tool_calls=len(calls))
+        self.usage.add(record)
+        self.input_tokens += record.input_tokens
+        self.output_tokens += record.output_tokens
         if parts:
             self._history.append(self._types.Content(role="model", parts=parts))
         text = "".join(p.text for p in parts if p.text and not getattr(p, "thought", False))
@@ -472,6 +509,7 @@ class GeminiModel:
                 replies.put((None, None, exc))
 
         threading.Thread(target=open_stream, daemon=True).start()
+        t0 = time.monotonic()
         started, failures, wait = 1, [], HEDGE_AFTER_S
         while True:
             try:
@@ -483,6 +521,7 @@ class GeminiModel:
                     continue
                 raise TimeoutError("the model sent nothing back") from None
             if exc is None:
+                self.last_first_piece, self.last_hedged = time.monotonic() - t0, started == 2
                 break
             failures.append(exc)
             if started == 1 or len(failures) == started:

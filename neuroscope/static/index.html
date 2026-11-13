@@ -130,7 +130,12 @@
           border: 1px solid var(--panel-border); background: var(--panel); }
   .mode-btn { border: 0; background: none; padding: 4px 12px; border-radius: 999px; font: 600 .82rem/1.2 inherit;
               color: var(--muted); cursor: pointer; }
-  .mode-btn.on { color: #fff; background: linear-gradient(135deg, var(--accent), var(--accent-2)); }
+  .mode-btn.on, .agent-btn.on { color: #fff; background: linear-gradient(135deg, var(--accent), var(--accent-2)); }
+  .agent-mode { margin-left: 6px; }
+  .agent-btn { border: 0; background: none; padding: 4px 12px; border-radius: 999px; font: 600 .82rem/1.2 inherit;
+               color: var(--muted); cursor: pointer; }
+  .agent-btn:disabled, .mode-btn:disabled { opacity: .4; cursor: not-allowed; }
+  .metrics-line { display: block; margin-top: 3px; font: .76rem/1.4 var(--mono); color: var(--faint); letter-spacing: .02em; }
   .examples { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; margin: 10px 4px 0;
               font-size: .96rem; color: var(--faint); }
   .example { white-space: nowrap; border: 0; background: none; padding: 0; color: var(--muted); font-size: .96rem; cursor: pointer;
@@ -525,6 +530,10 @@
       <button type="button" class="mode-btn on" data-mode="answer" aria-pressed="true" title="A short answer to a question">Answer</button>
       <button type="button" class="mode-btn" data-mode="report" aria-pressed="false" title="A sectioned report with citations (counts as 3 questions)">Report</button>
     </div>
+    <div class="mode agent-mode" role="group" aria-label="Which agent answers">
+      <button type="button" class="agent-btn on" data-agent="single" aria-pressed="true" title="One Gemini agent with nine lookups (fast)">One agent</button>
+      <button type="button" class="agent-btn" data-agent="team" aria-pressed="false" title="An ADK agent team: a coordinator, three specialists, and a critic (slower; counts as 3 questions)">Agent team</button>
+    </div>
   </div>
 
   <section id="progress" class="card progress" hidden aria-live="polite">
@@ -774,6 +783,16 @@ const TOOL_LABELS = {
 
 function renderLookups(lookups) {
   $("lookups-summary").textContent = `How this was answered: ${lookups.length} database lookup${lookups.length === 1 ? "" : "s"}`;
+  const m = window.LAST_METRICS || {};
+  if (m.model_calls) {
+    const line = document.createElement("span"); line.className = "metrics-line";
+    const tokens = (m.input_tokens || 0) + (m.output_tokens || 0) + (m.thinking_tokens || 0);
+    line.textContent = [window.LAST_AGENT === "team" ? "Agent team" : "One agent",
+      `${m.model_calls} model call${m.model_calls === 1 ? "" : "s"}`, `${tokens.toLocaleString()} tokens`,
+      m.tokens_per_second ? `${Math.round(m.tokens_per_second)} tokens/s` : null,
+      `${m.seconds} s`, m.cost_usd != null ? `$${Number(m.cost_usd).toFixed(4)}` : null].filter(Boolean).join(" · ");
+    $("lookups-summary").appendChild(line);
+  }
   const list = $("lookups");
   list.textContent = "";
   lookups.forEach((l, i) => {
@@ -898,6 +917,8 @@ function showDraft(question, text) {
 // The finished answer: rendered in full, with sources and the citation check.
 function renderFinal(question, data) {
   SOURCE_LINKS = data.source_links || {};
+  window.LAST_METRICS = data.cached ? {} : (data.metrics || {});
+  window.LAST_AGENT = agentMode;
   const wasHidden = $("result").hidden;
   $("result-question").textContent = question;
   $("answer").innerHTML = renderAnswer(data.answer);
@@ -918,7 +939,7 @@ function renderFinal(question, data) {
     chip.className = "chip neutral"; chip.textContent = "No citations in this answer";
   }
   $("cache-chip").hidden = !data.cached;
-  if (mode === "answer") setHistory([...history, { question, answer: data.answer.slice(0, 6000) }]);
+  if (mode === "answer" && agentMode === "single") setHistory([...history, { question, answer: data.answer.slice(0, 6000) }]);
   textarea.value = ""; autosize();          // ready for a follow-up, which starts empty
   $("result").hidden = false;
   if (wasHidden) $("result").scrollIntoView({ behavior: "smooth", block: "start" });
@@ -935,12 +956,14 @@ async function ask(question) {
   const handle = (ev) => {
     if (ev.type === "lookup") { draft = ""; showDraft(question, ""); liveStep(ev); neuro.think(true); }
     else if (ev.type === "text") { draft += ev.delta; showDraft(question, draft); }
+    else if (ev.type === "stage") { logLine(ev.text, false); }
     else if (ev.type === "done") { finished = true; renderFinal(question, ev); }
     else if (ev.type === "error") { finished = true; $("result").hidden = true; showError(ev.detail); }
   };
   try {
     const resp = await fetch("ask/stream", { method: "POST", headers: { "content-type": "application/json" },
-                                             body: JSON.stringify(mode === "report" ? { question, mode } : { question, history }) });
+                                             body: JSON.stringify(agentMode === "team" ? { question, agent: "team" }
+                                                                  : mode === "report" ? { question, mode } : { question, history }) });
     if (!resp.ok) {
       const data = await resp.json().catch(() => ({}));
       showError(typeof data.detail === "string" ? data.detail
@@ -993,7 +1016,20 @@ function setMode(next) {
   if (next === "report") { setHistory([]); textarea.placeholder = PLACEHOLDERS.report; }
   else textarea.placeholder = PLACEHOLDERS.answer;
 }
+let agentMode = "single";
+function setAgent(next) {
+  agentMode = next;
+  document.querySelectorAll(".agent-btn").forEach((b) => {
+    const on = b.dataset.agent === next; b.classList.toggle("on", on); b.setAttribute("aria-pressed", String(on));
+  });
+  // The team writes answers, not reports, and starts fresh each time.
+  const reportBtn = document.querySelector('.mode-btn[data-mode="report"]');
+  if (next === "team") { setMode("answer"); setHistory([]); reportBtn.disabled = true; }
+  else reportBtn.disabled = false;
+}
 $("examples").addEventListener("click", (e) => {
+  const ab = e.target.closest(".agent-btn");
+  if (ab) { setAgent(ab.dataset.agent); textarea.focus(); return; }
   const m = e.target.closest(".mode-btn");
   if (m) { setMode(m.dataset.mode); textarea.focus(); return; }
   const btn = e.target.closest(".example");
