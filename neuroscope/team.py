@@ -30,12 +30,16 @@ import time
 from typing import Callable
 
 from . import tracing
-from .agent import (DEFAULT_MODEL, SYSTEM_PROMPT, THINKING_BUDGET, AgentResult, ToolCall, check_attribution,
-                    check_citations, run_tool)
+from .agent import (DEFAULT_MODEL, HEDGE_AFTER_S, SYSTEM_PROMPT, THINKING_BUDGET, AgentResult, ToolCall,
+                    check_attribution, check_citations, run_tool)
 from .metrics import ModelCall, Usage
 
 APP = "neuroscope"
 TEAM_TIMEOUT_MS = 60_000
+# The specialists fetch facts and the critic checks them against records: they need little hidden reasoning.
+# The coordinator plans and writes, so it keeps the single agent's budget.
+SPECIALIST_THINKING = 256
+CRITIC_THINKING = 512
 
 COORDINATOR = SYSTEM_PROMPT + """
 
@@ -73,6 +77,53 @@ RECORDS (JSON):
 {records}"""
 
 
+def _copy_request(request):
+    """A copy safe to send twice: the message list and config are copied, the rest is shared (it holds
+    locks and cannot be deep-copied)."""
+    update = {"contents": list(request.contents)}
+    if getattr(request, "config", None) is not None:
+        update["config"] = request.config.model_copy(deep=True)
+    return request.model_copy(update=update)
+
+
+def _hedged_gemini_class():
+    """ADK's Gemini model with the single agent's stall protection: if no reply has started after
+    HEDGE_AFTER_S, the same request is raced and whichever replies first is used."""
+    from google.adk.models import Gemini
+
+    class HedgedGemini(Gemini):
+        async def generate_content_async(self, llm_request, stream: bool = False):
+            base = Gemini.generate_content_async
+
+            def start(request):
+                gen = base(self, request, stream)
+                return gen, asyncio.ensure_future(gen.__anext__())
+
+            first_gen, first = start(_copy_request(llm_request))
+            done, _ = await asyncio.wait({first}, timeout=HEDGE_AFTER_S)
+            if done:
+                winner_gen, winner = first_gen, first
+            else:
+                second_gen, second = start(_copy_request(llm_request))
+                pending, winner_gen, winner = {first, second}, None, None
+                while pending:
+                    done, pending = await asyncio.wait(pending, return_when=asyncio.FIRST_COMPLETED)
+                    ok = [t for t in done if not t.exception()]
+                    if ok:
+                        winner = ok[0]
+                        winner_gen = first_gen if winner is first else second_gen
+                        break
+                if winner is None:
+                    raise next(iter(done)).exception()
+                for t in pending:
+                    t.cancel()
+            yield winner.result()
+            async for response in winner_gen:
+                yield response
+
+    return HedgedGemini
+
+
 def _client():
     from google import genai
     from google.genai import types
@@ -87,7 +138,6 @@ class Team:
 
     def __init__(self, registry: dict[str, Callable[..., dict]], on_event: Callable[[dict], None] | None = None):
         from google.adk.agents import LlmAgent
-        from google.adk.models import Gemini
         from google.adk.tools.agent_tool import AgentTool
         from google.genai import types
 
@@ -95,13 +145,17 @@ class Team:
         self.steps: list[tuple[ToolCall, dict]] = []
         self.usage = Usage()
         self._started: dict[str, float] = {}
-        model = Gemini(model=os.environ.get("NEUROSCOPE_AGENT_MODEL") or DEFAULT_MODEL, client=_client())
-        config = types.GenerateContentConfig(
-            temperature=0, thinking_config=types.ThinkingConfig(thinking_budget=THINKING_BUDGET))
+        model = _hedged_gemini_class()(model=os.environ.get("NEUROSCOPE_AGENT_MODEL") or DEFAULT_MODEL,
+                                       client=_client())
+
+        def config_with(budget: int):
+            return types.GenerateContentConfig(temperature=0,
+                                               thinking_config=types.ThinkingConfig(thinking_budget=budget))
+        config = config_with(THINKING_BUDGET)
         callbacks = dict(before_model_callback=self._before_model, after_model_callback=self._after_model)
 
         def specialist(role: str, names: list[str]) -> LlmAgent:
-            return LlmAgent(name=role, model=model, generate_content_config=config,
+            return LlmAgent(name=role, model=model, generate_content_config=config_with(SPECIALIST_THINKING),
                             description=f"The {role} specialist", instruction=SPECIALIST.format(role=role),
                             tools=[self._tool(n) for n in names], **callbacks)
 
@@ -112,7 +166,7 @@ class Team:
                                                      "list_pipeline", "compare_diseases"])),
                    AgentTool(specialist("evidence", ["find_drug", "search_literature", "search_disclosures"]))],
             **callbacks)
-        self.critic = LlmAgent(name="critic", model=model, generate_content_config=config,
+        self.critic = LlmAgent(name="critic", model=model, generate_content_config=config_with(CRITIC_THINKING),
                                instruction="Follow the user's instructions exactly.", **callbacks)
 
     # Each lookup is an ordinary Python function for ADK (it reads the parameters from the signature and
