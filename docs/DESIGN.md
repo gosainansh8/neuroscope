@@ -57,10 +57,19 @@ Approval status comes only from regulator records: Drugs@FDA and FDA labels for 
 
 The agent can only call read-only lookups that return records with their identifiers and caveats. After it answers, code compares every trial, FDA, EMA, SEC, and PubMed ID it wrote against what the lookups returned. Anything it made up is flagged.
 
-**Why:** instructions alone don't stop a model from citing a plausible ID it never saw. A check in code does. Across 58 evaluation questions scored by code (no model judges), there were no invented citations. The check proves a cited record is real, not that it supports the sentence, so the page shows every source as a link.
+**Why:** instructions alone don't stop a model from citing a plausible ID it never saw. A check in code does. In the latest 66-question evaluation (scored by code, no model judges) the single agent cited an identifier no lookup returned once, an FDA application number from the model's memory; the check flagged it, and the agent now gets one repair turn whenever that happens. The agent team, whose critic re-checks every sentence, had none. The check proves a cited record is real, not that it supports the sentence, so the page shows every source as a link.
 
 ## 5. Smaller choices with the same reasoning
 
 - **Registry synonyms are filtered.** "Parkinson Disease" also returned 251 cancer trials through "PD" (as in PD-1). A trial counts toward a disease only if its own text names it.
 - **Stricter matching for company filings.** Only drugs with a Phase 2+ program or an approval, never a generic substance, so "same" does not match the supplement "SAM-e".
 - **Program status is labelled as a registry reading.** "Discontinued" means the latest trial stopped and none is active, which is not the same as a company announcing it.
+
+## 6. A second mode: an ADK agent team
+
+The same nine lookups and citation check also run behind an agent team built with Google's Agent Development Kit. A coordinator, which cannot query the database, asks three specialists (regulatory, clinical, evidence), each an ADK agent limited to its own lookups and called as a tool, then drafts an answer. A critic receives the draft and the raw records from every lookup, and removes or corrects any claim those records do not support. The code checks then run exactly as for the single agent.
+
+**Why it is a switch, not the default:** on 66 questions both versions passed 63, but the team made 7.6 model calls per answer to the single agent's 3.4, so it was 2.3 times slower and 2.2 times the cost. What the extra calls bought was the one thing a sourced-answers tool cannot get wrong: the team had no invented citation, while the single agent once cited an FDA application number from the model's memory. That finding led to a fix in the single agent too (one repair turn naming any unchecked identifier), so the default got the benefit without the cost.
+
+**What made the team fast enough to use:** ADK model calls got the same stall hedging as the single agent (a duplicate request after 8 seconds of silence), the specialists and critic got smaller thinking budgets than the coordinator, and a run that hits a dropped connection starts again. Together these took a typical team answer from about 70 to about 30 seconds.
+

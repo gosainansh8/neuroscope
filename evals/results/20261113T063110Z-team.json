@@ -1,0 +1,276 @@
+{
+ "model": "gemini-3.8-flash",
+ "agent": "team",
+ "performance": {
+  "median_seconds": 64.6,
+  "median_tokens_per_second": 9.7,
+  "mean_cost_usd": 0.01766,
+  "total_cost_usd": 0.053,
+  "mean_model_calls": 10.7
+ },
+ "rows": [
+  {
+   "id": "fda-kisunla-brand",
+   "category": "approval",
+   "question": "Is Kisunla approved, and when?",
+   "passed": true,
+   "checks": {
+    "verdict": {
+     "passed": true,
+     "detail": "expected yes, got yes"
+    },
+    "mentions /2024-07-02|July 0?2,? 2024/": {
+     "passed": true,
+     "detail": ""
+    },
+    "mentions /donanemab/": {
+     "passed": true,
+     "detail": ""
+    },
+    "cites an expected record": {
+     "passed": true,
+     "detail": "BLA761248"
+    },
+    "no unsupported citations": {
+     "passed": true,
+     "detail": ""
+    }
+   },
+   "answer": "Yes, Kisunla (donanemab) is approved by both the US FDA and the European Union EMA.\n\n* **United States (FDA):** Approved on 2024-07-02 under BLA761248, indicated \"for the treatment of Alzheimer's disease\" with treatment initiated in patients with \"mild cognitive impairment or mild dementia stage of disease\".\n* **European Union (EMA):** Centrally authorised on 2025-09-24 under EMEA/H/C/006024, indicated \"for the treatment of adult patients with a clinical diagnosis of mild cognitive impairment and mild dementia due to Alzheimer\u2019s disease (Early symptomatic Alzheimer\u2019s disease) who are apolipoprotein E \u03b54 (ApoE \u03b54) heterozygotes or non-carriers with confirmed amyloid pathology\".",
+   "lookups": [
+    {
+     "tool": "find_drug",
+     "arguments": {
+      "name": "Kisunla"
+     }
+    },
+    {
+     "tool": "get_fda_status",
+     "arguments": {
+      "drug": "donanemab",
+      "disease": "alzheimers"
+     }
+    },
+    {
+     "tool": "get_ema_status",
+     "arguments": {
+      "drug": "donanemab",
+      "disease": "alzheimers"
+     }
+    }
+   ],
+   "attribution_warnings": [],
+   "seconds": 21.0,
+   "input_tokens": null,
+   "output_tokens": null,
+   "metrics": {
+    "model_calls": 7,
+    "hedged_calls": 0,
+    "input_tokens": 6417,
+    "output_tokens": 861,
+    "thinking_tokens": 0,
+    "model_seconds": 20.5,
+    "seconds": 21.04,
+    "tokens_per_second": 42.0,
+    "cost_usd": 0.008042,
+    "model_calls_by_agent": {
+     "coordinator": 2,
+     "critic": 1,
+     "regulatory": 4
+    }
+   }
+  },
+  {
+   "id": "norecord-masitinib",
+   "category": "no-fda-record",
+   "question": "Is masitinib FDA approved? It finished a Phase 3 trial.",
+   "passed": true,
+   "checks": {
+    "verdict": {
+     "passed": true,
+     "detail": "expected no, got no"
+    },
+    "mentions /no (matched )?FDA approval record|no matched FDA/": {
+     "passed": true,
+     "detail": ""
+    },
+    "called get_fda_status": {
+     "passed": true,
+     "detail": ""
+    },
+    "no unsupported citations": {
+     "passed": true,
+     "detail": ""
+    }
+   },
+   "answer": "No, masitinib has no matched FDA approval record.\n\n* A search for masitinib (verified names: AB1010, masitinib) found no matched FDA approval record; this is not proof the drug is unapproved.\n* Finishing a Phase 3 trial does not establish FDA approval.",
+   "lookups": [
+    {
+     "tool": "find_drug",
+     "arguments": {
+      "name": "masitinib"
+     }
+    },
+    {
+     "tool": "get_fda_status",
+     "arguments": {
+      "drug": "masitinib"
+     }
+    },
+    {
+     "tool": "get_fda_status",
+     "arguments": {
+      "drug": "masitinib",
+      "disease": "als"
+     }
+    }
+   ],
+   "attribution_warnings": [],
+   "seconds": 64.6,
+   "input_tokens": null,
+   "output_tokens": null,
+   "metrics": {
+    "model_calls": 7,
+    "hedged_calls": 0,
+    "input_tokens": 4695,
+    "output_tokens": 321,
+    "thinking_tokens": 0,
+    "model_seconds": 64.54,
+    "seconds": 64.61,
+    "tokens_per_second": 5.0,
+    "cost_usd": 0.004725,
+    "model_calls_by_agent": {
+     "coordinator": 2,
+     "critic": 1,
+     "regulatory": 4
+    }
+   }
+  },
+  {
+   "id": "missing-japan",
+   "category": "outside-data",
+   "question": "Is lecanemab approved in Japan?",
+   "passed": true,
+   "checks": {
+    "says the data does not cover it": {
+     "passed": true,
+     "detail": ""
+    },
+    "no unsupported citations": {
+     "passed": true,
+     "detail": ""
+    }
+   },
+   "answer": "The available regulatory records do not track approvals in Japan, so the data does not cover whether lecanemab is approved there. \n\n* The database regulatory records cover only the US FDA and the EU EMA, not Japan's regulatory authorities.\n* Lecanemab is FDA-approved for Alzheimer's disease (BLA761269, BLA761375).\n* Lecanemab is centrally authorised in the EU for early Alzheimer's disease (EMEA/H/C/005966).\n* Biogen reported in an SEC filing that \"Eisai filed an NDA for LEQEMBI in Japan seeking approval for a subcutaneous autoinjector as a new route of administration\" (SEC filing 0000875045-26-000013).",
+   "lookups": [
+    {
+     "tool": "find_drug",
+     "arguments": {
+      "name": "lecanemab"
+     }
+    },
+    {
+     "tool": "get_fda_status",
+     "arguments": {
+      "drug": "lecanemab",
+      "disease": "alzheimers"
+     }
+    },
+    {
+     "tool": "get_ema_status",
+     "arguments": {
+      "drug": "lecanemab",
+      "disease": "alzheimers"
+     }
+    },
+    {
+     "tool": "find_drug",
+     "arguments": {
+      "name": "lecanemab"
+     }
+    },
+    {
+     "tool": "search_disclosures",
+     "arguments": {
+      "query": "Japan approval MHLW Leqembi",
+      "drug": "lecanemab"
+     }
+    },
+    {
+     "tool": "search_disclosures",
+     "arguments": {
+      "query": "Japan Ministry of Health, Labour and Welfare Eisai approved",
+      "drug": "lecanemab"
+     }
+    },
+    {
+     "tool": "search_literature",
+     "arguments": {
+      "query": "Japan approval lecanemab MHLW",
+      "drug": "lecanemab"
+     }
+    },
+    {
+     "tool": "search_disclosures",
+     "arguments": {
+      "query": "Japan Leqembi approval September 2023 Eisai",
+      "drug": "lecanemab"
+     }
+    },
+    {
+     "tool": "search_literature",
+     "arguments": {
+      "query": "\"38692883\"",
+      "drug": "lecanemab",
+      "limit": 5
+     }
+    },
+    {
+     "tool": "search_literature",
+     "arguments": {
+      "query": "38692883"
+     }
+    },
+    {
+     "tool": "search_literature",
+     "arguments": {
+      "query": "\"In Japan\" approval"
+     }
+    },
+    {
+     "tool": "search_literature",
+     "arguments": {
+      "query": "\"In Japan\""
+     }
+    },
+    {
+     "tool": "search_literature",
+     "arguments": {
+      "query": "38692883 Japan"
+     }
+    }
+   ],
+   "attribution_warnings": [],
+   "seconds": 192.6,
+   "input_tokens": null,
+   "output_tokens": null,
+   "metrics": {
+    "model_calls": 18,
+    "hedged_calls": 0,
+    "input_tokens": 43647,
+    "output_tokens": 1990,
+    "thinking_tokens": 0,
+    "model_seconds": 205.41,
+    "seconds": 192.59,
+    "tokens_per_second": 9.7,
+    "cost_usd": 0.040198,
+    "model_calls_by_agent": {
+     "coordinator": 3,
+     "critic": 1,
+     "evidence": 12,
+     "regulatory": 2
+    }
+   }
+  }
+ ]
+}

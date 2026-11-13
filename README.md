@@ -15,6 +15,7 @@ Sourced drug-development intelligence for Alzheimer's disease, Parkinson's disea
 - **Spots discontinued programs:** a drug's program in a disease is active, discontinued, dormant, or completed, judged from its trials, with the sponsor's stated reason. The weekly news flags a stop that left a drug with no active trial.
 - **Answers or writes reports with checked citations:** a Gemini agent can only call nine read-only lookups. Every trial, FDA, EMA, SEC, and PubMed ID it writes must come from a lookup made for that answer, or it is flagged. Report mode writes a sectioned briefing (status, development, evidence, landscape, gaps) under the same check.
 - **Maps the three pipelines:** the Atlas tab pins each disease to the brain region it strikes (hippocampus, substantia nigra, motor cortex and spinal cord) and opens its pipeline at a glance, with the companies filing about it and their latest SEC press release.
+- **Runs as one agent or an agent team:** a switch on the page runs the same question through an ADK multi-agent version (coordinator, regulatory, clinical, and evidence specialists, and a critic). Every answer records its model calls, tokens, tokens per second, time, and estimated cost, and is traced with OpenTelemetry to Cloud Trace.
 - **Stays current:** a weekly job on Google Cloud refreshes every source and records new trials and changes in status, phase, and completion date.
 
 ## How it works
@@ -31,18 +32,23 @@ Each trial is tagged with every disease whose registry search returned it, provi
 
 ## Results
 
-58 questions whose answers come from the database, scored by code rather than by a model ([cases](evals/cases.json), [reports](evals/results/)). Run on 2026-11-13 with `gemini-3.8-flash`:
+66 questions whose answers come from the database, scored by code rather than by a model ([cases](evals/cases.json), [reports](evals/results/)), run on 2026-11-13 with `gemini-3.8-flash` against both versions of the agent: the single agent the site uses by default, and the [ADK agent team](docs/DESIGN.md#6-a-second-mode-an-adk-agent-team) (a coordinator, three specialists, and a critic).
 
-| Area | Passed |
-|---|---|
-| US and EU approval, including drugs approved only for other uses or with no record | 26 of 26 |
-| Parkinson's and ALS | 9 of 9 |
-| Literature, company filings, and cross-disease comparisons | 8 of 8 |
-| Trials, program status, and the pipeline | 10 of 11 |
-| Judgment calls and questions the data cannot answer | 2 of 4 |
-| **Total** | **55 of 58** |
+| Area | Single agent | Agent team |
+|---|---|---|
+| US and EU approval, including drugs approved only for other uses or with no record | 26 of 26 | 24 of 26 |
+| Parkinson's and ALS | 9 of 9 | 9 of 9 |
+| Literature, company filings, and cross-disease comparisons | 7 of 8 | 8 of 8 |
+| Trials, program status, and the pipeline | 11 of 11 | 11 of 11 |
+| Multi-part questions (approval, trials, mechanism, and company statements together) | 8 of 8 | 8 of 8 |
+| Judgment calls and questions the data cannot answer | 2 of 4 | 3 of 4 |
+| **Total** | **63 of 66** | **63 of 66** |
+| **Invented citations** | **1** | **0** |
+| Median answer time | 13.2 s | 29.7 s |
+| Model calls per answer | 3.4 | 7.6 |
+| Estimated cost per answer | $0.0065 | $0.0143 |
 
-**No invented citations** in any answer, and a median answer time of 13 seconds. Of the three misses, two were out-of-date cases (the SEC filings now include a Leqembi price, and one expected phrase was too narrow) and one was a Vertex AI timeout; all three pass on a re-run after the cases were updated.
+The team's critic checks every sentence against the records the specialists found, so it was the only version with no invented citation; the single agent once cited an FDA application number from the model's memory, which the citation check flagged. The single agent is more than twice as fast and half the cost, which is why it is the site default and the team is a switch. Each version's misses were fixed (the single agent now gets one repair turn when it cites an unchecked identifier; the critic keeps generic drug names, "no matched record" caveats, and statements about what the data does not cover), and all six pass on a re-run. Per-answer metrics (model calls, tokens, tokens/s, time, estimated cost) are recorded for every answer and shown under it on the page; traces go to Cloud Trace.
 
 ## Run it locally
 
@@ -54,7 +60,7 @@ python3.11 -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev,api,vertex]"
 cp .env.example .env && set -a && source .env && set +a
 python -m neuroscope.db init
-REQUIRE_DB_TESTS=1 pytest                             # 278 tests, no network needed
+REQUIRE_DB_TESTS=1 pytest                             # 285 tests, no network needed
 
 python -m neuroscope.ingest --disease alzheimers      # also: parkinsons, als
 python -m neuroscope.fda load && python -m neuroscope.fda labels && python -m neuroscope.ema load
@@ -71,4 +77,4 @@ Deployment to Cloud Run and Cloud SQL is covered in [`deploy/README.md`](deploy/
 
 ## Stack
 
-Python, Postgres with pgvector, Gemini and text embeddings on Vertex AI, FastAPI, Cloud Run, Cloud SQL, Cloud Scheduler, and GitHub Actions. The web page is a single self-contained HTML file.
+Python, Postgres with pgvector, Gemini and text embeddings on Vertex AI, Google's Agent Development Kit (ADK), OpenTelemetry and Cloud Trace, FastAPI, Cloud Run, Cloud SQL, Cloud Scheduler, and GitHub Actions. The web page is a single self-contained HTML file.

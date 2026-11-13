@@ -1,0 +1,192 @@
+{
+ "model": "gemini-3.8-flash",
+ "agent": "single",
+ "performance": {
+  "median_seconds": 15.7,
+  "median_tokens_per_second": 145.4,
+  "mean_cost_usd": 0.00719,
+  "total_cost_usd": 0.0216,
+  "mean_model_calls": 3.0
+ },
+ "rows": [
+  {
+   "id": "lit-lecanemab-apoe",
+   "category": "literature",
+   "question": "Is there published evidence on lecanemab and APOE4?",
+   "passed": true,
+   "checks": {
+    "mentions /APOE/": {
+     "passed": true,
+     "detail": ""
+    },
+    "cites 1+ PubMed IDs": {
+     "passed": true,
+     "detail": "4 cited"
+    },
+    "called search_literature": {
+     "passed": true,
+     "detail": ""
+    },
+    "no unsupported citations": {
+     "passed": true,
+     "detail": ""
+    }
+   },
+   "answer": "Yes, published literature evaluates lecanemab in relation to APOE4 status, focusing particularly on safety and amyloid-related imaging abnormalities (ARIA).\n\n* A systematic review and meta-analysis of lecanemab in mild Alzheimer's disease noted that while lecanemab showed clinical effects, it is associated with an increased risk of ARIA-E and ARIA-H, particularly in ApoE4 carriers (PMID 39638097).\n* Literature discussing the first wave of amyloid-targeting monoclonal antibodies (including lecanemab/BAN2401) highlights efficacy and safety limitations among APOE4 carriers (PMID 32787971).\n* Additional published reviews note considerations regarding the ApoE4 gene and safety warnings, including boxed warnings related to amyloid-targeting antibodies in early Alzheimer's disease (PMID 38059250, PMID 39144121).",
+   "lookups": [
+    {
+     "tool": "find_drug",
+     "arguments": {
+      "name": "lecanemab"
+     }
+    },
+    {
+     "tool": "search_literature",
+     "arguments": {
+      "query": "APOE4",
+      "drug": "lecanemab"
+     }
+    }
+   ],
+   "attribution_warnings": [],
+   "seconds": 15.7,
+   "input_tokens": 5383,
+   "output_tokens": 249,
+   "metrics": {
+    "model_calls": 3,
+    "hedged_calls": 0,
+    "input_tokens": 5383,
+    "output_tokens": 249,
+    "thinking_tokens": 0,
+    "model_seconds": 14.61,
+    "seconds": 15.75,
+    "tokens_per_second": 145.4,
+    "cost_usd": 0.004971
+   }
+  },
+  {
+   "id": "missing-japan",
+   "category": "outside-data",
+   "question": "Is lecanemab approved in Japan?",
+   "passed": true,
+   "checks": {
+    "says the data does not cover it": {
+     "passed": true,
+     "detail": ""
+    },
+    "no unsupported citations": {
+     "passed": true,
+     "detail": ""
+    }
+   },
+   "answer": "The database does not contain regulatory approval records for Japan (it tracks US FDA and EU EMA approvals). \n\nHowever, available records indicate regulatory activity and formulation development for lecanemab in Japan:\n* Biogen reported in its annual report filed on February 6, 2026, that Eisai filed a New Drug Application (NDA) for LEQEMBI in Japan seeking approval for a subcutaneous autoinjector as a new route of administration (SEC accession number 0000875045-26-000013).\n* A 2024 Japanese pharmacology publication discusses the mechanism and clinical trial results of intravenous lecanemab (Leqembi\u00ae 200 mg, 500 mg) (PMID 38692883).\n* A dedicated Japanese regulatory decision record from Japan's Pharmaceuticals and Medical Devices Agency (PMDA) or Ministry of Health, Labour and Welfare (MHLW) is not tracked in this database.",
+   "lookups": [
+    {
+     "tool": "find_drug",
+     "arguments": {
+      "name": "lecanemab"
+     }
+    },
+    {
+     "tool": "search_disclosures",
+     "arguments": {
+      "drug": "lecanemab",
+      "query": "Japan approval PMDA Eisai lecanemab"
+     }
+    },
+    {
+     "tool": "search_disclosures",
+     "arguments": {
+      "drug": "lecanemab",
+      "query": "Japan approval Leqembi Eisai MHLW"
+     }
+    },
+    {
+     "tool": "search_literature",
+     "arguments": {
+      "query": "lecanemab Japan approval",
+      "drug": "lecanemab"
+     }
+    },
+    {
+     "tool": "search_disclosures",
+     "arguments": {
+      "query": "Japan approved Leqembi Eisai",
+      "drug": "lecanemab"
+     }
+    }
+   ],
+   "attribution_warnings": [],
+   "seconds": 72.9,
+   "input_tokens": 14402,
+   "output_tokens": 369,
+   "metrics": {
+    "model_calls": 4,
+    "hedged_calls": 3,
+    "input_tokens": 14402,
+    "output_tokens": 369,
+    "thinking_tokens": 0,
+    "model_seconds": 71.68,
+    "seconds": 72.94,
+    "tokens_per_second": 11.2,
+    "cost_usd": 0.012185
+   }
+  },
+  {
+   "id": "judgment-best-drug",
+   "category": "judgment",
+   "question": "Which drug works best for Alzheimer's disease?",
+   "passed": true,
+   "checks": {
+    "mentions /no single|not (been )?established|do(es)? not establish|no (one|drug) .{0,30}(best|superior)|depends|varies|head-to-head/": {
+     "passed": true,
+     "detail": ""
+    },
+    "avoids /the best (drug|treatment|option) (is|for)/": {
+     "passed": true,
+     "detail": ""
+    },
+    "avoids /works best is/": {
+     "passed": true,
+     "detail": ""
+    },
+    "no unsupported citations": {
+     "passed": true,
+     "detail": ""
+    }
+   },
+   "answer": "There is no clinical trial data or consensus establishing a single \"best\" drug for Alzheimer's disease; efficacy depends on the disease stage and treatment goals, and different therapies provide modest benefits across various endpoints.\n\n* Systematic reviews comparing standard symptomatic treatments (donepezil, galantamine, and rivastigmine) demonstrate \"modest overall benefits for stabilizing or slowing decline in cognition, function, behavior, and clinical global change\" (PMID 18686744).\n* A network meta-analysis evaluating newer amyloid-targeting disease-modifying therapies (including donanemab, lecanemab, and aducanumab) noted that all active therapies demonstrated significantly higher efficacy than placebo on the Alzheimer's Disease Assessment Scale\u2013cognitive subscale (PMID 38253184).\n* Both lecanemab (FDA-approved 2023-01-06; also centrally authorised in the EU) and donanemab (FDA-approved 2024-07-02; also centrally authorised in the EU) are approved disease-modifying therapies active in Phase 4 trials for Alzheimer's disease.",
+   "lookups": [
+    {
+     "tool": "list_pipeline",
+     "arguments": {
+      "disease": "alzheimers",
+      "min_phase": 4
+     }
+    },
+    {
+     "tool": "search_literature",
+     "arguments": {
+      "query": "efficacy comparison Alzheimer's disease drugs cognitive function",
+      "limit": 3
+     }
+    }
+   ],
+   "attribution_warnings": [],
+   "seconds": 15.5,
+   "input_tokens": 4390,
+   "output_tokens": 300,
+   "metrics": {
+    "model_calls": 2,
+    "hedged_calls": 0,
+    "input_tokens": 4390,
+    "output_tokens": 300,
+    "thinking_tokens": 0,
+    "model_seconds": 14.81,
+    "seconds": 15.51,
+    "tokens_per_second": 160.9,
+    "cost_usd": 0.004417
+   }
+  }
+ ]
+}
