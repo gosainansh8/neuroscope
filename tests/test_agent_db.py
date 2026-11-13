@@ -245,3 +245,19 @@ def test_lookups_accept_a_combination_drug_by_its_canonical_name(conn, tmp_path)
     for name in ("xanomeline + trospium", "trospium + xanomeline", "Xanomeline and Trospium"):
         assert tools.find_drug(conn, name).get("canonical_name") == "xanomeline + trospium", name
     assert tools.get_fda_status(conn, "xanomeline + trospium")["found"] is True
+
+
+def test_an_invented_identifier_gets_one_repair_turn(conn, tmp_path):
+    seed(conn, tmp_path)
+
+    class Repairing(ScriptedModel):
+        def send_message(self, text):
+            self.repair_prompt = text
+            return self.turns.pop(0)
+
+    model = Repairing([ModelTurn([ToolCall("get_fda_status", {"drug": "lecanemab"})]),
+                       ModelTurn(text="Lecanemab is approved (BLA999001); memantine is NDA021487."),
+                       ModelTurn(text="Lecanemab is approved (BLA999001).")])
+    result = answer_question("?", model, build_tools(conn))
+    assert "NDA021487" in model.repair_prompt
+    assert result.answer == "Lecanemab is approved (BLA999001)." and not any(result.unsupported.values())

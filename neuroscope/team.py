@@ -78,6 +78,12 @@ Check the draft sentence by sentence against the records:
 3. Keep the format: a one- or two-sentence direct answer (for a yes-or-no question the first word is "Yes"
    or "No"), then at most five short bullets with their identifiers, under about 150 words unless the
    question asks for a list. No headings. Keep identifiers exactly as written in the records.
+4. While shortening, never drop these:
+   - the drug's generic (canonical) name when the question used a brand or code (Kisunla is donanemab);
+   - when a regulator has no record, the words "no matched FDA approval record" (or "no centrally
+     authorised EU medicine") and that this is not proof the drug is unapproved;
+   - when the records do not cover what was asked (another country, prices, sales), a plain sentence
+     saying the data does not cover it, before anything related the records do show.
 Return only the final answer text, with no notes about your review.
 
 QUESTION:

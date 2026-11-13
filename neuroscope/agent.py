@@ -363,6 +363,10 @@ def run_tool(registry: dict[str, Callable[..., dict]], call: ToolCall) -> dict:
 
 
 MAX_HISTORY_TURNS = 3
+REPAIR_STEPS = 2
+REPAIR_NOTE = ("Citation check: these identifiers in your answer did not come from any lookup in this "
+               "conversation: {ids}. Either look them up now, or rewrite the answer without them and without "
+               "the claims that depend on them. Return the full corrected answer in the same format.")
 STEP_LIMIT_NOTE = ("Lookup limit reached; this lookup was not run. Answer now using only the results you "
                    "already have, and say plainly what you could not check.")
 
@@ -420,6 +424,24 @@ def _answer(question, model, registry, max_steps, history, on_event, mode) -> Ag
     text = (turn.text or "").strip() or ("I could not finish within the step limit." if stopped
                                          else "The model returned no answer.")
     cited, unsupported = check_citations(text, steps)
+    bad = sorted(i for ids in unsupported.values() for i in ids)
+    if bad and hasattr(model, "send_message"):
+        # An identifier no lookup returned (usually recalled from the model's memory): one repair turn,
+        # naming the identifiers, with up to REPAIR_STEPS rounds of lookups if it wants to verify them.
+        turn = model.send_message(REPAIR_NOTE.format(ids=", ".join(bad)))
+        for _ in range(REPAIR_STEPS):
+            if not turn.tool_calls:
+                break
+            results = []
+            for call in turn.tool_calls:
+                if on_event:
+                    on_event({"type": "lookup", "tool": call.name, "arguments": call.args})
+                results.append((call, run_tool(registry, call)))
+            steps += results
+            turn = model.send_tool_results(results)
+        if turn.text and turn.text.strip():
+            text = turn.text.strip()
+            cited, unsupported = check_citations(text, steps)
     return AgentResult(text, steps, cited, unsupported, stopped, check_attribution(text, steps))
 
 
@@ -566,6 +588,11 @@ class GeminiModel:
         t = self._types
         self._history.append(t.Content(role="user", parts=[
             t.Part.from_function_response(name=call.name, response={"result": result}) for call, result in results]))
+        return self._generate()
+
+    def send_message(self, text: str) -> ModelTurn:
+        """A plain message in the same conversation (used for the citation repair turn)."""
+        self._history.append(self._types.Content(role="user", parts=[self._types.Part(text=text)]))
         return self._generate()
 
 
