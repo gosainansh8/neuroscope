@@ -152,8 +152,9 @@ def performance(rows: list[dict]) -> dict:
     """Median seconds and tokens/s, mean and total estimated cost, model calls per answer."""
     m = [r.get("metrics") or {} for r in rows]
     costs = [x.get("cost_usd") for x in m if x.get("cost_usd") is not None]
-    return {"median_seconds": _median([r["seconds"] for r in rows]),
-            "median_tokens_per_second": _median([x.get("tokens_per_second") for x in m]),
+    med_s, med_tps = _median([r["seconds"] for r in rows]), _median([x.get("tokens_per_second") for x in m])
+    return {"median_seconds": round(med_s, 1) if med_s is not None else None,
+            "median_tokens_per_second": round(med_tps, 1) if med_tps is not None else None,
             "mean_cost_usd": round(sum(costs) / len(costs), 5) if costs else None,
             "total_cost_usd": round(sum(costs), 4) if costs else None,
             "mean_model_calls": round(sum(x.get("model_calls", 0) for x in m) / len(m), 1) if m else None}

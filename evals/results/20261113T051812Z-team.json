@@ -1,0 +1,812 @@
+{
+ "model": "gemini-3.8-flash",
+ "agent": "team",
+ "performance": {
+  "median_seconds": 42.15,
+  "median_tokens_per_second": 46.599999999999994,
+  "mean_cost_usd": 0.02043,
+  "total_cost_usd": 0.1634,
+  "mean_model_calls": 8.8
+ },
+ "rows": [
+  {
+   "id": "multi-anti-amyloid",
+   "category": "multi-part",
+   "question": "Compare lecanemab and donanemab: when were they approved in the US and in the EU, and how many active Alzheimer's trials does each have?",
+   "passed": true,
+   "checks": {
+    "mentions /2023-01-06|January 0?6,? 2023/": {
+     "passed": true,
+     "detail": ""
+    },
+    "mentions /2024-07-02|July 0?2,? 2024/": {
+     "passed": true,
+     "detail": ""
+    },
+    "mentions /2025-04-15|April 15,? 2025|15 April 2025/": {
+     "passed": true,
+     "detail": ""
+    },
+    "mentions /2025-09-24|September 24,? 2025|24 September 2025/": {
+     "passed": true,
+     "detail": ""
+    },
+    "mentions /\\b13\\b/": {
+     "passed": true,
+     "detail": ""
+    },
+    "mentions /\\b11\\b/": {
+     "passed": true,
+     "detail": ""
+    },
+    "no unsupported citations": {
+     "passed": true,
+     "detail": ""
+    }
+   },
+   "answer": "Both lecanemab and donanemab are approved in the US and EU for Alzheimer's disease, with lecanemab having 13 active Alzheimer's trials and donanemab having 11.\n\n* **Lecanemab approvals**: FDA-approved on 2023-01-06 (BLA761269; BLA761375 approved 2025-08-29) \"for the treatment of Alzheimer\u2019s disease,\" and EMA-authorised on 2025-04-15 (EMEA/H/C/005966) \"for the treatment of adult patients with a clinical diagnosis of mild cognitive impairment and mild dementia due to Alzheimer\u2019s disease.\"\n* **Donanemab approvals**: FDA-approved on 2024-07-02 (BLA761248) \"for the treatment of Alzheimer's disease,\" and EMA-authorised on 2025-09-24 (EMEA/H/C/006024) \"for the treatment of adult patients with a clinical diagnosis of mild cognitive impairment and mild dementia due to Alzheimer\u2019s disease.\"\n* **Lecanemab active trials**: 13 active Alzheimer's disease clinical trials.\n* **Donanemab active trials**: 11 active Alzheimer's disease clinical trials.",
+   "lookups": [
+    {
+     "tool": "get_trials",
+     "arguments": {
+      "drug": "lecanemab",
+      "disease": "alzheimers"
+     }
+    },
+    {
+     "tool": "get_trials",
+     "arguments": {
+      "drug": "donanemab",
+      "disease": "alzheimers"
+     }
+    },
+    {
+     "tool": "find_drug",
+     "arguments": {
+      "name": "lecanemab"
+     }
+    },
+    {
+     "tool": "find_drug",
+     "arguments": {
+      "name": "donanemab"
+     }
+    },
+    {
+     "tool": "get_fda_status",
+     "arguments": {
+      "drug": "lecanemab",
+      "disease": "alzheimers"
+     }
+    },
+    {
+     "tool": "get_ema_status",
+     "arguments": {
+      "drug": "lecanemab",
+      "disease": "alzheimers"
+     }
+    },
+    {
+     "tool": "get_fda_status",
+     "arguments": {
+      "drug": "donanemab",
+      "disease": "alzheimers"
+     }
+    },
+    {
+     "tool": "get_ema_status",
+     "arguments": {
+      "drug": "donanemab",
+      "disease": "alzheimers"
+     }
+    }
+   ],
+   "attribution_warnings": [],
+   "seconds": 35.3,
+   "input_tokens": null,
+   "output_tokens": null,
+   "metrics": {
+    "model_calls": 8,
+    "hedged_calls": 0,
+    "input_tokens": 15494,
+    "output_tokens": 1991,
+    "thinking_tokens": 0,
+    "model_seconds": 39.22,
+    "seconds": 35.3,
+    "tokens_per_second": 50.8,
+    "cost_usd": 0.019087,
+    "model_calls_by_agent": {
+     "clinical": 2,
+     "coordinator": 2,
+     "critic": 1,
+     "regulatory": 3
+    }
+   }
+  },
+  {
+   "id": "multi-opicapone",
+   "category": "multi-part",
+   "question": "For opicapone, give its US and EU approval, its mechanism of action, and how many Parkinson's trials it has.",
+   "passed": true,
+   "checks": {
+    "mentions /2020-04-24|April 24,? 2020/": {
+     "passed": true,
+     "detail": ""
+    },
+    "mentions /2016-06-24|June 24,? 2016|24 June 2016/": {
+     "passed": true,
+     "detail": ""
+    },
+    "mentions /COMT|catechol/": {
+     "passed": true,
+     "detail": ""
+    },
+    "mentions /\\b41\\b/": {
+     "passed": true,
+     "detail": ""
+    },
+    "no unsupported citations": {
+     "passed": true,
+     "detail": ""
+    }
+   },
+   "answer": "Opicapone is approved in both the US and EU for Parkinson's disease, acts as a catechol O-methyltransferase (COMT) inhibitor, and has 41 clinical trials in Parkinson's disease.\n\n* **Mechanism of Action:** Catechol O-methyltransferase inhibitor.\n* **US Approval:** Approved by the FDA under NDA212489 on 2020-04-24 as ONGENTYS, indicated \"as adjunctive treatment to levodopa/carbidopa in patients with Parkinson\u2019s disease (PD) experiencing 'off' episodes.\"\n* **EU Approval:** Centrally authorised by the EMA under EMEA/H/C/002790 on 2016-06-24 as Ongentys, indicated \"as adjunctive therapy to preparations of levodopa/ DOPA decarboxylase inhibitors (DDCI) in adult patients with Parkinson\u2019s disease and end-of-dose motor fluctuations who cannot be stabilised on those combinations.\"\n* **Parkinson's Trials:** 41 clinical trials for Parkinson's disease recorded.",
+   "lookups": [
+    {
+     "tool": "find_drug",
+     "arguments": {
+      "name": "opicapone"
+     }
+    },
+    {
+     "tool": "get_fda_status",
+     "arguments": {
+      "drug": "opicapone",
+      "disease": "parkinsons"
+     }
+    },
+    {
+     "tool": "get_ema_status",
+     "arguments": {
+      "drug": "opicapone",
+      "disease": "parkinsons"
+     }
+    },
+    {
+     "tool": "find_drug",
+     "arguments": {
+      "name": "opicapone"
+     }
+    },
+    {
+     "tool": "get_trials",
+     "arguments": {
+      "drug": "opicapone",
+      "disease": "parkinsons"
+     }
+    }
+   ],
+   "attribution_warnings": [],
+   "seconds": 67.8,
+   "input_tokens": null,
+   "output_tokens": null,
+   "metrics": {
+    "model_calls": 8,
+    "hedged_calls": 0,
+    "input_tokens": 10681,
+    "output_tokens": 1370,
+    "thinking_tokens": 91,
+    "model_seconds": 78.06,
+    "seconds": 67.75,
+    "tokens_per_second": 18.7,
+    "cost_usd": 0.01349,
+    "model_calls_by_agent": {
+     "clinical": 3,
+     "coordinator": 2,
+     "critic": 1,
+     "regulatory": 2
+    }
+   }
+  },
+  {
+   "id": "multi-istradefylline",
+   "category": "multi-part",
+   "question": "Is istradefylline approved in the US and the EU, how does it work, and what do its Parkinson's trials mainly measure?",
+   "passed": true,
+   "checks": {
+    "mentions /2019-08-27|August 27,? 2019/": {
+     "passed": true,
+     "detail": ""
+    },
+    "mentions /refus/": {
+     "passed": true,
+     "detail": ""
+    },
+    "mentions /adenosine|A2A/": {
+     "passed": true,
+     "detail": ""
+    },
+    "mentions /\\bOFF\\b|off[ -]time|off episodes/": {
+     "passed": true,
+     "detail": ""
+    },
+    "cites an expected record": {
+     "passed": true,
+     "detail": "EMEA/H/C/005308, NDA022075"
+    },
+    "no unsupported citations": {
+     "passed": true,
+     "detail": ""
+    }
+   },
+   "answer": "Istradefylline is FDA-approved in the US but not authorised in the EU, works as an adenosine A2a receptor antagonist, and its Parkinson's disease trials focus on patients on levodopa, evaluating motor response complications such as \"off\" time and tremor.\n\n* **US FDA Status:** Approved on 2019-08-27 under NDA022075 (NOURIANZ) \"as adjunctive treatment to levodopa/carbidopa in adult patients with Parkinson's disease (PD) experiencing 'off' episodes.\"\n* **EU EMA Status:** Central marketing authorisation was refused on 2022-01-06 under EMEA/H/C/005308 (Nouryant) for use \"as an adjunctive treatment to levodopa based regimens in patients with Parkinson\u2019s disease (PD) experiencing \u201cOFF\u201d time.\"\n* **Mechanism of Action:** Classified in ChEMBL as an \"Adenosine A2a receptor antagonist\" targeting \"Adenosine receptor A2a\".\n* **Parkinson's Trials:** Across 20 Parkinson's disease trials (including Phase 3 studies NCT00199407, NCT00199420, NCT00955526, NCT00203957, and Phase 4 trial NCT05885360), studies primarily evaluate istradefylline in patients receiving levodopa regimens, focusing on motor response complications and tremor.",
+   "lookups": [
+    {
+     "tool": "find_drug",
+     "arguments": {
+      "name": "istradefylline"
+     }
+    },
+    {
+     "tool": "find_drug",
+     "arguments": {
+      "name": "istradefylline"
+     }
+    },
+    {
+     "tool": "get_fda_status",
+     "arguments": {
+      "drug": "istradefylline",
+      "disease": "parkinsons"
+     }
+    },
+    {
+     "tool": "get_ema_status",
+     "arguments": {
+      "drug": "istradefylline",
+      "disease": "parkinsons"
+     }
+    },
+    {
+     "tool": "get_trials",
+     "arguments": {
+      "drug": "istradefylline",
+      "disease": "parkinsons",
+      "limit": 25
+     }
+    },
+    {
+     "tool": "get_program_status",
+     "arguments": {
+      "drug": "istradefylline",
+      "disease": "parkinsons"
+     }
+    },
+    {
+     "tool": "compare_diseases",
+     "arguments": {
+      "aspect": "endpoints"
+     }
+    }
+   ],
+   "attribution_warnings": [],
+   "seconds": 79.6,
+   "input_tokens": null,
+   "output_tokens": null,
+   "metrics": {
+    "model_calls": 11,
+    "hedged_calls": 0,
+    "input_tokens": 23652,
+    "output_tokens": 3166,
+    "thinking_tokens": 0,
+    "model_seconds": 88.84,
+    "seconds": 79.59,
+    "tokens_per_second": 35.6,
+    "cost_usd": 0.029611,
+    "model_calls_by_agent": {
+     "clinical": 5,
+     "coordinator": 2,
+     "critic": 1,
+     "regulatory": 3
+    }
+   }
+  },
+  {
+   "id": "multi-als-regulatory",
+   "category": "multi-part",
+   "question": "Which ALS drugs are approved by the FDA, and what happened to each of them in the EU?",
+   "passed": true,
+   "checks": {
+    "mentions /riluzole/": {
+     "passed": true,
+     "detail": ""
+    },
+    "mentions /edaravone/": {
+     "passed": true,
+     "detail": ""
+    },
+    "mentions /tofersen/": {
+     "passed": true,
+     "detail": ""
+    },
+    "mentions /withdr/": {
+     "passed": true,
+     "detail": ""
+    },
+    "mentions /authori[sz]/": {
+     "passed": true,
+     "detail": ""
+    },
+    "no unsupported citations": {
+     "passed": true,
+     "detail": ""
+    }
+   },
+   "answer": "Three drugs have confirmed FDA approval specifically labeled for amyotrophic lateral sclerosis (ALS)\u2014riluzole, edaravone, and tofersen\u2014while sodium phenylbutyrate / taurursodiol received FDA approval under NDA216660 (currently not marketed, label not retrieved). In the EU, two are centrally authorised, one had its marketing application withdrawn, and one was refused.\n\n* **Riluzole**: Approved by the FDA (NDA020599; NDA209080 labeled \"for the treatment of amyotrophic lateral sclerosis (ALS)\"); centrally authorised in the EU as Rilutek (EMEA/H/C/000109) on 1996-06-10 \"to extend life or the time to mechanical ventilation for patients with amyotrophic lateral sclerosis (ALS).\"\n* **Edaravone**: Approved by the FDA (NDA209176; NDA215446 labeled \"for the treatment of amyotrophic lateral sclerosis (ALS)\"); its EU application for Radicava (EMEA/H/C/004938) was withdrawn on 2019-05-24.\n* **Tofersen**: Approved by the FDA (NDA215887 labeled \"for the treatment of amyotrophic lateral sclerosis (ALS) in adults who have a mutation in the superoxide dismutase 1 ( SOD1 ) gene\"); centrally authorised in the EU as Qalsody (EMEA/H/C/005493) on 2024-05-29 for \"adults with amyotrophic lateral sclerosis (ALS), associated with a mutation in the superoxide dismutase 1 (SOD1) gene.\"\n* **Sodium phenylbutyrate / taurursodiol**: FDA approved (NDA216660 on 2022-09-29; currently not marketed); its EU application for Albrioza (EMEA/H/C/005901) was refused on 2024-01-05.",
+   "lookups": [
+    {
+     "tool": "find_drug",
+     "arguments": {
+      "name": "riluzole"
+     }
+    },
+    {
+     "tool": "find_drug",
+     "arguments": {
+      "name": "edaravone"
+     }
+    },
+    {
+     "tool": "find_drug",
+     "arguments": {
+      "name": "tofersen"
+     }
+    },
+    {
+     "tool": "find_drug",
+     "arguments": {
+      "name": "sodium phenylbutyrate / taurursodiol"
+     }
+    },
+    {
+     "tool": "get_fda_status",
+     "arguments": {
+      "drug": "riluzole",
+      "disease": "als"
+     }
+    },
+    {
+     "tool": "get_fda_status",
+     "arguments": {
+      "drug": "edaravone",
+      "disease": "als"
+     }
+    },
+    {
+     "tool": "get_fda_status",
+     "arguments": {
+      "drug": "tofersen",
+      "disease": "als"
+     }
+    },
+    {
+     "tool": "get_fda_status",
+     "arguments": {
+      "drug": "phenylbutyrate + taurursodiol",
+      "disease": "als"
+     }
+    },
+    {
+     "tool": "get_ema_status",
+     "arguments": {
+      "drug": "riluzole",
+      "disease": "als"
+     }
+    },
+    {
+     "tool": "get_ema_status",
+     "arguments": {
+      "drug": "edaravone",
+      "disease": "als"
+     }
+    },
+    {
+     "tool": "get_ema_status",
+     "arguments": {
+      "drug": "tofersen",
+      "disease": "als"
+     }
+    },
+    {
+     "tool": "get_ema_status",
+     "arguments": {
+      "drug": "phenylbutyrate + taurursodiol",
+      "disease": "als"
+     }
+    }
+   ],
+   "attribution_warnings": [],
+   "seconds": 49.0,
+   "input_tokens": null,
+   "output_tokens": null,
+   "metrics": {
+    "model_calls": 7,
+    "hedged_calls": 0,
+    "input_tokens": 14483,
+    "output_tokens": 3009,
+    "thinking_tokens": 0,
+    "model_seconds": 48.75,
+    "seconds": 48.95,
+    "tokens_per_second": 61.7,
+    "cost_usd": 0.022146,
+    "model_calls_by_agent": {
+     "coordinator": 2,
+     "critic": 1,
+     "regulatory": 4
+    }
+   }
+  },
+  {
+   "id": "multi-tavapadon",
+   "category": "multi-part",
+   "question": "What is the status of tavapadon: its FDA approval, its development program, and what AbbVie has said about it in SEC filings?",
+   "passed": true,
+   "checks": {
+    "mentions /2026-09-25|September 25,? 2026/": {
+     "passed": true,
+     "detail": ""
+    },
+    "mentions /AbbVie/": {
+     "passed": true,
+     "detail": ""
+    },
+    "cites an expected record": {
+     "passed": true,
+     "detail": "NDA220415"
+    },
+    "called search_disclosures": {
+     "passed": true,
+     "detail": ""
+    },
+    "no unsupported citations": {
+     "passed": true,
+     "detail": ""
+    }
+   },
+   "answer": "Tavapadon is FDA-approved for Parkinson's disease, its clinical trial program is completed, and AbbVie has discussed its Phase 3 potential and contingent milestone and royalty obligations in SEC filings.\n\n* **FDA Status:** Approved under NDA220415 on 2026-09-25 as JUVMO, indicated \"for the treatment of Parkinson\u2019s disease (PD) in adults\"; there is no centrally authorised EMA record.\n* **Development Program:** The Parkinson's disease program status is completed with 0 active trials remaining, having completed four Phase 3 trials: NCT04760769 (last updated 2025-12-23), NCT04223193, NCT04201093, and NCT04542499.\n* **Acquisition Disclosure:** In SEC filing 0001104659-23-124047, AbbVie announced its acquisition of Cerevel Therapeutics, stating tavapadon was in \"Phase 3 studies and has potential for both monotherapy and adjunctive treatment.\"\n* **Milestones and Royalties:** In SEC filing 0001551152-26-000008, AbbVie disclosed agreements to \"repay regulatory milestones, sales milestones and royalties contingent upon approval of tavapadon by the U.S. Food [and Drug Administration]\".",
+   "lookups": [
+    {
+     "tool": "find_drug",
+     "arguments": {
+      "name": "tavapadon"
+     }
+    },
+    {
+     "tool": "find_drug",
+     "arguments": {
+      "name": "tavapadon"
+     }
+    },
+    {
+     "tool": "search_disclosures",
+     "arguments": {
+      "query": "AbbVie tavapadon",
+      "drug": "tavapadon"
+     }
+    },
+    {
+     "tool": "search_disclosures",
+     "arguments": {
+      "query": "Cerevel acquisition Parkinson pipeline phase 3 TEMPO",
+      "drug": "tavapadon"
+     }
+    },
+    {
+     "tool": "search_disclosures",
+     "arguments": {
+      "query": "tavapadon",
+      "drug": "tavapadon",
+      "limit": 10
+     }
+    },
+    {
+     "tool": "find_drug",
+     "arguments": {
+      "name": "tavapadon"
+     }
+    },
+    {
+     "tool": "get_fda_status",
+     "arguments": {
+      "drug": "tavapadon"
+     }
+    },
+    {
+     "tool": "get_ema_status",
+     "arguments": {
+      "drug": "tavapadon"
+     }
+    },
+    {
+     "tool": "search_disclosures",
+     "arguments": {
+      "query": "regulatory milestones sales milestones royalties contingent upon approval",
+      "drug": "tavapadon"
+     }
+    },
+    {
+     "tool": "get_program_status",
+     "arguments": {
+      "drug": "tavapadon"
+     }
+    },
+    {
+     "tool": "get_trials",
+     "arguments": {
+      "drug": "tavapadon",
+      "disease": "parkinsons",
+      "limit": 15
+     }
+    }
+   ],
+   "attribution_warnings": [
+    {
+     "identifier": "0001551152-26-000008",
+     "sentence": "* **Milestones and Royalties:** In SEC filing 0001551152-26-000008, AbbVie disclosed agreements to \"repay regulatory milestones, sales milestones and royalties contingent upon approval of tavapadon by the U.S.",
+     "record_belongs_to": [
+      "ABBV-1758",
+      "adalimumab",
+      "botulinum toxin",
+      "carbidopa",
+      "dexamethasone",
+      "lenalidomide",
+      "levodopa",
+      "levodopa-carbidopa intestinal gel"
+     ],
+     "sentence_names": [
+      "tavapadon"
+     ]
+    }
+   ],
+   "seconds": 51.8,
+   "input_tokens": null,
+   "output_tokens": null,
+   "metrics": {
+    "model_calls": 15,
+    "hedged_calls": 0,
+    "input_tokens": 23258,
+    "output_tokens": 3007,
+    "thinking_tokens": 0,
+    "model_seconds": 77.14,
+    "seconds": 51.8,
+    "tokens_per_second": 39.0,
+    "cost_usd": 0.02872,
+    "model_calls_by_agent": {
+     "clinical": 4,
+     "coordinator": 2,
+     "critic": 1,
+     "evidence": 6,
+     "regulatory": 2
+    }
+   }
+  },
+  {
+   "id": "multi-pd-discontinued",
+   "category": "multi-part",
+   "question": "Which Parkinson's drug programs at Phase 2 or later were discontinued recently, and why?",
+   "passed": true,
+   "checks": {
+    "mentions /minzasolmin|dipraglurant|K0706|valiloxybate|VENT-02/": {
+     "passed": true,
+     "detail": ""
+    },
+    "called get_program_status": {
+     "passed": true,
+     "detail": ""
+    },
+    "no unsupported citations": {
+     "passed": true,
+     "detail": ""
+    }
+   },
+   "answer": "Fifteen Parkinson's disease drug programs at Phase 2 or later are listed as discontinued in registry records, primarily due to sponsor business or administrative decisions, recruitment difficulties, or study outcomes.\n\n* **dipraglurant** (Phase 3.0): Terminated with reason \"Terminated prior to completing enrollment goals due to COVID-related difficulties in recruiting patients\" (NCT04857359).\n* **[123I]Altropane** (Phase 3.0): Terminated with reason \"Business Decision\" (NCT05636852).\n* **minzasolmin** (Phase 2.0): Terminated with reason \"Based on available data, the decision was made to stop development of UCB0599/minzasolmin as treatment of Parkinson's Disease.\" (NCT05543252).\n* **K0706** (Phase 2.0): Terminated with reason \"Terminated based on study outcomes\" (NCT03655236).\n* **JM-010 A** (Phase 2.0): Terminated with reason \"The trial is terminated based on business decision, not due to safety concerns or regulatory requirements.\" (NCT05516875).",
+   "lookups": [
+    {
+     "tool": "get_program_status",
+     "arguments": {
+      "disease": "parkinsons",
+      "status": "discontinued",
+      "min_phase": 2
+     }
+    }
+   ],
+   "attribution_warnings": [],
+   "seconds": 29.3,
+   "input_tokens": null,
+   "output_tokens": null,
+   "metrics": {
+    "model_calls": 5,
+    "hedged_calls": 0,
+    "input_tokens": 9446,
+    "output_tokens": 1902,
+    "thinking_tokens": 0,
+    "model_seconds": 29.22,
+    "seconds": 29.32,
+    "tokens_per_second": 65.1,
+    "cost_usd": 0.014217,
+    "model_calls_by_agent": {
+     "clinical": 2,
+     "coordinator": 2,
+     "critic": 1
+    }
+   }
+  },
+  {
+   "id": "multi-amx0035",
+   "category": "multi-part",
+   "question": "What is the regulatory status of AMX0035 in the US and the EU, and what has Amylyx reported about it?",
+   "passed": true,
+   "checks": {
+    "mentions /2022-09-29|September 29,? 2022/": {
+     "passed": true,
+     "detail": ""
+    },
+    "mentions /Albrioza|refus/": {
+     "passed": true,
+     "detail": ""
+    },
+    "mentions /Amylyx/": {
+     "passed": true,
+     "detail": ""
+    },
+    "called search_disclosures": {
+     "passed": true,
+     "detail": ""
+    },
+    "no unsupported citations": {
+     "passed": true,
+     "detail": ""
+    }
+   },
+   "answer": "In the United States, AMX0035 received FDA approval under the brand name RELYVRIO but is not currently marketed, while in the European Union, central marketing authorization under the brand name Albrioza was refused.\n\n* **FDA Status:** The US FDA approved AMX0035 (RELYVRIO) on September 29, 2022 under NDA 216660, but it is currently listed as not marketed (NDA 216660).\n* **EMA Status:** Central marketing authorization for AMX0035 (Albrioza) for the \"Treatment of amyotrophic lateral sclerosis (ALS)\" was refused on January 5, 2024, leaving it not centrally authorised in the EU (EMEA/H/C/005901).\n* **PHOENIX Trial Disclosures:** Amylyx announced topline results from the Phase 3 PHOENIX trial of AMX0035 in ALS on March 8, 2024 (SEC Form 8-K, Accession: 0001193125-24-062878).\n* **Market Removal Disclosures:** Amylyx announced its intention to remove RELYVRIO/ALBRIOZA from the market and relinquish marketing authorizations based on the PHOENIX results (SEC Form 8-K, Accession: 0001193125-24-086609; Accession: 0000950170-24-122779).\n* **Wolfram Syndrome Focus:** Amylyx reported planned regulatory discussions regarding AMX0035 for the treatment of Wolfram syndrome (SEC Form 8-K, Accession: 0000950170-25-031303).",
+   "lookups": [
+    {
+     "tool": "find_drug",
+     "arguments": {
+      "name": "AMX0035"
+     }
+    },
+    {
+     "tool": "find_drug",
+     "arguments": {
+      "name": "AMX0035"
+     }
+    },
+    {
+     "tool": "get_fda_status",
+     "arguments": {
+      "drug": "phenylbutyrate + taurursodiol",
+      "disease": "als"
+     }
+    },
+    {
+     "tool": "get_ema_status",
+     "arguments": {
+      "drug": "phenylbutyrate + taurursodiol",
+      "disease": "als"
+     }
+    },
+    {
+     "tool": "search_disclosures",
+     "arguments": {
+      "query": "Amylyx AMX0035 Relyvrio SEC filing annual report press release",
+      "drug": "phenylbutyrate + taurursodiol",
+      "limit": 10
+     }
+    },
+    {
+     "tool": "get_fda_status",
+     "arguments": {
+      "drug": "phenylbutyrate + taurursodiol"
+     }
+    },
+    {
+     "tool": "search_disclosures",
+     "arguments": {
+      "query": "PHOENIX trial results remove Relyvrio market",
+      "drug": "phenylbutyrate + taurursodiol",
+      "limit": 5
+     }
+    }
+   ],
+   "attribution_warnings": [],
+   "seconds": 32.9,
+   "input_tokens": null,
+   "output_tokens": null,
+   "metrics": {
+    "model_calls": 11,
+    "hedged_calls": 0,
+    "input_tokens": 15945,
+    "output_tokens": 2295,
+    "thinking_tokens": 0,
+    "model_seconds": 54.1,
+    "seconds": 32.89,
+    "tokens_per_second": 42.4,
+    "cost_usd": 0.020565,
+    "model_calls_by_agent": {
+     "coordinator": 2,
+     "critic": 1,
+     "evidence": 4,
+     "regulatory": 4
+    }
+   }
+  },
+  {
+   "id": "multi-endpoints",
+   "category": "multi-part",
+   "question": "How do ALS and Parkinson's trials differ in their primary endpoints and biomarkers? Give examples.",
+   "passed": true,
+   "checks": {
+    "mentions /ALSFRS/": {
+     "passed": true,
+     "detail": ""
+    },
+    "mentions /UPDRS/": {
+     "passed": true,
+     "detail": ""
+    },
+    "mentions /neurofilament|NfL/": {
+     "passed": true,
+     "detail": ""
+    },
+    "mentions /synuclein|DaT|dopamine transporter/": {
+     "passed": true,
+     "detail": ""
+    },
+    "called compare_diseases": {
+     "passed": true,
+     "detail": ""
+    },
+    "no unsupported citations": {
+     "passed": true,
+     "detail": ""
+    }
+   },
+   "answer": "ALS trials primarily assess rapidly progressive functional, respiratory, and survival decline, whereas Parkinson's disease trials focus on motor impairment, motor fluctuations, and dopaminergic deficits.\n\n* **ALS primary endpoints:** Frequently use the ALSFRS-R functional score (e.g., NCT07834450), survival or time to death/ventilation (e.g., NCT07743268), and vital capacity such as SVC/FVC (e.g., NCT07703462).\n* **Parkinson's primary endpoints:** Center on MDS-UPDRS/UPDRS motor scores (e.g., NCT07928050), motor diaries evaluating OFF/ON time (e.g., NCT07925086), and dyskinesia scales (e.g., NCT07681219).\n* **ALS biomarkers:** Rely most frequently on neurofilament light (NfL) (e.g., NCT07743268) and specific targets such as SOD1 protein (e.g., NCT07077668).\n* **Parkinson's biomarkers:** Focus on disease-specific pathology and dopaminergic integrity, including alpha-synuclein (e.g., NCT07880379) and DaT-SPECT imaging (e.g., NCT07093944), alongside NfL (e.g., NCT07681219).",
+   "lookups": [
+    {
+     "tool": "compare_diseases",
+     "arguments": {
+      "aspect": "endpoints"
+     }
+    },
+    {
+     "tool": "compare_diseases",
+     "arguments": {
+      "aspect": "biomarkers"
+     }
+    }
+   ],
+   "attribution_warnings": [],
+   "seconds": 29.0,
+   "input_tokens": null,
+   "output_tokens": null,
+   "metrics": {
+    "model_calls": 5,
+    "hedged_calls": 0,
+    "input_tokens": 10367,
+    "output_tokens": 2086,
+    "thinking_tokens": 0,
+    "model_seconds": 28.87,
+    "seconds": 29.01,
+    "tokens_per_second": 72.3,
+    "cost_usd": 0.015598,
+    "model_calls_by_agent": {
+     "clinical": 2,
+     "coordinator": 2,
+     "critic": 1
+    }
+   }
+  }
+ ]
+}

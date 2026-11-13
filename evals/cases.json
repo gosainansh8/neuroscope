@@ -680,6 +680,110 @@
       "must_call": [
         "search_disclosures"
       ]
+    },
+    {
+      "id": "multi-anti-amyloid",
+      "category": "multi-part",
+      "question": "Compare lecanemab and donanemab: when were they approved in the US and in the EU, and how many active Alzheimer's trials does each have?",
+      "must_mention": [
+        "2023-01-06|January 0?6,? 2023",
+        "2024-07-02|July 0?2,? 2024",
+        "2025-04-15|April 15,? 2025|15 April 2025",
+        "2025-09-24|September 24,? 2025|24 September 2025",
+        "\\b13\\b",
+        "\\b11\\b"
+      ]
+    },
+    {
+      "id": "multi-opicapone",
+      "category": "multi-part",
+      "question": "For opicapone, give its US and EU approval, its mechanism of action, and how many Parkinson's trials it has.",
+      "must_mention": [
+        "2020-04-24|April 24,? 2020",
+        "2016-06-24|June 24,? 2016|24 June 2016",
+        "COMT|catechol",
+        "\\b41\\b"
+      ]
+    },
+    {
+      "id": "multi-istradefylline",
+      "category": "multi-part",
+      "question": "Is istradefylline approved in the US and the EU, how does it work, and what do its Parkinson's trials mainly measure?",
+      "must_mention": [
+        "2019-08-27|August 27,? 2019",
+        "refus",
+        "adenosine|A2A",
+        "\\bOFF\\b|off[ -]time|off episodes"
+      ],
+      "must_cite_any": [
+        "NDA022075",
+        "EMEA/H/C/005308"
+      ]
+    },
+    {
+      "id": "multi-als-regulatory",
+      "category": "multi-part",
+      "question": "Which ALS drugs are approved by the FDA, and what happened to each of them in the EU?",
+      "must_mention": [
+        "riluzole",
+        "edaravone",
+        "tofersen",
+        "withdr",
+        "authori[sz]"
+      ]
+    },
+    {
+      "id": "multi-tavapadon",
+      "category": "multi-part",
+      "question": "What is the status of tavapadon: its FDA approval, its development program, and what AbbVie has said about it in SEC filings?",
+      "must_mention": [
+        "2026-09-25|September 25,? 2026",
+        "AbbVie"
+      ],
+      "must_cite_any": [
+        "NDA220415"
+      ],
+      "must_call": [
+        "search_disclosures"
+      ]
+    },
+    {
+      "id": "multi-pd-discontinued",
+      "category": "multi-part",
+      "question": "Which Parkinson's drug programs at Phase 2 or later were discontinued recently, and why?",
+      "must_mention": [
+        "minzasolmin|dipraglurant|K0706|valiloxybate|VENT-02"
+      ],
+      "must_call": [
+        "get_program_status"
+      ]
+    },
+    {
+      "id": "multi-amx0035",
+      "category": "multi-part",
+      "question": "What is the regulatory status of AMX0035 in the US and the EU, and what has Amylyx reported about it?",
+      "must_mention": [
+        "2022-09-29|September 29,? 2022",
+        "Albrioza|refus",
+        "Amylyx"
+      ],
+      "must_call": [
+        "search_disclosures"
+      ]
+    },
+    {
+      "id": "multi-endpoints",
+      "category": "multi-part",
+      "question": "How do ALS and Parkinson's trials differ in their primary endpoints and biomarkers? Give examples.",
+      "must_mention": [
+        "ALSFRS",
+        "UPDRS",
+        "neurofilament|NfL",
+        "synuclein|DaT|dopamine transporter"
+      ],
+      "must_call": [
+        "compare_diseases"
+      ]
     }
   ]
 }
