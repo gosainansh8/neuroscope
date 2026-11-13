@@ -39,6 +39,19 @@ TEAM_TIMEOUT_MS = 60_000
 # The specialists fetch facts and the critic checks them against records: they need little hidden reasoning.
 # The coordinator plans and writes, so it keeps the single agent's budget.
 SPECIALIST_THINKING = 256
+TEAM_ATTEMPTS = 2            # a run that fails on a dropped connection or busy server is started once more
+
+
+def _transient(exc: BaseException) -> bool:
+    """Network drops, timeouts, rate limits, and server errors, anywhere in the exception chain."""
+    while exc is not None:
+        name = type(exc).__name__
+        code = getattr(exc, "code", None) or getattr(exc, "status_code", None)
+        if name in ("TransportError", "ConnectionError", "ConnectionResetError", "ReadTimeout", "TimeoutError",
+                    "ServerError", "RemoteProtocolError") or code in (429, 500, 502, 503, 504):
+            return True
+        exc = exc.__cause__ or exc.__context__
+    return False
 CRITIC_THINKING = 512
 
 COORDINATOR = SYSTEM_PROMPT + """
@@ -271,12 +284,17 @@ def answer_question_team(question: str, registry: dict[str, Callable[..., dict]]
                          on_event: Callable[[dict], None] | None = None) -> AgentResult:
     """Answer with the agent team. Same result shape and checks as agent.answer_question."""
     started = time.monotonic()
-    team = Team(registry, on_event)
     with tracing.span("answer", mode="answer", agent="team", question_chars=len(question)) as set_attrs:
-        try:
-            text = asyncio.run(team.answer(question))
-        except Exception as exc:              # surface model failures like the single agent does
-            raise RuntimeError(f"Agent team failed: {type(exc).__name__}: {exc}") from exc
+        for attempt in range(1, TEAM_ATTEMPTS + 1):
+            team = Team(registry, on_event)
+            try:
+                text = asyncio.run(team.answer(question))
+                break
+            except Exception as exc:          # a dropped connection or busy server: start the run again
+                if attempt < TEAM_ATTEMPTS and _transient(exc):
+                    time.sleep(2 * attempt)
+                    continue
+                raise RuntimeError(f"Agent team failed: {type(exc).__name__}: {exc}") from exc
         text = text or "The agent team returned no answer."
         cited, unsupported = check_citations(text, team.steps)
         result = AgentResult(text, team.steps, cited, unsupported, False, check_attribution(text, team.steps))

@@ -57,3 +57,24 @@ def test_answers_carry_metrics_and_the_team_option_costs_three(client, conn, mon
     after = conn.execute("SELECT questions FROM api_usage WHERE day = current_date").fetchone()[0]
     assert after - before == 3
     assert client.post("/ask", json={"question": "x y z", "agent": "crowd"}).status_code == 422
+
+
+def test_team_retries_a_dropped_connection(monkeypatch):
+    from neuroscope import team
+    attempts = []
+
+    class FakeTeam:
+        def __init__(self, registry, on_event=None):
+            self.steps, self.usage = [], Usage()
+
+        async def answer(self, question):
+            attempts.append(1)
+            if len(attempts) == 1:
+                raise ConnectionResetError(54, "Connection reset by peer")
+            return "No, it is not approved."
+
+    monkeypatch.setattr(team, "Team", FakeTeam)
+    monkeypatch.setattr(team.time, "sleep", lambda s: None)
+    result = team.answer_question_team("Is x approved?", {})
+    assert result.answer == "No, it is not approved." and len(attempts) == 2
+    assert not team._transient(ValueError("bad argument"))
