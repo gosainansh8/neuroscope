@@ -23,7 +23,7 @@ from dataclasses import dataclass
 import psycopg
 
 from .db import connect
-from .normalize import alias_key
+from .normalize import alias_key, combination_key, split_combination
 
 
 @dataclass
@@ -40,11 +40,17 @@ class Hit:
 
 
 def resolve_drug(conn: psycopg.Connection, name: str) -> int | None:
-    """Drug id for a trusted name (verified alias or canonical name), else None."""
+    """Drug id for a trusted name (verified alias or canonical name), else None. A combination
+    ("phenylbutyrate + taurursodiol") is looked up by its order-independent combination key, which is
+    how find_drug names it."""
+    parts = split_combination(name)
+    key = combination_key(parts) if parts else alias_key(name)
     row = conn.execute(
         "SELECT a.drug_id FROM drug_aliases a JOIN drugs d ON d.id = a.drug_id WHERE a.alias_key = %s "
         "AND (a.review_status = 'verified' OR lower(d.canonical_name) = lower(%s))",
-        (alias_key(name), name.strip())).fetchone()
+        (key, name.strip())).fetchone()
+    if row is None and parts:                  # a canonical combination name can also match directly
+        row = conn.execute("SELECT id FROM drugs WHERE lower(canonical_name) = lower(%s)", (name.strip(),)).fetchone()
     return row[0] if row else None
 
 

@@ -235,3 +235,13 @@ def test_a_stalled_model_request_is_raced_by_a_duplicate(monkeypatch):
     monkeypatch.setattr(agent, "HEDGE_AFTER_S", 0.05)
     assert list(m._hedged_stream()) == ["fresh", "reply"] and len(calls) == 2
     release.set()
+
+
+def test_lookups_accept_a_combination_drug_by_its_canonical_name(conn, tmp_path):
+    """find_drug names a combination 'xanomeline + trospium'; the next lookup must accept that name."""
+    from neuroscope import tools
+    seed(conn, tmp_path)
+    assert tools.find_drug(conn, "KarXT")["canonical_name"] == "xanomeline + trospium"
+    for name in ("xanomeline + trospium", "trospium + xanomeline", "Xanomeline and Trospium"):
+        assert tools.find_drug(conn, name).get("canonical_name") == "xanomeline + trospium", name
+    assert tools.get_fda_status(conn, "xanomeline + trospium")["found"] is True
