@@ -92,7 +92,7 @@
   .card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: var(--radius);
           box-shadow: var(--shadow); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
   /* The question box is the main thing on the page: larger, with a soft gradient edge */
-  form.card { display: flex; flex-direction: column; gap: 4px; padding: 8px 10px 10px 8px; border-radius: 18px;
+  form.card { display: flex; flex-direction: column; gap: 6px; padding: 8px 10px 10px 8px; border-radius: 18px;
               border: 1.5px solid transparent;
               background: linear-gradient(var(--panel-solid), var(--panel-solid)) padding-box,
                           linear-gradient(135deg, rgba(91, 91, 214, .55), rgba(20, 158, 147, .45)) border-box;
@@ -127,7 +127,7 @@
 
   /* Examples: two quiet suggestions */
   .toolbar { display: flex; align-items: center; gap: 8px; padding: 0 0 0 6px; }
-  .toolbar #submit { margin-left: auto; }
+  .toolbar #submit { margin-left: auto; align-self: center; padding: 9px 20px; border-radius: 10px; }
   .seg { display: inline-flex; gap: 2px; padding: 3px; border-radius: 10px; background: var(--panel);
          border: 1px solid var(--panel-border); }
   .seg button { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border: 0; border-radius: 7px;
