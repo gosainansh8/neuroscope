@@ -131,7 +131,8 @@
   .mode-btn { border: 0; background: none; padding: 4px 12px; border-radius: 999px; font: 600 .82rem/1.2 inherit;
               color: var(--muted); cursor: pointer; }
   .mode-btn.on, .agent-btn.on { color: #fff; background: linear-gradient(135deg, var(--accent), var(--accent-2)); }
-  .agent-mode { margin-left: 6px; }
+  .switches { margin-left: auto; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
+  .switches .mode { margin-left: 0; }
   .agent-btn { border: 0; background: none; padding: 4px 12px; border-radius: 999px; font: 600 .82rem/1.2 inherit;
                color: var(--muted); cursor: pointer; }
   .agent-btn:disabled, .mode-btn:disabled { opacity: .4; cursor: not-allowed; }
@@ -526,6 +527,7 @@
     <span>Try:</span>
     <button type="button" class="example">Is tofersen approved for ALS?</button>
     <button type="button" class="example">Which Parkinson's drugs are in Phase 3 trials?</button>
+    <div class="switches">
     <div class="mode" role="group" aria-label="What to write">
       <button type="button" class="mode-btn on" data-mode="answer" aria-pressed="true" title="A short answer to a question">Answer</button>
       <button type="button" class="mode-btn" data-mode="report" aria-pressed="false" title="A sectioned report with citations (counts as 3 questions)">Report</button>
@@ -533,6 +535,7 @@
     <div class="mode agent-mode" role="group" aria-label="Which agent answers">
       <button type="button" class="agent-btn on" data-agent="single" aria-pressed="true" title="One Gemini agent with nine lookups (fast)">One agent</button>
       <button type="button" class="agent-btn" data-agent="team" aria-pressed="false" title="An ADK agent team: a coordinator, three specialists, and a critic (slower; counts as 3 questions)">Agent team</button>
+    </div>
     </div>
   </div>
 
